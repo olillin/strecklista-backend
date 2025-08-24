@@ -1,16 +1,20 @@
-# P.R.I.T. Strecklista Backend
+# Strecklista Backend
 
-Backend of the "strecklista" developed by and for
-[P.R.I.T.](https://prit.chalmers.it) at Chalmers'
-[IT student division](https://chalmers.it).
+![Version from package.json on 'main' branch](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Folillin%2Fstrecklista-backend%2Frefs%2Fheads%2Fmain%2Fpackage.json&query=%24.version&label=Version&labelColor=%23222&color=%2309cdda)
 
-## Running/configuring the server
-
-Check out [SERVER.md](./docs/SERVER.md)
+Backend of the "strecklista" developed by
+[P.R.I.T.](https://prit.chalmers.it), a committee at
+[the Software Engineering Student Division (IT)](https://chalmers.it) of
+[Chalmers Student Union](https://chalmersstudentkar.se).
 
 ## See also
 
-The source for the frontend by [Erik Persson](https://github.com/erikpersson0884)
-can be found at <https://github.com/erikpersson0884/strecklista>
+- [API.md](docs/API.md) for API documentation.
 
-The [API documentation](docs/API.md).
+- [DEPLOYMENT.md](./docs/DEPLOYMENT.md) for hosting and configuration.
+
+## Acknowledgements
+
+- [Erik Persson](https://github.com/erikpersson0884) for developing the frontend
+intended to be used with this service
+([erikpersson0884/strecklista](https://github.com/erikpersson0884/strecklista)).

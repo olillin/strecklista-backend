@@ -1,4 +1,4 @@
-# P.R.I.T. Strecklista backend API documentation
+# Strecklista API documentation
 
 ## Index
 

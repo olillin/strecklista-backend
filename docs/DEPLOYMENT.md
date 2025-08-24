@@ -24,7 +24,7 @@ To be able to setup and run the server you will need the following:
 1. Start by cloning the repository by running this command in the terminal:
 
    ```shell
-   git clone https://github.com/olillin/prit-streck-backend
+   git clone https://github.com/olillin/strecklista-backend
    ```
 
 2. Create a `.env` file in the root of the project and copy the following
@@ -109,11 +109,11 @@ the `.env` you created earlier. See the list of available settings below.
 
 ### JWT
 
-| Name                    | Type   | Default    |  Description                                                                              |
-|-------------------------|--------|------------|-------------------------------------------------------------------------------------------|
-| JWT_SECRET              | string |            |  Used to sign JWTs when users log in                                                      |
-| JWT_ISSUER              | string | PritStreck |  The issuer of the JWT                                                                    |
-| JWT_EXPIRES_IN          | int    | 43 200     |  How many seconds the JWT is valid for after signing                                      |
+| Name                    | Type   | Default     |  Description                                         |
+|-------------------------|--------|-------------|------------------------------------------------------|
+| JWT_SECRET              | string |             |  Used to sign JWTs when users log in                 |
+| JWT_ISSUER              | string | strecklista |  The issuer of the JWT                               |
+| JWT_EXPIRES_IN          | int    | 43200       |  How many seconds the JWT is valid for after signing |
 
 ### Gamma
 

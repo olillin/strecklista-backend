@@ -38,9 +38,9 @@ export const DEFAULT_ENVIRONMENT: Partial<Concrete<EnvironmentVariables>> = {
     PGUSER: 'postgres',
     PGHOST: 'localhost',
     PGPORT: '5432',
-    PGDATABASE: 'prit_streck',
+    PGDATABASE: 'strecklista',
 
-    JWT_ISSUER: 'prit_streck',
+    JWT_ISSUER: 'strecklista',
     JWT_EXPIRES_IN: '43200',
 }
 

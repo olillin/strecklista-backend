@@ -1,6 +1,6 @@
-import { Location } from 'express-validator'
-import { ErrorDefinition, ErrorResolvable, ResponseBody } from './types'
 import { Response } from 'express'
+import { Location } from 'express-validator'
+import { ErrorDefinition, ErrorResolvable, ErrorResponseBody } from './types'
 
 // Pre-defined errors
 export enum ApiError {
@@ -146,6 +146,15 @@ export function tokenSignError(details: string): ErrorDefinition {
 }
 // #endregion Parameterized Errors
 
+export function isErrorResolvable(maybeError: any): maybeError is ErrorResolvable {
+    if (typeof maybeError === 'object') {
+        return Object.hasOwn(maybeError, 'code') && typeof maybeError.code === 'number' && Object.hasOwn(maybeError, 'message') && typeof maybeError.message === 'string'
+    } else if (typeof maybeError === 'number') {
+        return Object.values(ApiError).includes(maybeError)
+    }
+    return false
+}
+
 export function resolveError(error: ErrorResolvable): ErrorDefinition {
     if (typeof error === 'number') {
         // error is ApiError
@@ -172,11 +181,11 @@ export function sendError(res: Response, a: number | ErrorResolvable, b?: string
         message = error.message
     }
 
-    const response: ResponseBody<never> = {
+    const body: ErrorResponseBody = {
         error: {
             code: code,
             message: message,
         },
     }
-    res.status(code).json(response)
+    res.status(code).json(body)
 }

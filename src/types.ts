@@ -88,13 +88,10 @@ export interface ItemStockUpdate {
 
 // #region Response types
 export type ResponseBody<T> = [T] extends [never]
-    ? { error: ResponseError }
+    ? { error: ErrorDefinition }
     : { data: T }
 
-export interface ResponseError {
-    code: number
-    message: string
-}
+export type ErrorResponseBody = ResponseBody<never>
 
 export interface UserResponse {
     user: User

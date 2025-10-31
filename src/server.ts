@@ -9,6 +9,7 @@ import * as validate from './middleware/validators'
 import validationErrorHandler from './middleware/validationErrorHandler'
 import appendHeader from './middleware/setHeader'
 import cors, { CorsOptions } from 'cors'
+import errorHandler from './middleware/errorHandler'
 
 const exposeCors =
     env.EXPOSE_CORS.toLowerCase() === 'true' || env.EXPOSE_CORS === '1'
@@ -51,11 +52,7 @@ async function main() {
     const api = await createApiRouter()
     app.use('/api', api)
 
-    app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-        console.error(err)
-        console.trace(err)
-        sendError(res, unexpectedError(err.message))
-    })
+    app.use(errorHandler)
 
     app.listen(parseInt(env.PORT))
     console.log(`Listening on port ${env.PORT}`)

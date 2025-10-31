@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response } from 'express'
+import { NextFunction, Request, RequestHandler, Response } from 'express'
 import { FieldValidationError, validationResult } from 'express-validator'
 import {
     ApiError,
@@ -8,11 +8,11 @@ import {
     unexpectedError,
 } from '../errors'
 
-async function validationErrorHandler(
+const validationErrorHandler: RequestHandler = (
     req: Request,
     res: Response,
     next: NextFunction
-) {
+) => {
     const result = validationResult(req)
     if (result.isEmpty()) {
         next()

@@ -1,12 +1,12 @@
-import {NextFunction, Request, Response} from "express";
-import {clientApi, database} from "../../config/clients";
-import {UserId} from "gammait";
-import {getGammaUserId, getGroupId} from "../../middleware/validateToken";
-import {ApiError, sendError} from "../../errors";
-import * as convert from "../../util/convert";
-import {GroupResponse, ResponseBody, User} from "../../types";
-import * as tableType from "../../database/types";
-import {getAuthorizedGroup} from "../../util/helpers";
+import { NextFunction, Request, Response } from "express"
+import { UserId } from "gammait"
+import { clientApi, database } from "../../config/clients"
+import * as tableType from "../../database/types"
+import { ApiError } from "../../errors"
+import { getGammaUserId, getGroupId } from "../../middleware/validateToken"
+import { GroupResponse, ResponseBody, User } from "../../types"
+import * as convert from "../../util/convert"
+import { getAuthorizedGroup } from "../../util/helpers"
 
 export default async function getGroup(req: Request, res: Response, next: NextFunction) {
     try {
@@ -20,13 +20,11 @@ export default async function getGroup(req: Request, res: Response, next: NextFu
                 return null
             })
         if (!gammaGroups) {
-            sendError(res, ApiError.FailedGetGroups)
-            return
+            return next(ApiError.FailedGetGroups)
         }
         const gammaGroup = getAuthorizedGroup(gammaGroups)
         if (!gammaGroup) {
-            sendError(res, ApiError.NoPermission)
-            return
+            return next(ApiError.NoPermission)
         }
 
         // Get members
@@ -44,8 +42,7 @@ export default async function getGroup(req: Request, res: Response, next: NextFu
         } catch (e) {
             const message = `Failed to get users from gamma: ${e}`
             console.error(message)
-            sendError(res, ApiError.InvalidGammaResponse)
-            return
+            return next(ApiError.InvalidGammaResponse)
         }
         const members = await Promise.all(userPromises)
 
@@ -56,6 +53,7 @@ export default async function getGroup(req: Request, res: Response, next: NextFu
         const group = convert.toGroup(dbGroup, gammaGroup)
         const body: ResponseBody<GroupResponse> = { data: { group, members } }
         res.json(body)
+        next()
     } catch (error) {
         next(error)
     }

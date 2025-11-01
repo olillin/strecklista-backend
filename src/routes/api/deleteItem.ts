@@ -1,5 +1,5 @@
-import {NextFunction, Request, Response} from "express";
-import {database} from "../../config/clients";
+import { NextFunction, Request, Response } from "express"
+import { database } from "../../config/clients"
 
 export default async function deleteItem(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -7,6 +7,7 @@ export default async function deleteItem(req: Request, res: Response, next: Next
 
         await database.deleteItem(itemId)
         res.status(204).end()
+        next()
     } catch (error) {
         next(error)
     }

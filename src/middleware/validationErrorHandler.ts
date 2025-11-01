@@ -1,11 +1,10 @@
 import { NextFunction, Request, RequestHandler, Response } from 'express'
 import { FieldValidationError, validationResult } from 'express-validator'
 import {
-    ApiError,
     invalidPropertyError,
+    isErrorResolvable,
     missingRequiredPropertyError,
-    sendError,
-    unexpectedError,
+    unexpectedError
 } from '../errors'
 
 const validationErrorHandler: RequestHandler = (
@@ -13,14 +12,13 @@ const validationErrorHandler: RequestHandler = (
     res: Response,
     next: NextFunction
 ) => {
-    const result = validationResult(req)
-    if (result.isEmpty()) {
-        next()
-        return
+    const errors = validationResult(req)
+    if (errors.isEmpty()) {
+        return next()
     }
 
     // Select the first field error
-    const validationError = result.array()[0]
+    const validationError = errors.array()[0]
     let fieldError: FieldValidationError
     if (validationError.type === 'field') {
         fieldError = validationError
@@ -34,31 +32,24 @@ const validationErrorHandler: RequestHandler = (
             validationError.type
         }': ${JSON.stringify(validationError)}`
         console.error(message)
-        sendError(res, unexpectedError(message))
-        return
+        return next(unexpectedError(message))
     }
 
     // Respond to error
     const message = fieldError.msg
-    if (typeof message === 'number' && message in ApiError) {
-        // Use defined error
-        sendError(res, message)
+    if (isErrorResolvable(message)) {
+        // Use as defined error
+        return next(message)
     } else if (fieldError.value === undefined && message === 'Invalid value') {
         // Missing required property
-        sendError(
-            res,
-            missingRequiredPropertyError(fieldError.path, fieldError.location)
-        )
+        return next(missingRequiredPropertyError(fieldError.path, fieldError.location))
     } else {
         // Other error
         console.warn(
             'Validation error does not have a corresponding error definition:'
         )
         console.warn(fieldError)
-        sendError(
-            res,
-            invalidPropertyError(fieldError.path, fieldError.location)
-        )
+        return next(invalidPropertyError(fieldError.path, fieldError.location))
     }
 }
 

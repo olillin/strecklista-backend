@@ -1,11 +1,11 @@
-import {Request, Response} from "express";
+import {NextFunction, Request, Response} from "express";
 import {database} from "../../config/clients";
 import {ItemSortMode, ItemsResponse, ResponseBody} from "../../types";
 import {getGroupId, getUserId} from "../../middleware/validateToken";
 import * as convert from "../../util/convert";
 import {getFlag, ItemFlags} from "../../flags";
 
-export default async function getItems(req: Request, res: Response) {
+export default async function getItems(req: Request, res: Response, next: NextFunction) {
     const sort: ItemSortMode = req.query.sort as ItemSortMode
     const visibleOnly: boolean = req.query.visibleOnly === '1' || req.query.visibleOnly === 'true'
 
@@ -51,4 +51,5 @@ export default async function getItems(req: Request, res: Response) {
     }
     const body: ResponseBody<ItemsResponse> = {data: {items}}
     res.json(body)
+    next()
 }

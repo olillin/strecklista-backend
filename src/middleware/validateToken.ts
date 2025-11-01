@@ -1,17 +1,16 @@
-import { Request, Response, NextFunction } from 'express'
-import { ApiError, sendError } from '../errors'
+import { NextFunction, Request, Response } from 'express'
+import { GroupId, UserId } from 'gammait'
 import jwt from 'jsonwebtoken'
 import env from '../config/env'
+import { ApiError } from '../errors'
 import { LocalJwt } from '../types'
-import {GroupId, UserId} from 'gammait'
 
 function validateToken(req: Request, res: Response, next: NextFunction) {
     console.log(`${req.method} to API: ${req.path}`)
 
     const auth = req.headers.authorization
     if (!auth) {
-        sendError(res, ApiError.Unauthorized)
-        return
+        return next(ApiError.Unauthorized)
     }
     const token = auth.split(' ')[1]
     try {
@@ -20,21 +19,18 @@ function validateToken(req: Request, res: Response, next: NextFunction) {
         if (verifiedToken.exp) {
             const isExpired = Date.now() >= verifiedToken.exp * 1000
             if (isExpired) {
-                sendError(res, ApiError.ExpiredToken)
-                return
+                return next(ApiError.ExpiredToken)
             }
         }
         if (verifiedToken.nbf) {
             const isBefore = Date.now() < verifiedToken.nbf * 1000
             if (isBefore) {
-                sendError(res, ApiError.BeforeNbf)
-                return
+                return next(ApiError.BeforeNbf)
             }
         }
 
         if (!verifiedToken.userId || !verifiedToken.groupId) {
-            sendError(res, ApiError.InvalidToken)
-            return
+            return next(ApiError.InvalidToken)
         }
 
         console.log('Verified token:')
@@ -44,7 +40,7 @@ function validateToken(req: Request, res: Response, next: NextFunction) {
         res.locals.jwt = verifiedToken
         next()
     } catch {
-        sendError(res, ApiError.Unauthorized)
+        next(ApiError.Unauthorized)
     }
 }
 export default validateToken

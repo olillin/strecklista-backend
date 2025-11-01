@@ -1,34 +1,36 @@
-import {Request, Response} from "express";
-import {clientApi, database} from "../../config/clients";
-import {getGammaUserId, getUserId} from "../../middleware/validateToken";
-import {ApiError, sendError} from "../../errors";
-import {ResponseBody, UserResponse} from "../../types";
-import * as convert from "../../util/convert";
-import {UserId} from "gammait";
-import {getAuthorizedGroup} from "../../util/helpers";
+import { NextFunction, Request, Response } from "express"
+import { UserId } from "gammait"
+import { clientApi, database } from "../../config/clients"
+import { ApiError, sendError } from "../../errors"
+import { getGammaUserId, getUserId } from "../../middleware/validateToken"
+import { ResponseBody, UserResponse } from "../../types"
+import * as convert from "../../util/convert"
+import { getAuthorizedGroup } from "../../util/helpers"
 
-export default async function getUser(req: Request, res: Response) {
+// TODO: Revise how errors are handled in this handler
+export default async function getUser(req: Request, res: Response, next: NextFunction) {
     const userId: number = getUserId(res)
     const gammaUserId: UserId = getGammaUserId(res)
     console.log(`Getting user info for: ${userId}`)
 
     // Get requests
+    let errorSent = false
     const dbUserPromise = database.getFullUser(userId).catch(reason => {
-        if (!res.headersSent) {
-            console.log(reason)
-            sendError(res, 500, 'Failed to fetch user from database')
+        if (!errorSent) {
+            console.error(`Failed to get user from database: ${reason}`)
+            next('Failed to get user from database')
         }
     })
     const gammaUserPromise = clientApi.getUser(gammaUserId).catch(reason => {
         if (!res.headersSent) {
-            console.log(reason)
-            sendError(res, ApiError.UserNotExist)
+            console.warn(reason)
+            next(ApiError.UserNotExist)
         }
     })
     const groupsPromise = clientApi.getGroupsFor(gammaUserId).catch(reason => {
         if (!res.headersSent) {
-            console.log(reason)
-            sendError(res, ApiError.FailedGetGroups)
+            console.warn(reason)
+            next(ApiError.FailedGetGroups)
         }
     })
 

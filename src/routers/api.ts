@@ -1,11 +1,11 @@
-import { Router, Request, Response } from 'express'
+import { NextFunction, Request, Response, Router } from 'express'
+import { ApiError } from "../errors"
+import setHeader from "../middleware/setHeader"
 import validateToken from '../middleware/validateToken'
 import validationErrorHandler from '../middleware/validationErrorHandler'
 import * as validators from '../middleware/validators'
 import * as apiRoutes from '../routes/api'
-import setHeader from "../middleware/setHeader";
-import {ApiError, sendError} from "../errors";
-import {ErrorResolvable} from "../types";
+import { ErrorResolvable } from "../types"
 
 async function createApiRouter(): Promise<Router> {
     const api = Router()
@@ -60,8 +60,8 @@ async function createApiRouter(): Promise<Router> {
             ]
             // Error routes
             : [
-                (req: Request, res: Response) => {
-                    sendError(res, name as ErrorResolvable)
+                (req: Request, res: Response, next: NextFunction) => {
+                    return next(name)
                 }
             ]
 

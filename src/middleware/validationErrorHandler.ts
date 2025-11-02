@@ -4,7 +4,7 @@ import {
     invalidPropertyError,
     isErrorResolvable,
     missingRequiredPropertyError,
-    unexpectedError
+    unexpectedErrorPleaseReport,
 } from '../errors'
 
 const validationErrorHandler: RequestHandler = (
@@ -32,7 +32,7 @@ const validationErrorHandler: RequestHandler = (
             validationError.type
         }': ${JSON.stringify(validationError)}`
         console.error(message)
-        return next(unexpectedError(message))
+        return next(unexpectedErrorPleaseReport(message))
     }
 
     // Respond to error
@@ -42,7 +42,9 @@ const validationErrorHandler: RequestHandler = (
         return next(message)
     } else if (fieldError.value === undefined && message === 'Invalid value') {
         // Missing required property
-        return next(missingRequiredPropertyError(fieldError.path, fieldError.location))
+        return next(
+            missingRequiredPropertyError(fieldError.path, fieldError.location)
+        )
     } else {
         // Other error
         console.warn(

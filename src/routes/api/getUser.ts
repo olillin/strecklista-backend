@@ -1,60 +1,66 @@
-import { NextFunction, Request, Response } from "express"
-import { UserId } from "gammait"
-import { clientApi, database } from "../../config/clients"
-import { ApiError, sendError } from "../../errors"
-import { getGammaUserId, getUserId } from "../../middleware/validateToken"
-import { ResponseBody, UserResponse } from "../../types"
-import * as convert from "../../util/convert"
-import { getAuthorizedGroup } from "../../util/helpers"
+import { NextFunction, Request, Response } from 'express'
+import { GroupWithPost, User, UserId } from 'gammait'
+import { clientApi, database } from '../../config/clients'
+import { FullUser } from '../../database/types'
+import { ApiError, isErrorResolvable } from '../../errors'
+import { getGammaUserId, getUserId } from '../../middleware/validateToken'
+import { ErrorResolvable, ResponseBody, UserResponse } from '../../types'
+import * as convert from '../../util/convert'
+import { getAuthorizedGroup } from '../../util/helpers'
 
-// TODO: Revise how errors are handled in this handler
-export default async function getUser(req: Request, res: Response, next: NextFunction) {
+export default async function getUser(
+    req: Request,
+    res: Response,
+    next: NextFunction
+) {
     const userId: number = getUserId(res)
     const gammaUserId: UserId = getGammaUserId(res)
     console.log(`Getting user info for: ${userId}`)
 
     // Get requests
-    let errorSent = false
-    const dbUserPromise = database.getFullUser(userId).catch(reason => {
-        if (!errorSent) {
-            console.error(`Failed to get user from database: ${reason}`)
-            next('Failed to get user from database')
-        }
-    })
-    const gammaUserPromise = clientApi.getUser(gammaUserId).catch(reason => {
-        if (!res.headersSent) {
-            console.warn(reason)
-            next(ApiError.UserNotExist)
-        }
-    })
-    const groupsPromise = clientApi.getGroupsFor(gammaUserId).catch(reason => {
-        if (!res.headersSent) {
-            console.warn(reason)
-            next(ApiError.FailedGetGroups)
-        }
-    })
+    const dbUserPromise: Promise<FullUser | undefined | ErrorResolvable> =
+        database.getFullUser(userId).catch(reason => {
+            console.error(`Failed to fetch user from database: ${reason}`)
+            return ApiError.Unexpected
+        })
+    const gammaUserPromise: Promise<User | ErrorResolvable> = clientApi
+        .getUser(gammaUserId)
+        .catch(reason => {
+            console.warn(`Failed to fetch user from Gamma: ${reason}`)
+            const fetchFailed = String(reason).includes('fetch failed')
+            return fetchFailed
+                ? ApiError.UnreachableGamma
+                : ApiError.InvalidGammaResponse
+        })
+    const groupsPromise: Promise<GroupWithPost[] | ErrorResolvable> = clientApi
+        .getGroupsFor(gammaUserId)
+        .catch(reason => {
+            console.warn('Failed to fetch groups from Gamma')
+            const fetchFailed = String(reason).includes('fetch failed')
+            return fetchFailed
+                ? ApiError.UnreachableGamma
+                : ApiError.InvalidGammaResponse
+        })
 
     // Await promises
-    const dbUser = await dbUserPromise
-    if (dbUser === undefined) {
-        sendError(res, 404, 'User does not exist')
-        return
+    const promises = [dbUserPromise, gammaUserPromise, groupsPromise]
+    // Check for errors
+    for (const promise of promises) {
+        const result = await promise
+        if (isErrorResolvable(result)) return next(result)
     }
-    const gammaUser = await gammaUserPromise
-    if (!gammaUser) {
-        sendError(res, 502, 'Failed to get user from gamma')
-        return
-    }
-    const groups = await groupsPromise
-    if (!groups) {
-        sendError(res, 502, 'Failed to get groups from gamma')
-        return
-    }
+
+    const [dbUser, gammaUser, groups] = (await Promise.all(promises)) as [
+        FullUser | undefined,
+        User,
+        GroupWithPost[]
+    ]
+
+    if (dbUser === undefined) return next(ApiError.UserNotExist)
 
     const group = getAuthorizedGroup(groups)
     if (!group) {
-        sendError(res, ApiError.NoPermission)
-        return
+        return next(ApiError.NoPermission)
     }
 
     const body: ResponseBody<UserResponse> = {

@@ -1,9 +1,17 @@
-import {Request, Response} from "express";
-import {database} from "../../config/clients";
-import {TransactionResponse, PatchTransactionBody, ResponseBody} from "../../types";
-import {TransactionFlagsMap} from "../../flags";
+import { NextFunction, Request, Response } from 'express'
+import { database } from '../../config/clients'
+import { TransactionFlagsMap } from '../../flags'
+import {
+    PatchTransactionBody,
+    ResponseBody,
+    TransactionResponse,
+} from '../../types'
 
-export default async function patchTransaction(req: Request, res: Response) {
+export default async function patchTransaction(
+    req: Request,
+    res: Response,
+    next: NextFunction
+) {
     const transactionId = parseInt(req.params.id)
     const { removed } = req.body as PatchTransactionBody
 
@@ -14,7 +22,7 @@ export default async function patchTransaction(req: Request, res: Response) {
     // Update transactions table
     const newTransaction = await database.updateTransaction(
         transactionId,
-        flags,
+        flags
     )
 
     const data: TransactionResponse = { transaction: newTransaction }

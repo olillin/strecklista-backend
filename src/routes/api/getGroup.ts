@@ -1,20 +1,25 @@
-import { NextFunction, Request, Response } from "express"
-import { UserId } from "gammait"
-import { clientApi, database } from "../../config/clients"
-import * as tableType from "../../database/types"
-import { ApiError } from "../../errors"
-import { getGammaUserId, getGroupId } from "../../middleware/validateToken"
-import { GroupResponse, ResponseBody, User } from "../../types"
-import * as convert from "../../util/convert"
-import { getAuthorizedGroup } from "../../util/helpers"
+import { NextFunction, Request, Response } from 'express'
+import { UserId } from 'gammait'
+import { clientApi, database } from '../../config/clients'
+import * as tableType from '../../database/types'
+import { ApiError } from '../../errors'
+import { getGammaUserId, getGroupId } from '../../middleware/validateToken'
+import { GroupResponse, ResponseBody, User } from '../../types'
+import * as convert from '../../util/convert'
+import { getAuthorizedGroup } from '../../util/helpers'
 
-export default async function getGroup(req: Request, res: Response, next: NextFunction) {
+export default async function getGroup(
+    req: Request,
+    res: Response,
+    next: NextFunction
+) {
     try {
         const gammaUserId: UserId = getGammaUserId(res)
         const groupId = getGroupId(res)
 
         // Get group
-        const gammaGroups = await clientApi.getGroupsFor(gammaUserId)
+        const gammaGroups = await clientApi
+            .getGroupsFor(gammaUserId)
             .catch(reason => {
                 console.log(reason)
                 return null
@@ -32,10 +37,13 @@ export default async function getGroup(req: Request, res: Response, next: NextFu
         let userPromises: Promise<User>[]
         try {
             userPromises = fullUsersInGroup.map(async dbUser => {
-                const gammaUser = await clientApi.getUser(dbUser.gamma_id)
+                const gammaUser = await clientApi
+                    .getUser(dbUser.gamma_id)
                     .catch(() => null)
                 if (!gammaUser) {
-                    console.warn(`Failed to get user ${dbUser.gamma_id} in group ${dbUser.group_gamma_id} from Gamma`)
+                    console.warn(
+                        `Failed to get user ${dbUser.gamma_id} in group ${dbUser.group_gamma_id} from Gamma`
+                    )
                 }
                 return convert.toUser(dbUser, gammaUser)
             })
@@ -53,7 +61,6 @@ export default async function getGroup(req: Request, res: Response, next: NextFu
         const group = convert.toGroup(dbGroup, gammaGroup)
         const body: ResponseBody<GroupResponse> = { data: { group, members } }
         res.json(body)
-        next()
     } catch (error) {
         next(error)
     }

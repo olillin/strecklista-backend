@@ -1,13 +1,27 @@
-import {GroupId, UserId} from 'gammait'
-import pg, {Client, ClientConfig, QueryResult, QueryResultRow} from 'pg'
+import { GroupId, UserId } from 'gammait'
+import { EventEmitter } from 'node:events'
+import pg, { Client, ClientConfig, QueryResult, QueryResultRow } from 'pg'
+import { database } from '../config/clients'
+import {
+    ItemFlags,
+    ItemFlagsMap,
+    TransactionFlags,
+    TransactionFlagsMap,
+} from '../flags'
+import {
+    AnyTransaction,
+    Deposit,
+    Item,
+    PostItemStockUpdate,
+    Price,
+    Purchase,
+    PurchaseItem,
+    StockUpdate,
+} from '../types'
+import * as convert from '../util/convert'
+import { isValidComment } from '../util/helpers'
 import * as q from './queries'
 import * as tableType from './types'
-import {AnyTransaction, Deposit, Item, PostItemStockUpdate, Price, Purchase, PurchaseItem, StockUpdate} from '../types'
-import * as convert from '../util/convert'
-import {database} from '../config/clients'
-import {EventEmitter} from 'node:events'
-import {isValidComment} from "../util/helpers";
-import {ItemFlags, ItemFlagsMap, TransactionFlags, TransactionFlagsMap} from "../flags";
 
 // Parse numeric types
 pg.types.setTypeParser(pg.types.builtins.NUMERIC, parseFloat)
@@ -107,7 +121,9 @@ class DatabaseClient extends EventEmitter {
                         table => !existingTables.includes(table)
                     )
                     if (missingTables.length > 0) {
-                        throw `Database is missing tables: ${missingTables.join(', ')}`
+                        throw `Database is missing tables: ${missingTables.join(
+                            ', '
+                        )}`
                     }
 
                     // All checks pass
@@ -551,12 +567,20 @@ class DatabaseClient extends EventEmitter {
                     }
                 } else {
                     // Update other item columns
-                    await this.query(q.UPDATE_ITEM(columns[i]), itemId, values[i])
+                    await this.query(
+                        q.UPDATE_ITEM(columns[i]),
+                        itemId,
+                        values[i]
+                    )
                 }
             }
             // Set flags
             if (flags.invisible !== undefined) {
-                await this.query(flags.invisible ? q.SET_ITEM_FLAG : q.CLEAR_ITEM_FLAG, itemId, ItemFlags.INVISIBLE)
+                await this.query(
+                    flags.invisible ? q.SET_ITEM_FLAG : q.CLEAR_ITEM_FLAG,
+                    itemId,
+                    ItemFlags.INVISIBLE
+                )
             }
             // Set prices
             if (prices !== undefined) {
@@ -665,15 +689,27 @@ class DatabaseClient extends EventEmitter {
         }
         switch (transaction.type) {
             case 'purchase': {
-                const purchaseRows = await this.queryRows<tableType.FullPurchases>(q.GET_FULL_PURCHASE, transactionId)
+                const purchaseRows =
+                    await this.queryRows<tableType.FullPurchases>(
+                        q.GET_FULL_PURCHASE,
+                        transactionId
+                    )
                 return convert.toPurchase(purchaseRows)
             }
             case 'deposit': {
-                const depositRow = (await this.queryFirstRow<tableType.Deposits>(q.GET_DEPOSIT, transactionId))!
+                const depositRow =
+                    (await this.queryFirstRow<tableType.Deposits>(
+                        q.GET_DEPOSIT,
+                        transactionId
+                    ))!
                 return convert.toDeposit(depositRow)
             }
             case 'stock_update': {
-                const stockUpdateRows = await this.queryRows<tableType.FullStockUpdates>(q.GET_FULL_STOCK_UPDATE, transactionId)
+                const stockUpdateRows =
+                    await this.queryRows<tableType.FullStockUpdates>(
+                        q.GET_FULL_STOCK_UPDATE,
+                        transactionId
+                    )
                 return convert.toStockUpdate(stockUpdateRows)
             }
         }
@@ -699,27 +735,36 @@ class DatabaseClient extends EventEmitter {
         limit: number,
         offset: number
     ): Promise<Array<AnyTransaction>> {
-        const rows = await this.queryRows<{id: number}>(
+        const rows = await this.queryRows<{ id: number }>(
             q.GET_TRANSACTION_IDS_IN_GROUP,
             groupId,
             limit,
             offset
         )
-        return await Promise.all(rows.map(({id}) => this.getTransaction(id)))
+        return await Promise.all(rows.map(({ id }) => this.getTransaction(id)))
     }
 
     async getTransactionFlags(transactionId: number): Promise<number> {
         return await this.queryFirstInt(q.GET_TRANSACTION_FLAGS, transactionId)
     }
 
-    async updateTransaction(transactionId: number, flags: Partial<TransactionFlagsMap>): Promise<AnyTransaction> {
+    async updateTransaction(
+        transactionId: number,
+        flags: Partial<TransactionFlagsMap>
+    ): Promise<AnyTransaction> {
         let newTransaction: AnyTransaction | undefined = undefined
         try {
             await this.query('BEGIN')
 
             // Set flags
             if (flags.removed !== undefined) {
-                await this.query(flags.removed ? q.SET_TRANSACTION_FLAG : q.CLEAR_TRANSACTION_FLAG, transactionId, TransactionFlags.REMOVED)
+                await this.query(
+                    flags.removed
+                        ? q.SET_TRANSACTION_FLAG
+                        : q.CLEAR_TRANSACTION_FLAG,
+                    transactionId,
+                    TransactionFlags.REMOVED
+                )
             }
             // Get result
             newTransaction = await this.getTransaction(transactionId)
@@ -743,7 +788,7 @@ class DatabaseClient extends EventEmitter {
         createdBy: number,
         createdFor: number,
         comment: string | undefined | null,
-        total: number,
+        total: number
     ): Promise<Deposit> {
         if (!isValidComment(comment)) {
             comment = null
@@ -781,7 +826,7 @@ class DatabaseClient extends EventEmitter {
                 groupId,
                 createdBy,
                 createdFor,
-                comment,
+                comment
             ))!
 
             // Add items
@@ -796,7 +841,7 @@ class DatabaseClient extends EventEmitter {
 
                     console.log(`Adding item ${dbItem.id}`)
                     await this.addPurchasedItem(
-                        dbTransaction.id, //
+                        dbTransaction.id,
                         item.quantity,
                         item.purchasePrice,
                         dbItem.id,
@@ -836,7 +881,7 @@ class DatabaseClient extends EventEmitter {
     ): Promise<tableType.PurchasedItems> {
         if (iconUrl) {
             return (await this.queryFirstRow(
-                q.ADD_PURCHASED_ITEM_WITH_ICON, //
+                q.ADD_PURCHASED_ITEM_WITH_ICON,
                 purchaseId,
                 quantity,
                 purchasePrice.price,
@@ -847,7 +892,7 @@ class DatabaseClient extends EventEmitter {
             ))!
         } else {
             return (await this.queryFirstRow(
-                q.ADD_PURCHASED_ITEM, //
+                q.ADD_PURCHASED_ITEM,
                 purchaseId,
                 quantity,
                 purchasePrice.price,
@@ -859,7 +904,12 @@ class DatabaseClient extends EventEmitter {
     }
 
     // Stock updates
-    async createStockUpdate(groupId: number, createdBy: number, comment: string | undefined | null, items: PostItemStockUpdate[]): Promise<StockUpdate> {
+    async createStockUpdate(
+        groupId: number,
+        createdBy: number,
+        comment: string | undefined | null,
+        items: PostItemStockUpdate[]
+    ): Promise<StockUpdate> {
         if (!isValidComment(comment)) {
             comment = null
         }
@@ -873,7 +923,7 @@ class DatabaseClient extends EventEmitter {
                 q.CREATE_STOCK_UPDATE_WITH_COMMENT,
                 groupId,
                 createdBy,
-                comment,
+                comment
             ))!
 
             // Add item stock updates
@@ -891,15 +941,21 @@ class DatabaseClient extends EventEmitter {
                         )
                     }
 
-                    console.log(`Adding stock update for item with id ${dbItem.id}`)
+                    console.log(
+                        `Adding stock update for item with id ${dbItem.id}`
+                    )
 
-                    const after = item.quantity + (item.absolute === true ? 0 : (dbItem as tableType.FullItem).stock)
+                    const after =
+                        item.quantity +
+                        (item.absolute === true
+                            ? 0
+                            : (dbItem as tableType.FullItem).stock)
 
                     await this.query(
-                        q.ADD_ITEM_STOCK_UPDATE, //
+                        q.ADD_ITEM_STOCK_UPDATE,
                         dbTransaction.id,
                         dbItem.id,
-                        after,
+                        after
                     )
                 })
             )
@@ -908,7 +964,9 @@ class DatabaseClient extends EventEmitter {
             if (transaction.type === 'stockUpdate') {
                 stockUpdate = transaction as StockUpdate
             } else {
-                throw new Error('Stock update returned wrong type after creation')
+                throw new Error(
+                    'Stock update returned wrong type after creation'
+                )
             }
 
             await this.query('COMMIT')

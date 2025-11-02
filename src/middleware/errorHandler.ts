@@ -1,23 +1,16 @@
 import { ErrorRequestHandler, NextFunction, Request, Response } from 'express'
-import {
-    isErrorResolvable,
-    sendError,
-    unexpectedErrorPleaseReport,
-} from '../errors'
+import { ApiError, isApiError, sendError } from '../errors'
 
 /** Send any errors to the client without crashing the server. */
-const errorHandler: ErrorRequestHandler = (
-    err: unknown,
-    req: Request,
-    res: Response,
-    next: NextFunction
-) => {
-    if (isErrorResolvable(err)) {
-        sendError(res, err)
-    } else {
-        sendError(res, unexpectedErrorPleaseReport(String(err)))
+function createErrorHandler(): ErrorRequestHandler {
+    return (err: unknown, req: Request, res: Response, next: NextFunction) => {
+        if (isApiError(err)) {
+            sendError(res, err)
+        } else {
+            console.error(`An unexpected error occured: ${err}`)
+            sendError(res, ApiError.Unexpected)
+        }
     }
-    next(err)
 }
 
-export default errorHandler
+export default createErrorHandler

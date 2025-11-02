@@ -2,7 +2,7 @@ import { NextFunction, Request, RequestHandler, Response } from 'express'
 import { FieldValidationError, validationResult } from 'express-validator'
 import {
     invalidPropertyError,
-    isErrorResolvable,
+    isApiError,
     missingRequiredPropertyError,
     unexpectedErrorPleaseReport,
 } from '../errors'
@@ -37,8 +37,8 @@ const validationErrorHandler: RequestHandler = (
 
     // Respond to error
     const message = fieldError.msg
-    if (isErrorResolvable(message)) {
-        // Use as defined error
+    if (isApiError(message)) {
+        // Forward given API error
         return next(message)
     } else if (fieldError.value === undefined && message === 'Invalid value') {
         // Missing required property

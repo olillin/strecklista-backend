@@ -1,13 +1,9 @@
-import { NextFunction, Request, Response } from 'express'
+import { Request, Response } from 'express'
 import { database } from '../../config/clients'
 import { getGroupId, getUserId } from '../../middleware/validateToken'
 import { Item, ItemResponse, PostItemBody, ResponseBody } from '../../types'
 
-export default async function postItem(
-    req: Request,
-    res: Response,
-    next: NextFunction
-) {
+export default async function postItem(req: Request, res: Response) {
     const { displayName, prices, icon } = req.body as PostItemBody
     const userId: number = getUserId(res)
     const groupId: number = getGroupId(res)

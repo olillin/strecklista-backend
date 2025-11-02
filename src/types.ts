@@ -88,10 +88,14 @@ export interface ItemStockUpdate {
 
 // #region Response types
 export type ResponseBody<T> = [T] extends [never]
-    ? { error: ErrorDefinition }
+    ? { error: ErrorBody }
     : { data: T }
-
 export type ErrorResponseBody = ResponseBody<never>
+
+export interface ErrorBody {
+    code: number
+    message: string
+}
 
 export interface UserResponse {
     user: User
@@ -197,9 +201,3 @@ export interface PatchItemBody {
 // #endregion Request types
 
 export type ItemSortMode = (typeof itemSortModes)[number]
-
-export interface ErrorDefinition {
-    code: number
-    message: string
-}
-export type ErrorResolvable = ErrorDefinition | ApiError

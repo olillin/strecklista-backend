@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response } from 'express'
+import { Request, Response } from 'express'
 import { database } from '../../config/clients'
 import { getGroupId, getUserId } from '../../middleware/validateToken'
 import {
@@ -7,11 +7,7 @@ import {
     TransactionResponse,
 } from '../../types'
 
-export default async function postStockUpdate(
-    req: Request,
-    res: Response,
-    next: NextFunction
-) {
+export default async function postStockUpdate(req: Request, res: Response) {
     const { items, comment } = req.body as PostStockUpdateBody
 
     const groupId: number = getGroupId(res)

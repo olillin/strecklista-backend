@@ -1,29 +1,26 @@
-import { NextFunction, Request, Response } from 'express'
+import { Request, Response } from 'express'
 import { GroupWithPost, User, UserId } from 'gammait'
 import { clientApi, database } from '../../config/clients'
 import { FullUser } from '../../database/types'
-import { ApiError, isErrorResolvable } from '../../errors'
+import { ApiError, isApiError } from '../../errors'
 import { getGammaUserId, getUserId } from '../../middleware/validateToken'
-import { ErrorResolvable, ResponseBody, UserResponse } from '../../types'
+import { ResponseBody, UserResponse } from '../../types'
 import * as convert from '../../util/convert'
 import { getAuthorizedGroup } from '../../util/helpers'
 
-export default async function getUser(
-    req: Request,
-    res: Response,
-    next: NextFunction
-) {
+export default async function getUser(req: Request, res: Response) {
     const userId: number = getUserId(res)
     const gammaUserId: UserId = getGammaUserId(res)
     console.log(`Getting user info for: ${userId}`)
 
     // Get requests
-    const dbUserPromise: Promise<FullUser | undefined | ErrorResolvable> =
-        database.getFullUser(userId).catch(reason => {
+    const dbUserPromise: Promise<FullUser | undefined | ApiError> = database
+        .getFullUser(userId)
+        .catch(reason => {
             console.error(`Failed to fetch user from database: ${reason}`)
             return ApiError.Unexpected
         })
-    const gammaUserPromise: Promise<User | ErrorResolvable> = clientApi
+    const gammaUserPromise: Promise<User | ApiError> = clientApi
         .getUser(gammaUserId)
         .catch(reason => {
             console.warn(`Failed to fetch user from Gamma: ${reason}`)
@@ -32,7 +29,7 @@ export default async function getUser(
                 ? ApiError.UnreachableGamma
                 : ApiError.InvalidGammaResponse
         })
-    const groupsPromise: Promise<GroupWithPost[] | ErrorResolvable> = clientApi
+    const groupsPromise: Promise<GroupWithPost[] | ApiError> = clientApi
         .getGroupsFor(gammaUserId)
         .catch(reason => {
             console.warn('Failed to fetch groups from Gamma')
@@ -47,7 +44,10 @@ export default async function getUser(
     // Check for errors
     for (const promise of promises) {
         const result = await promise
-        if (isErrorResolvable(result)) return next(result)
+        if (isApiError(result)) {
+            console.log(`Passing error ${result}`)
+            throw result
+        }
     }
 
     const [dbUser, gammaUser, groups] = (await Promise.all(promises)) as [
@@ -56,11 +56,11 @@ export default async function getUser(
         GroupWithPost[]
     ]
 
-    if (dbUser === undefined) return next(ApiError.UserNotExist)
+    if (dbUser === undefined) throw ApiError.UserNotExist
 
     const group = getAuthorizedGroup(groups)
     if (!group) {
-        return next(ApiError.NoPermission)
+        throw ApiError.NoPermission
     }
 
     const body: ResponseBody<UserResponse> = {

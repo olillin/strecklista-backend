@@ -3,7 +3,7 @@ import express from 'express'
 import rateLimit from 'express-rate-limit'
 import { authorizationCode } from './config/clients'
 import env from './config/env'
-import errorHandler from './middleware/errorHandler'
+import createErrorHandler from './middleware/errorHandler'
 import appendHeader from './middleware/setHeader'
 import validationErrorHandler from './middleware/validationErrorHandler'
 import * as validate from './middleware/validators'
@@ -50,7 +50,7 @@ async function main() {
     const api = await createApiRouter()
     app.use('/api', api)
 
-    app.use(errorHandler)
+    app.use(createErrorHandler())
 
     app.listen(parseInt(env.PORT))
     console.log(`Listening on port ${env.PORT}`)

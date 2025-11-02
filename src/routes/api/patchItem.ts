@@ -1,15 +1,11 @@
-import { NextFunction, Request, Response } from 'express'
+import { Request, Response } from 'express'
 import { database } from '../../config/clients'
 import { LegalItemColumn } from '../../database/client'
 import { ItemFlagsMap } from '../../flags'
 import { getUserId } from '../../middleware/validateToken'
 import { ItemResponse, PatchItemBody, ResponseBody } from '../../types'
 
-export default async function patchItem(
-    req: Request,
-    res: Response,
-    next: NextFunction
-) {
+export default async function patchItem(req: Request, res: Response) {
     const userId: number = getUserId(res)
 
     const itemId = parseInt(req.params.id)

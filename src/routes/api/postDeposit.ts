@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response } from 'express'
+import { Request, Response } from 'express'
 import { database } from '../../config/clients'
 import { unexpectedErrorPleaseReport } from '../../errors'
 import { getGroupId, getUserId } from '../../middleware/validateToken'
@@ -8,11 +8,7 @@ import {
     ResponseBody,
 } from '../../types'
 
-export default async function postDeposit(
-    req: Request,
-    res: Response,
-    next: NextFunction
-) {
+export default async function postDeposit(req: Request, res: Response) {
     const { userId: createdFor, total, comment } = req.body as PostDepositBody
 
     const groupId: number = getGroupId(res)
@@ -27,10 +23,8 @@ export default async function postDeposit(
     )
     const user = await database.getFullUser(createdFor)
     if (!user) {
-        return next(
-            unexpectedErrorPleaseReport(
-                'Failed to get user balance after creating purchase'
-            )
+        throw unexpectedErrorPleaseReport(
+            'Failed to get user balance after creating purchase'
         )
     }
     const balance = user.balance

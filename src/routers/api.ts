@@ -5,7 +5,6 @@ import validateToken from '../middleware/validateToken'
 import validationErrorHandler from '../middleware/validationErrorHandler'
 import * as validators from '../middleware/validators'
 import * as apiRoutes from '../routes/api'
-import { ErrorResolvable } from '../types'
 
 async function createApiRouter(): Promise<Router> {
     const api = Router()
@@ -26,23 +25,22 @@ async function createApiRouter(): Promise<Router> {
     /*
      * Routes are defined as: method, path, handler/error
      */
-    const routes: [Method, string, HandlerName | ErrorResolvable, boolean?][] =
-        [
-            ['get', '/user', 'getUser'],
-            ['get', '/group', 'getGroup'],
-            ['get', '/group/transaction', 'getTransactions'],
-            ['get', '/group/transaction/:id', 'getTransaction'],
-            ['patch', '/group/transaction/:id', 'patchTransaction'],
-            ['delete', '/group/transaction/:id', ApiError.NoDeleteTransaction],
-            ['post', '/group/purchase', 'postPurchase'],
-            ['post', '/group/deposit', 'postDeposit'],
-            ['post', '/group/stock', 'postStockUpdate'],
-            ['get', '/group/item', 'getItems'],
-            ['get', '/group/item/:id', 'getItem'],
-            ['post', '/group/item', 'postItem'],
-            ['patch', '/group/item/:id', 'patchItem'],
-            ['delete', '/group/item/:id', 'deleteItem'],
-        ]
+    const routes: [Method, string, HandlerName | ApiError, boolean?][] = [
+        ['get', '/user', 'getUser'],
+        ['get', '/group', 'getGroup'],
+        ['get', '/group/transaction', 'getTransactions'],
+        ['get', '/group/transaction/:id', 'getTransaction'],
+        ['patch', '/group/transaction/:id', 'patchTransaction'],
+        ['delete', '/group/transaction/:id', ApiError.NoDeleteTransaction],
+        ['post', '/group/purchase', 'postPurchase'],
+        ['post', '/group/deposit', 'postDeposit'],
+        ['post', '/group/stock', 'postStockUpdate'],
+        ['get', '/group/item', 'getItems'],
+        ['get', '/group/item/:id', 'getItem'],
+        ['post', '/group/item', 'postItem'],
+        ['patch', '/group/item/:id', 'patchItem'],
+        ['delete', '/group/item/:id', 'deleteItem'],
+    ]
 
     for (const [method, path, name] of routes) {
         // Get allowed methods on this path

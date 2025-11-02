@@ -5,11 +5,7 @@ import { ApiError } from '../../errors'
 import { ItemResponse, ResponseBody } from '../../types'
 import * as convert from '../../util/convert'
 
-export default async function getItem(
-    req: Request,
-    res: Response,
-    next: NextFunction
-) {
+export default async function getItem(req: Request, res: Response) {
     const itemId = parseInt(req.params.id)
     const userId: number = getUserId(res)
 
@@ -19,7 +15,7 @@ export default async function getItem(
     )
 
     if (dbItemWithPrices.length === 0) {
-        return next(ApiError.ItemNotExist)
+        throw ApiError.ItemNotExist
     }
 
     const data: ItemResponse = {

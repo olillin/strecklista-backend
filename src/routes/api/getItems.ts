@@ -5,11 +5,7 @@ import { getGroupId, getUserId } from '../../middleware/validateToken'
 import * as convert from '../../util/convert'
 import { getFlag, ItemFlags } from '../../flags'
 
-export default async function getItems(
-    req: Request,
-    res: Response,
-    next: NextFunction
-) {
+export default async function getItems(req: Request, res: Response) {
     const sort: ItemSortMode = req.query.sort as ItemSortMode
     const visibleOnly: boolean =
         req.query.visibleOnly === '1' || req.query.visibleOnly === 'true'

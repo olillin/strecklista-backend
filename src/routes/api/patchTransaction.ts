@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response } from 'express'
+import { Request, Response } from 'express'
 import { database } from '../../config/clients'
 import { TransactionFlagsMap } from '../../flags'
 import {
@@ -7,11 +7,7 @@ import {
     TransactionResponse,
 } from '../../types'
 
-export default async function patchTransaction(
-    req: Request,
-    res: Response,
-    next: NextFunction
-) {
+export default async function patchTransaction(req: Request, res: Response) {
     const transactionId = parseInt(req.params.id)
     const { removed } = req.body as PatchTransactionBody
 

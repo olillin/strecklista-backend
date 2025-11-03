@@ -63,6 +63,7 @@ export class ApiError extends Error {
         500,
         'An unexpected issue occured. Please try again later'
     )
+    static RouteNotFound = new ApiError(404, 'This route does not exist')
     static InvalidUserId = new ApiError(400, 'Invalid user ID')
     static UserNotExist = new ApiError(404, 'User does not exist')
     static InvalidItemId = new ApiError(400, 'Invalid item ID')

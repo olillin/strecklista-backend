@@ -9,6 +9,7 @@ import validationErrorHandler from './middleware/validationErrorHandler'
 import * as validate from './middleware/validators'
 import createApiRouter from './routers/api'
 import { login as loginRoute } from './routes/login'
+import create404Handler from './middleware/404Handler'
 
 const exposeCors =
     env.EXPOSE_CORS.toLowerCase() === 'true' || env.EXPOSE_CORS === '1'
@@ -50,6 +51,7 @@ async function main() {
     const api = await createApiRouter()
     app.use('/api', api)
 
+    app.use(create404Handler())
     app.use(createErrorHandler())
 
     app.listen(parseInt(env.PORT))

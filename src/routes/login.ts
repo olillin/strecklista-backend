@@ -53,16 +53,16 @@ export function login(): RequestHandler {
                     (error as NodeJS.ErrnoException)?.code === 'ENOTFOUND' ||
                     (error as NodeJS.ErrnoException)?.code === 'ECONNREFUSED'
                 if (unreachable) {
-                    return next(ApiError.UnreachableGamma)
+                    throw ApiError.UnreachableGamma
                 } else {
                     console.error(`Failed to get token from Gamma: ${error}`)
                     if (
                         error instanceof Error &&
                         (error as Error).message.includes('400')
                     ) {
-                        return next(ApiError.AuthorizationCodeUsed)
+                        throw ApiError.AuthorizationCodeUsed
                     } else {
-                        return next(ApiError.GammaToken)
+                        throw ApiError.GammaToken
                     }
                 }
             }
@@ -98,14 +98,14 @@ export function login(): RequestHandler {
                     res.json(body)
                 })
                 .catch(error => {
-                    return next(tokenSignError(String(error)))
+                    next(tokenSignError(String(error)))
                 })
         } catch (error) {
             if (
                 (error as NodeJS.ErrnoException).code === 'ENOTFOUND' ||
                 (error as NodeJS.ErrnoException).code === 'ECONNREFUSED'
             ) {
-                return next(ApiError.UnreachableGamma)
+                throw ApiError.UnreachableGamma
             }
         }
     }

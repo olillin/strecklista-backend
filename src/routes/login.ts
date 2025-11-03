@@ -3,7 +3,7 @@ import { GroupId, UserId } from 'gammait'
 import jwt from 'jsonwebtoken'
 import { authorizationCode, clientApi, database } from '../config/clients'
 import env from '../config/env'
-import { ApiError, tokenSignError } from '../errors'
+import { ApiError, isApiError, tokenSignError } from '../errors'
 import { JWT, LoggedInUser } from '../types'
 import * as convert from '../util/convert'
 import { getAuthorizedGroup } from '../util/helpers'
@@ -41,72 +41,75 @@ function signJWT(user: LoggedInUser): Promise<JWT> {
 export function login(): RequestHandler {
     return async (req: Request, res: Response, next: NextFunction) => {
         res.setHeader('Allow', 'POST')
-        try {
-            // Validate request
-            const code = (req.query.code ?? req.body.code) as string
 
-            // Get token from Gamma
-            try {
-                await authorizationCode.generateToken(code)
-            } catch (error) {
-                const unreachable =
-                    (error as NodeJS.ErrnoException)?.code === 'ENOTFOUND' ||
-                    (error as NodeJS.ErrnoException)?.code === 'ECONNREFUSED'
+        // Validate request
+        const code = (req.query.code ?? req.body.code) as string
+
+        // Get token from Gamma
+        const tokenResponse: unknown | ApiError = await authorizationCode
+            .generateToken(code)
+            .catch(reason => {
+                console.warn(`Failed to get token from Gamma: ${reason}`)
+                const unreachable = String(reason).includes('request error')
+                const badRequest = String(reason).includes('400 Bad Request')
                 if (unreachable) {
-                    throw ApiError.UnreachableGamma
+                    return ApiError.UnreachableGamma
+                } else if (badRequest) {
+                    return ApiError.AuthorizationCodeUsed
                 } else {
-                    console.error(`Failed to get token from Gamma: ${error}`)
-                    if (
-                        error instanceof Error &&
-                        (error as Error).message.includes('400')
-                    ) {
-                        throw ApiError.AuthorizationCodeUsed
-                    } else {
-                        throw ApiError.GammaToken
-                    }
+                    return ApiError.GammaToken
                 }
-            }
-
-            const userInfo = await authorizationCode.userInfo()
-            const gammaUserId: UserId = userInfo.sub
-            const groups = await clientApi.getGroupsFor(gammaUserId)
-            const group = getAuthorizedGroup(groups)
-            if (!group) {
-                // User is not in the super group
-                return next(ApiError.NoPermission)
-            }
-            const gammaGroupId: GroupId = group.id
-
-            const dbUser = await database.softCreateGroupAndUser(
-                gammaGroupId,
-                gammaUserId
-            )
-
-            signJWT({
-                userId: dbUser.id,
-                groupId: dbUser.group_id,
-                gammaUserId: dbUser.gamma_id,
-                gammaGroupId: dbUser.group_gamma_id,
             })
-                .then(token => {
-                    const body = convert.toLoginResponse(
-                        dbUser,
-                        userInfo,
-                        group,
-                        token
-                    )
-                    res.json(body)
-                })
-                .catch(error => {
-                    next(tokenSignError(String(error)))
-                })
-        } catch (error) {
-            if (
-                (error as NodeJS.ErrnoException).code === 'ENOTFOUND' ||
-                (error as NodeJS.ErrnoException).code === 'ECONNREFUSED'
-            ) {
-                throw ApiError.UnreachableGamma
-            }
+        if (isApiError(tokenResponse)) throw tokenResponse
+
+        const userInfo = await authorizationCode.userInfo().catch(reason => {
+            console.warn(`Failed to get user info from Gamma: ${reason}`)
+            return ApiError.Unexpected
+        })
+        if (isApiError(userInfo)) throw userInfo
+
+        const gammaUserId: UserId = userInfo.sub
+
+        const groups = await clientApi
+            .getGroupsFor(gammaUserId)
+            .catch(reason => {
+                console.warn(`Failed to get groups for user: ${reason}`)
+                return ApiError.FailedGetGroups
+            })
+        if (isApiError(groups)) throw groups
+
+        const group = getAuthorizedGroup(groups)
+        if (!group) {
+            // User is not in the super group
+            return next(ApiError.NoPermission)
         }
+        const gammaGroupId: GroupId = group.id
+
+        const dbUser = await database
+            .softCreateGroupAndUser(gammaGroupId, gammaUserId)
+            .catch(reason => {
+                console.error(`Failed to create user in database: ${reason}`)
+                return ApiError.Unexpected
+            })
+        if (isApiError(dbUser)) throw dbUser
+
+        signJWT({
+            userId: dbUser.id,
+            groupId: dbUser.group_id,
+            gammaUserId: dbUser.gamma_id,
+            gammaGroupId: dbUser.group_gamma_id,
+        })
+            .then(token => {
+                const body = convert.toLoginResponse(
+                    dbUser,
+                    userInfo,
+                    group,
+                    token
+                )
+                res.json(body)
+            })
+            .catch(error => {
+                next(tokenSignError(String(error)))
+            })
     }
 }

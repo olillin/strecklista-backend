@@ -1,10 +1,12 @@
 import { Request, Response } from 'express'
+import { matchedData } from 'express-validator'
 import { database } from '../../config/clients'
 import { getGroupId, getUserId } from '../../middleware/validateToken'
 import { Item, ItemResponse, PostItemBody, ResponseBody } from '../../types'
 
 export default async function postItem(req: Request, res: Response) {
-    const { displayName, prices, icon } = req.body as PostItemBody
+    const reqBody = matchedData(req, { locations: ['body'] })
+    const { displayName, prices, icon } = reqBody as PostItemBody
     const userId: number = getUserId(res)
     const groupId: number = getGroupId(res)
 

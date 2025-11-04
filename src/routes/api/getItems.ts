@@ -1,14 +1,16 @@
-import { NextFunction, Request, Response } from 'express'
+import { Request, Response } from 'express'
+import { matchedData } from 'express-validator'
 import { database } from '../../config/clients'
-import { ItemSortMode, ItemsResponse, ResponseBody } from '../../types'
-import { getGroupId, getUserId } from '../../middleware/validateToken'
-import * as convert from '../../util/convert'
 import { getFlag, ItemFlags } from '../../flags'
+import { getGroupId, getUserId } from '../../middleware/validateToken'
+import { ItemSortMode, ItemsResponse, ResponseBody } from '../../types'
+import * as convert from '../../util/convert'
 
 export default async function getItems(req: Request, res: Response) {
-    const sort: ItemSortMode = req.query.sort as ItemSortMode
+    const reqQuery = matchedData(req, { locations: ['query'] })
+    const sort: ItemSortMode = reqQuery.sort as ItemSortMode
     const visibleOnly: boolean =
-        req.query.visibleOnly === '1' || req.query.visibleOnly === 'true'
+        reqQuery.visibleOnly === '1' || reqQuery.visibleOnly === 'true'
 
     const userId: number = getUserId(res)
     const groupId: number = getGroupId(res)

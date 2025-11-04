@@ -1,4 +1,5 @@
 import { Request, Response } from 'express'
+import { matchedData } from 'express-validator'
 import { database } from '../../config/clients'
 import { unexpectedErrorPleaseReport } from '../../errors'
 import { getGroupId, getUserId } from '../../middleware/validateToken'
@@ -9,7 +10,8 @@ import {
 } from '../../types'
 
 export default async function postDeposit(req: Request, res: Response) {
-    const { userId: createdFor, total, comment } = req.body as PostDepositBody
+    const reqBody = matchedData(req, { locations: ['body'] })
+    const { userId: createdFor, total, comment } = reqBody as PostDepositBody
 
     const groupId: number = getGroupId(res)
     const createdBy: number = getUserId(res)

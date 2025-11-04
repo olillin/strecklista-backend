@@ -28,7 +28,7 @@
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "express-rate-limit": "^7.5.0",
-    "express-validator": "^7.2.1",
+    "express-validator": "^7.3.0",
     "gammait": "^1.0.1",
     "jsonwebtoken": "^9.0.2",
     "pg": "^8.13.2",

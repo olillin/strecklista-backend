@@ -117,7 +117,8 @@ export const getTransaction = () => [
         .isInt({ min: 1 })
         .withMessage(ApiError.InvalidTransactionId)
         .bail()
-        .custom(checkTransactionExistsInGroup),
+        .custom(checkTransactionExistsInGroup)
+        .withMessage(ApiError.TransactionNotExist),
 ]
 
 export const patchTransaction = () => [
@@ -126,10 +127,9 @@ export const patchTransaction = () => [
         .isInt({ min: 1 })
         .withMessage(ApiError.InvalidTransactionId)
         .bail()
-        .custom(checkTransactionExistsInGroup),
-    body('removed')
-        .optional()
-        .isBoolean({ strict: true })
+        .custom(checkTransactionExistsInGroup)
+        .withMessage(ApiError.TransactionNotExist),
+    body('removed').optional().isBoolean({ strict: true }),
 ]
 
 export const postPurchase = () => [
@@ -138,7 +138,8 @@ export const postPurchase = () => [
         .isInt({ min: 1 })
         .withMessage(ApiError.InvalidUserId)
         .bail()
-        .custom(checkUserExistsInGroup),
+        .custom(checkUserExistsInGroup)
+        .withMessage(ApiError.UserNotExist),
     body('items')
         .exists()
         .isArray({ min: 1 })
@@ -149,6 +150,7 @@ export const postPurchase = () => [
         .withMessage(ApiError.InvalidItemId)
         .bail()
         .custom(checkItemExistsInGroup)
+        .withMessage(ApiError.ItemNotExist)
         .bail()
         .custom(checkItemVisible)
         .withMessage(ApiError.PurchaseInvisible),
@@ -159,7 +161,12 @@ export const postPurchase = () => [
     body('items.*.purchasePrice').exists().isObject(),
     body('items.*.purchasePrice.price').exists().isDecimal(),
     body('items.*.purchasePrice.displayName').exists().isString().trim(),
-    body('comment').optional().isString().trim().isLength({ max: 1000 }).withMessage(ApiError.InvalidComment),
+    body('comment')
+        .optional()
+        .isString()
+        .trim()
+        .isLength({ max: 1000 })
+        .withMessage(ApiError.InvalidComment),
 ]
 
 export const postDeposit = () => [
@@ -168,9 +175,15 @@ export const postDeposit = () => [
         .isInt({ min: 1 })
         .withMessage(ApiError.InvalidUserId)
         .bail()
-        .custom(checkUserExistsInGroup),
+        .custom(checkUserExistsInGroup)
+        .withMessage(ApiError.UserNotExist),
     body('total').exists().isDecimal().withMessage(ApiError.InvalidTotal),
-    body('comment').optional().isString().trim().isLength({ max: 1000 }).withMessage(ApiError.InvalidComment),
+    body('comment')
+        .optional()
+        .isString()
+        .trim()
+        .isLength({ max: 1000 })
+        .withMessage(ApiError.InvalidComment),
 ]
 
 export const postStockUpdate = () => [
@@ -183,13 +196,19 @@ export const postStockUpdate = () => [
         .isInt({ min: 1 })
         .withMessage(ApiError.InvalidItemId)
         .bail()
-        .custom(checkItemExistsInGroup),
+        .custom(checkItemExistsInGroup)
+        .withMessage(ApiError.ItemNotExist),
     body('items.*.quantity')
         .exists()
         .isInt()
         .withMessage(ApiError.StockItemCount),
     body('items.*.absolute').optional().isBoolean(),
-    body('comment').optional().isString().trim().isLength({ max: 1000 }).withMessage(ApiError.InvalidComment),
+    body('comment')
+        .optional()
+        .isString()
+        .trim()
+        .isLength({ max: 1000 })
+        .withMessage(ApiError.InvalidComment),
 ]
 
 export const itemSortModes = <const>[
@@ -221,7 +240,8 @@ export const postItem = () => [
         .trim()
         .notEmpty()
         .bail()
-        .custom(checkDisplayNameUniqueInGroup),
+        .custom(checkDisplayNameUniqueInGroup)
+        .withMessage(ApiError.DisplayNameNotUnique),
     body('prices')
         .exists()
         .isArray({ min: 1 })
@@ -237,7 +257,8 @@ export const getItem = () => [
         .isInt({ min: 1 })
         .withMessage(ApiError.InvalidItemId)
         .bail()
-        .custom(checkItemExistsInGroup),
+        .custom(checkItemExistsInGroup)
+        .withMessage(ApiError.ItemNotExist),
 ]
 
 export const patchItem = () => [
@@ -246,7 +267,8 @@ export const patchItem = () => [
         .isInt({ min: 1 })
         .withMessage(ApiError.InvalidItemId)
         .bail()
-        .custom(checkItemExistsInGroup),
+        .custom(checkItemExistsInGroup)
+        .withMessage(ApiError.ItemNotExist),
     oneOf([
         body('icon')
             .optional()
@@ -261,7 +283,8 @@ export const patchItem = () => [
         .optional()
         .isString()
         .trim()
-        .custom(checkDisplayNameUniqueInGroup),
+        .custom(checkDisplayNameUniqueInGroup)
+        .withMessage(ApiError.DisplayNameNotUnique),
     body('prices')
         .optional()
         .isArray({ min: 1 })
@@ -269,6 +292,7 @@ export const patchItem = () => [
     body('prices.*.price').isDecimal(),
     body('prices.*.displayName').isString().trim().notEmpty(),
     body('visible').optional().isBoolean(),
+    body('favorite').optional().isBoolean(),
 ]
 
 export const deleteItem = () => [
@@ -277,5 +301,6 @@ export const deleteItem = () => [
         .isInt({ min: 1 })
         .withMessage(ApiError.InvalidItemId)
         .bail()
-        .custom(checkItemExistsInGroup),
+        .custom(checkItemExistsInGroup)
+        .withMessage(ApiError.ItemNotExist),
 ]

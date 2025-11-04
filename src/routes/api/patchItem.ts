@@ -1,4 +1,5 @@
 import { Request, Response } from 'express'
+import { matchedData } from 'express-validator'
 import { database } from '../../config/clients'
 import { LegalItemColumn } from '../../database/client'
 import { ItemFlagsMap } from '../../flags'
@@ -6,11 +7,13 @@ import { getUserId } from '../../middleware/validateToken'
 import { ItemResponse, PatchItemBody, ResponseBody } from '../../types'
 
 export default async function patchItem(req: Request, res: Response) {
-    const userId: number = getUserId(res)
-
-    const itemId = parseInt(req.params.id)
+    const reqParams = matchedData(req, { locations: ['params'] })
+    const reqBody = matchedData(req, { locations: ['body'] })
+    const itemId = parseInt(reqParams.id)
     const { icon, displayName, visible, favorite, prices } =
-        req.body as PatchItemBody
+        reqBody as PatchItemBody
+
+    const userId: number = getUserId(res)
 
     const flags: Partial<ItemFlagsMap> = {
         invisible: visible === undefined ? undefined : !visible,

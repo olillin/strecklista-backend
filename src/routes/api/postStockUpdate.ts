@@ -1,4 +1,5 @@
 import { Request, Response } from 'express'
+import { matchedData } from 'express-validator'
 import { database } from '../../config/clients'
 import { getGroupId, getUserId } from '../../middleware/validateToken'
 import {
@@ -8,7 +9,8 @@ import {
 } from '../../types'
 
 export default async function postStockUpdate(req: Request, res: Response) {
-    const { items, comment } = req.body as PostStockUpdateBody
+    const reqBody = matchedData(req, { locations: ['body'] })
+    const { items, comment } = reqBody as PostStockUpdateBody
 
     const groupId: number = getGroupId(res)
     const createdBy: number = getUserId(res)

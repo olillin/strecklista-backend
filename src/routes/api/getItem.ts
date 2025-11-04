@@ -1,12 +1,14 @@
-import { NextFunction, Request, Response } from 'express'
+import { Request, Response } from 'express'
+import { matchedData } from 'express-validator'
 import { database } from '../../config/clients'
-import { getUserId } from '../../middleware/validateToken'
 import { ApiError } from '../../errors'
+import { getUserId } from '../../middleware/validateToken'
 import { ItemResponse, ResponseBody } from '../../types'
 import * as convert from '../../util/convert'
 
 export default async function getItem(req: Request, res: Response) {
-    const itemId = parseInt(req.params.id)
+    const reqParams = matchedData(req, { locations: ['params'] })
+    const itemId = parseInt(reqParams.id)
     const userId: number = getUserId(res)
 
     const dbItemWithPrices = await database.getFullItemWithPrices(

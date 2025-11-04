@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from 'express'
+import { matchedData } from 'express-validator'
 import { database } from '../../config/clients'
 import { ApiError } from '../../errors'
 
@@ -7,7 +8,8 @@ export default async function deleteItem(
     res: Response,
     next: NextFunction
 ): Promise<void> {
-    const itemId = parseInt(req.params.id)
+    const requestData = matchedData(req, { locations: ['params'] })
+    const itemId = parseInt(requestData.id)
 
     await database
         .deleteItem(itemId)

@@ -1,4 +1,5 @@
 import { Request, Response } from 'express'
+import { matchedData } from 'express-validator'
 import { database } from '../../config/clients'
 import { TransactionFlagsMap } from '../../flags'
 import {
@@ -8,8 +9,10 @@ import {
 } from '../../types'
 
 export default async function patchTransaction(req: Request, res: Response) {
-    const transactionId = parseInt(req.params.id)
-    const { removed } = req.body as PatchTransactionBody
+    const reqParams = matchedData(req, { locations: ['params'] })
+    const reqBody = matchedData(req, { locations: ['body'] })
+    const transactionId = parseInt(reqParams.id)
+    const { removed } = reqBody as PatchTransactionBody
 
     const flags: Partial<TransactionFlagsMap> = {
         removed: removed,

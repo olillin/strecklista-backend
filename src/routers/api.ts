@@ -58,6 +58,7 @@ async function createApiRouter(): Promise<Router> {
                   [
                       ...validators[name](),
                       validationErrorHandler,
+
                       apiRoutes[name],
                   ]
                 : // Error routes

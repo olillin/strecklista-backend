@@ -1,7 +1,7 @@
 {
-  "name": "prit-streck-backend",
+  "name": "strecklista-backend",
   "version": "0.3.0",
-  "description": "Backend till strecklista för P.R.I.T.",
+  "description": "Backend for the \"strecklista\" developed by P.R.I.T.",
   "main": "out/server.js",
   "scripts": {
     "build": "tsc",
@@ -9,21 +9,21 @@
     "startenv": "cd out && node --env-file=../.env server.js",
     "up": "docker compose -f docker-compose.yaml up -d",
     "dev": "docker compose -f docker-compose.yaml -f docker-compose.dev.yaml up -d --build --force-recreate",
-    "rmdevdb": "docker compose down && docker volume rm prit-streck-backend_dev-db-data",
+    "rmdevdb": "docker compose -f docker-compose.yaml -f docker-compose.dev.yaml down && docker volume rm strecklista-backend_dev-db-data",
     "cleandev": "npm run rmdevdb && npm run dev",
     "lint": "eslint",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/olillin/prit-streck-backend.git"
+    "url": "git+https://github.com/olillin/strecklista-backend.git"
   },
   "author": "olillin",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/olillin/prit-streck-backend/issues"
+    "url": "https://github.com/olillin/strecklista-backend/issues"
   },
-  "homepage": "https://github.com/olillin/prit-streck-backend#readme",
+  "homepage": "https://github.com/olillin/strecklista-backend",
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.21.2",

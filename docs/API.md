@@ -1,4 +1,4 @@
-# P.R.I.T. Strecklista backend API documentation
+# Strecklista API documentation
 
 ## Index
 
@@ -374,7 +374,8 @@ Unless at the end of the list a *next* url is provided to get the next page of t
             "id": 954210554821,
             "count": 1
           }
-        ]
+        ],
+        "removed": true
       },
       {
         "type": "purchase",
@@ -392,6 +393,7 @@ Unless at the end of the list a *next* url is provided to get the next page of t
             "count": 1
           }
         ],
+        "removed": false,
         "comment": "Göken asked me to"
       },
       {
@@ -400,7 +402,8 @@ Unless at the end of the list a *next* url is provided to get the next page of t
         "createdTime": 1738583085,
         "createdBy": 1,
         "createdFor": 1,
-        "total": 488.90
+        "total": 488.90,
+        "removed": false
       }
     ],
     "next": "https://prit.chalmers.it/store/api/group/purchases?limit=2&offset=6",
@@ -530,7 +533,8 @@ The newly created transaction:
           "id": 3,
           "count": 1
         }
-      ]
+      ],
+      "removed": false
     },
     "balance": -19
   }
@@ -579,7 +583,8 @@ The newly created transaction:
     "transaction": {
       "type": "deposit",
       "id": 7,
-      "total": 532.0
+      "total": 532.0,
+      "removed": false
     },
     "balance": -23.5
   }
@@ -634,7 +639,8 @@ The newly created transaction:
           "before": 3,
           "after": 80
         }
-      ]
+      ],
+      "removed": false
     }
   }
 }

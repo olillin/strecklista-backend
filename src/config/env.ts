@@ -1,4 +1,4 @@
-import * as fs from "node:fs";
+import * as fs from 'node:fs'
 
 const PRIT_SUPER_GROUP_ID = '32da51ec-2854-4bc2-b19a-30dad5dcc501'
 
@@ -22,6 +22,8 @@ export interface EnvironmentVariables {
     JWT_SECRET: string
     JWT_ISSUER?: string
     JWT_EXPIRES_IN?: string
+
+    TRUST_PROXY: string
 }
 
 // Remove 'optional' attributes from a type's properties
@@ -42,6 +44,8 @@ export const DEFAULT_ENVIRONMENT: Partial<Concrete<EnvironmentVariables>> = {
 
     JWT_ISSUER: 'strecklista',
     JWT_EXPIRES_IN: '43200',
+
+    TRUST_PROXY: 'false',
 }
 
 export function withDefaults(
@@ -56,7 +60,9 @@ export function withDefaults(
 export type FileEnvironmentVariables = EnvironmentVariables & {
     [K in keyof EnvironmentVariables as `${K}_FILE`]: string
 }
-export function resolveFileEnvironment(env: FileEnvironmentVariables): EnvironmentVariables {
+export function resolveFileEnvironment(
+    env: FileEnvironmentVariables
+): EnvironmentVariables {
     const out: Partial<EnvironmentVariables> = {}
     for (const k in env) {
         const key = k as keyof FileEnvironmentVariables
@@ -64,11 +70,16 @@ export function resolveFileEnvironment(env: FileEnvironmentVariables): Environme
         out[key as keyof EnvironmentVariables] = env[key]
 
         // Resolve _FILE environment
-        if (key.endsWith("_FILE")) {
+        if (key.endsWith('_FILE')) {
             const path = env[key]!
-            const shortKey = key.substring(0, key.length-5) as keyof EnvironmentVariables
+            const shortKey = key.substring(
+                0,
+                key.length - 5
+            ) as keyof EnvironmentVariables
             if (!fs.existsSync(path) || !fs.lstatSync(path).isFile()) {
-                console.warn(`Unable to load environment variable ${shortKey} from ${path}, file not found`)
+                console.warn(
+                    `Unable to load environment variable ${shortKey} from ${path}, file not found`
+                )
                 continue
             }
             out[shortKey] = fs.readFileSync(path).toString().trim()

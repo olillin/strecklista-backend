@@ -4,6 +4,10 @@
 
 ## General
 
+### API Endpoints
+
+All endpoints in this file are relative to <https://strecklista.chalmers.it/api>
+
 ### API Responses
 
 All API responses are in JSON format. If the request was successful the response will look like this and contain a data object:
@@ -187,15 +191,15 @@ extends [Transaction](#transaction)
 
 ### Authorization flow
 
-1. User goes to [https://prit.chalmers.it/store/authorize](https://prit.chalmers.it/store/authorize).
+1. User goes to [https://strecklista.chalmers.it/api/authorize](https://strecklista.chalmers.it/api/authorize).
 
 2. User is redirected to the Gamma login screen.
 
 3. After logging in the user will be sent to the callback with a Gamma authorization code:  
-   `https://prit.chalmers.it/store/callback?code=<gamma code>`
+   `https://strecklista.chalmers.it/callback?code=<gamma code>`
 
 4. The client page sends the `code` from Gamma in a `POST` request to:  
-   `https://prit.chalmers.it/store/backend/login`
+   `https://strecklista.chalmers.it/api/login`
 
 5. The server validates the code and user and then responds with a JWT token.
 
@@ -208,7 +212,7 @@ extends [Transaction](#transaction)
 
 Redirect to Gamma login page. After logging in the user will be redirected to:
 
-`https://prit.chalmers.it/store/callback`
+`https://strecklista.chalmers.it/callback`
 
 ### POST /login
 
@@ -243,8 +247,6 @@ The generated JWT token and data about the authenticated user and their group.
 | 502  | Failed to get token from Gamma, your authorization code may be invalid |
 
 ## API Endpoints
-
-All of the following endpoints are under <https://prit.chalmers.it/store/api>
 
 ### GET /user
 
@@ -344,7 +346,7 @@ List transactions in currently authenticated user's group.
 #### Response
 
 A paginated list of transactions with the newest first.  
-Unless offset is 0 a *previous* url is provided to get the previous page of the list with the same limit or lower.  
+Unless offset is 0 a *previous* url is provnded to get the previous page of the list with the same limit or lower.  
 Unless at the end of the list a *next* url is provided to get the next page of the list with the same limit.
 
 ```javascript
@@ -406,8 +408,8 @@ Unless at the end of the list a *next* url is provided to get the next page of t
         "removed": false
       }
     ],
-    "next": "https://prit.chalmers.it/store/api/group/purchases?limit=2&offset=6",
-    "previous": "https://prit.chalmers.it/store/api/group/purchases?limit=2&offset=2"
+    "next": "https://strecklista.chalmers.it/api/group/purchases?limit=2&offset=6",
+    "previous": "https://strecklista.chalmers.it/api/group/purchases?limit=2&offset=2"
   }
 }
 ```
@@ -440,7 +442,7 @@ Get a specific transaction.
 | 400   | Invalid transaction ID     |
 | 404   | Transaction does not exist |
 
-### PATCH /group/transaction/<id>
+### PATCH /group/transaction/<id\>
 
 Update an existing transaction.
 

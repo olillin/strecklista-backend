@@ -49,7 +49,7 @@ async function main() {
     app.post('/login', validate.login(), validationErrorHandler, loginRoute())
 
     const api = await createApiRouter()
-    app.use('/api', api)
+    app.use('/', api)
 
     app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
         console.error(err)

@@ -106,6 +106,7 @@ the `.env` you created earlier. See the list of available settings below.
 | PORT           | int         | 8080                                                                                                         | Which port the server will listen to.                                                                                                             |
 | SUPER_GROUP_ID | UUID        | ID of the [P.R.I.T. super group](https://auth.chalmers.it/super-groups/32da51ec-2854-4bc2-b19a-30dad5dcc501) | Which Gamma super group to allow to use the service.                                                                                              |
 | EXPOSE_CORS    | true\|false | false                                                                                                        | Enable [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS) requests for all origins and disable CORS security, not recommended. |
+| TRUST_PROXY    | true\|false | false                                                                                                        | Enable 'trust proxy' to fix <https://express-rate-limit.mintlify.app/reference/error-codes#err-erl-unexpected-x-forwarded-for>.                   |
 
 ### JWT
 

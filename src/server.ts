@@ -16,6 +16,8 @@ const corsOptions: CorsOptions = {
     origin: exposeCors ? '*' : true,
     credentials: exposeCors,
 }
+const trustProxy =
+    env.TRUST_PROXY.toLowerCase() === 'true' || env.TRUST_PROXY === '1'
 
 async function main() {
     const app = express()
@@ -29,6 +31,10 @@ async function main() {
         legacyHeaders: false, // Disable `X-RateLimit-*` headers (deprecated)
     })
     app.use(limiter)
+    if (trustProxy) {
+        console.log('Enabling trust proxy')
+        app.set('trust proxy', 1)
+    }
 
     app.use(cors(corsOptions))
     app.options('*', cors())

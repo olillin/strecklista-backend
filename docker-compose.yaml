@@ -28,7 +28,8 @@ services:
             db:
                 condition: service_healthy
     db:
-        image: postgres
+        build:
+            context: ./db
         container_name: strecklista-backend-db
         restart: always
         user: postgres
@@ -36,7 +37,6 @@ services:
             - db-password
         volumes:
             - db-data:/var/lib/postgresql/data
-            - ./db:/docker-entrypoint-initdb.d
         environment:
             - POSTGRES_DB=strecklista
             - POSTGRES_PASSWORD_FILE=/run/secrets/db-password

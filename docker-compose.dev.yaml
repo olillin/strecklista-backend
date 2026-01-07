@@ -4,10 +4,12 @@ services:
             PGPASSWORD_FILE: null
             PGPASSWORD: secret-dev-password
     db:
+        build:
+          args:
+            dev: 1
         environment:
             POSTGRES_PASSWORD_FILE: null
             POSTGRES_PASSWORD: secret-dev-password
-            DEV_MODE: true
         volumes:
             - dev-db-data:/var/lib/postgresql/data
         extends:

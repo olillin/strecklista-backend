@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
@@ -11,4 +8,164 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+model Group {
+  id       Int     @id @default(autoincrement())
+  gammaId  String  @unique @db.VarChar(64)
+
+  users    User[]
+  items    Item[]
+  purchases Purchase[]
+  deposits  Deposit[]
+  stockUpdates StockUpdate[]
+
+  @@map("groups")
+}
+
+model User {
+  id       Int    @id @default(autoincrement())
+  gammaId  String @unique @db.VarChar(64)
+
+  groupId  Int
+  group    Group  @relation(fields: [groupId], references: [id])
+
+  createdPurchases Purchase[] @relation("CreatedByPurchases")
+  receivedPurchases Purchase[] @relation("CreatedForPurchases")
+
+  createdDeposits Deposit[] @relation("CreatedByDeposits")
+  receivedDeposits Deposit[] @relation("CreatedForDeposits")
+
+  stockUpdates StockUpdate[]
+
+  favoriteItems FavoriteItem[]
+
+  @@map("users")
+}
+
+model Item {
+  id          Int       @id @default(autoincrement())
+  groupId     Int
+  group       Group     @relation(fields: [groupId], references: [id])
+
+  displayName String    @db.VarChar(100)
+  iconUrl     String?   @db.VarChar(500)
+  createdTime DateTime  @default(now()) @db.Timestamptz
+  flags       Int?      @db.SmallInt
+
+  prices              Price[]
+  purchasedItems      PurchasedItem[]
+  itemStockUpdates    ItemStockUpdate[]
+  favoriteBy          FavoriteItem[]
+
+  @@unique([groupId, displayName])
+  @@map("items")
+}
+
+model Price {
+  itemId      Int
+  item        Item    @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  displayName String  @db.VarChar(30)
+  price       Decimal @db.Decimal(7,2)
+
+  @@id([itemId, displayName])
+  @@map("prices")
+}
+
+model Purchase {
+  id          Int       @id @default(autoincrement())
+  groupId     Int
+  group       Group     @relation(fields: [groupId], references: [id])
+
+  createdById  Int
+  createdBy    User     @relation("CreatedByPurchases", fields: [createdById], references: [id])
+
+  createdForId Int
+  createdFor   User     @relation("CreatedForPurchases", fields: [createdForId], references: [id])
+
+  createdTime DateTime  @default(now()) @db.Timestamptz
+  flags       Int?      @db.SmallInt
+  comment     String?   @db.VarChar(1000)
+
+  items PurchasedItem[]
+
+  @@map("purchases")
+}
+
+model PurchasedItem {
+  transactionId Int
+  purchase      Purchase @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  itemId        Int?
+  item          Item?    @relation(fields: [itemId], references: [id], onDelete: SetNull)
+
+  displayName        String  @db.VarChar(100)
+  iconUrl            String? @db.VarChar(500)
+  purchasePrice      Decimal @db.Decimal(7,2)
+  purchasePriceName  String  @db.VarChar(30)
+  quantity           Int
+
+  @@map("purchased_items")
+}
+
+model Deposit {
+  id          Int       @id @default(autoincrement())
+  groupId     Int
+  group       Group     @relation(fields: [groupId], references: [id])
+
+  createdById  Int
+  createdBy    User     @relation("CreatedByDeposits", fields: [createdById], references: [id])
+
+  createdForId Int
+  createdFor   User     @relation("CreatedForDeposits", fields: [createdForId], references: [id])
+
+  createdTime DateTime  @default(now()) @db.Timestamptz
+  total       Decimal   @db.Decimal(7,2)
+  flags       Int?      @db.SmallInt
+  comment     String?   @db.VarChar(1000)
+
+  @@map("deposits")
+}
+
+model StockUpdate {
+  id          Int       @id @default(autoincrement())
+  groupId     Int
+  group       Group     @relation(fields: [groupId], references: [id])
+
+  createdById Int
+  createdBy   User      @relation(fields: [createdById], references: [id])
+
+  createdTime DateTime  @default(now()) @db.Timestamptz
+  flags       Int?      @db.SmallInt
+  comment     String?   @db.VarChar(1000)
+
+  items ItemStockUpdate[]
+
+  @@map("stock_updates")
+}
+
+model ItemStockUpdate {
+  transactionId Int
+  stockUpdate   StockUpdate @relation(fields: [transactionId], references: [id])
+
+  itemId        Int
+  item          Item        @relation(fields: [itemId], references: [id])
+
+  before        Int
+  after         Int
+
+  @@map("item_stock_updates")
+}
+
+model FavoriteItem {
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  itemId Int
+  item   Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@id([userId, itemId])
+  @@unique([userId, itemId])
+  @@map("favorite_items")
 }

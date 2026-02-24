@@ -57,8 +57,9 @@ export function withDefaults(
         env
     ) as Concrete<EnvironmentVariables>
     if (environment.DATABASE_URL === undefined) {
-        const dbUrl = `postgresql://${environment.PGUSER}:${secret}@db:5432/strecklista?schema=publc`
+        environment.DATABASE_URL = `postgresql://${environment.PGUSER}:${environment.PGPASSWORD}@db:5432/strecklista`
     }
+    return environment
 }
 
 export type FileEnvironmentVariables = EnvironmentVariables & {

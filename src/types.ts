@@ -2,6 +2,7 @@ import { GroupId, UserId } from 'gammait'
 import { JwtPayload } from 'jsonwebtoken'
 import { itemSortModes } from './middleware/validators'
 import { ApiError } from './errors'
+import { Decimal } from '@prisma/client/runtime/client'
 
 // #region Basic types
 export interface Group {
@@ -26,7 +27,7 @@ export interface User {
 
 export interface Item {
     id: number
-    createdTime: number
+    createdTime: Date
     icon?: string
     displayName: string
     prices: Price[]
@@ -37,7 +38,7 @@ export interface Item {
 }
 
 export interface Price {
-    price: number
+    price: Decimal
     displayName: string
 }
 
@@ -47,7 +48,7 @@ export interface Transaction<T extends TransactionType> {
     id: number
 
     createdBy: number
-    createdTime: number
+    createdTime: Date
 
     removed: boolean
 

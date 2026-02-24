@@ -1,82 +1,64 @@
-export enum ItemFlags {
-    INVISIBLE
+export enum ItemFlag {
+    VISIBLE = 0
 }
 
-export interface ItemFlagsMap {
-    invisible: boolean
+export interface ItemFlags {
+    visible: boolean
 }
 
-export enum TransactionFlags {
-    REMOVED
+export enum TransactionFlag {
+    REMOVED = 0
 }
 
-export interface TransactionFlagsMap {
+export interface TransactionFlags {
     removed: boolean
 }
 
-export type Flag = ItemFlags | TransactionFlags
-export type FlagsMap = ItemFlagsMap | TransactionFlagsMap
-
 /**
  * Get the value of a flag from a flag int and a flag index
- * @param flagsInt The flags data
+ * @param bits The bitfield data
  * @param flagIndex Which flag to get, as an index from the least significant bit
  */
-export function getFlag(flagsInt: number | null | undefined, flagIndex: number): boolean {
-    if (!flagsInt) return false
-    return !!((flagsInt >> flagIndex) & 0b1)
+export function getFlag(bits: number | null | undefined, flagIndex: number): boolean {
+    if (!bits) return false
+    return !!((bits >> flagIndex) & 0b1)
 }
 
 /**
  * Get all transaction flags from a flag int
- * @param flagsInt The flags data
+ * @param bits The bitfield data
  */
-export function getTransactionFlags(flagsInt: number | null | undefined): TransactionFlagsMap {
+export function parseTransactionFlags(bits: number | null | undefined): TransactionFlags {
     return {
-        removed: getFlag(flagsInt, TransactionFlags.REMOVED),
+        removed: getFlag(bits, TransactionFlag.REMOVED),
     }
 }
 
 /**
- * Get all item flags from a flag int
- * @param flagsInt The flags data
+ * Parse item flags from a bitfield
+ * @param bits The bitfield data
  */
-export function getItemFlags(flagsInt: number | null | undefined): ItemFlagsMap {
+export function parseItemFlags(bits: number | null | undefined): ItemFlags {
     return {
-        invisible: getFlag(flagsInt, ItemFlags.INVISIBLE),
+        visible: getFlag(bits, ItemFlag.VISIBLE),
     }
 }
 
-/** Combine a map of item flags to an integer */
-export function createItemFlags(flags: Partial<ItemFlagsMap>): number {
-    return Number(flags.invisible) << ItemFlags.INVISIBLE
+/**
+ * Convert a map of item flags to a bitfield
+ * @param flags The item flags
+ * @return The bitfield
+ */
+export function serializeItemFlags(flags: Partial<ItemFlags>): number {
+    return Number(flags.visible) << ItemFlag.VISIBLE
 }
 
-/** Combine a map of transaction flags to an integer */
-export function createTransactionFlags(flags: Partial<TransactionFlagsMap>): number {
-    return Number(flags.removed) << TransactionFlags.REMOVED
+/**
+ * Convert a map of transaction flags to a bitfield
+ * @param flags The transaction flags
+ * @return The bitfield
+ */
+export function serializeTransactionFlags(flags: Partial<TransactionFlags>): number {
+    return Number(flags.removed) << TransactionFlag.REMOVED
 }
 
-// function updateFlagsWithIndices(oldFlags: number | null | undefined, indexFlags: [Flag, boolean?][]): number {
-//     const falseIndices = indexFlags.filter(([,value]) => value === false).map(([i,]) => i)
-//     const trueIndices = indexFlags.filter(([,value]) => value === true).map(([i,]) => i)
-//
-//     const fullMask = Math.floor(Math.log2(oldFlags ?? 0) + 1)
-//     const falseMask =
-// }
-//
-// /** Create a new flag int with flags in the map replaced with new values */
-// export function updateItemFlags(oldFlags: number | null | undefined, flags: Partial<ItemFlagsMap>): number {
-//     const offsetFlags: [Flag, boolean?][] = [
-//         [ItemFlags.INVISIBLE, flags.invisible]
-//     ]
-//     return updateFlagsWithIndices(oldFlags, offsetFlags)
-// }
-//
-// /** Create a new flag int with flags in the map replaced with new values */
-// export function updateTransactionFlags(oldFlags: number | null | undefined, flags: Partial<TransactionFlagsMap>): number {
-//     const offsetFlags: [Flag, boolean?][] = [
-//         [TransactionFlags.REMOVED, flags.removed]
-//     ]
-//     return updateFlagsWithIndices(oldFlags, offsetFlags)
-// }

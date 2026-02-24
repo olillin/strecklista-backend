@@ -8,154 +8,149 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Group {
-  id       Int     @id @default(autoincrement())
-  gammaId  String  @unique @db.VarChar(64)
+  id      Int    @id @default(autoincrement())
+  gammaId String @unique @db.VarChar(64)
 
-  users    User[]
-  items    Item[]
-  purchases Purchase[]
-  deposits  Deposit[]
-  stockUpdates StockUpdate[]
-
-  @@map("groups")
+  users        GroupUser[]
+  items        Item[]
+  transactions Transaction[]
 }
 
 model User {
-  id       Int    @id @default(autoincrement())
-  gammaId  String @unique @db.VarChar(64)
+  id      Int    @id @default(autoincrement())
+  gammaId String @unique @db.VarChar(64)
 
-  groupId  Int
-  group    Group  @relation(fields: [groupId], references: [id])
+  groups GroupUser[]
 
-  createdPurchases Purchase[] @relation("CreatedByPurchases")
-  receivedPurchases Purchase[] @relation("CreatedForPurchases")
-
-  createdDeposits Deposit[] @relation("CreatedByDeposits")
-  receivedDeposits Deposit[] @relation("CreatedForDeposits")
-
-  stockUpdates StockUpdate[]
+  createdTransactions  Transaction[] @relation("CreatedByTransactions")
+  receivedTransactions Transaction[] @relation("CreatedForTransactions")
 
   favoriteItems FavoriteItem[]
+}
 
-  @@map("users")
+model GroupUser {
+  groupId Int
+  group   Group @relation(fields: [groupId], references: [id])
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  @@id([groupId, userId])
 }
 
 model Item {
-  id          Int       @id @default(autoincrement())
-  groupId     Int
-  group       Group     @relation(fields: [groupId], references: [id])
+  id      Int   @id @default(autoincrement())
+  groupId Int
+  group   Group @relation(fields: [groupId], references: [id])
 
-  displayName String    @db.VarChar(100)
-  iconUrl     String?   @db.VarChar(500)
-  createdTime DateTime  @default(now()) @db.Timestamptz
-  flags       Int?      @db.SmallInt
+  displayName String   @db.VarChar(100)
+  iconUrl     String?  @db.VarChar(500)
+  createdTime DateTime @default(now()) @db.Timestamptz
+  flags       Int?     @db.SmallInt
 
-  prices              Price[]
-  purchasedItems      PurchasedItem[]
-  itemStockUpdates    ItemStockUpdate[]
-  favoriteBy          FavoriteItem[]
+  prices           Price[]
+  purchasedItems   PurchasedItem[]
+  itemStockUpdates ItemStockUpdate[]
+  favoriteBy       FavoriteItem[]
 
   @@unique([groupId, displayName])
-  @@map("items")
 }
 
 model Price {
-  itemId      Int
-  item        Item    @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  itemId Int
+  item   Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
   displayName String  @db.VarChar(30)
-  price       Decimal @db.Decimal(7,2)
+  price       Decimal @db.Decimal(7, 2)
 
   @@id([itemId, displayName])
-  @@map("prices")
+}
+
+enum TransactionType {
+  PURCHASE
+  DEPOSIT
+  STOCK_UPDATE
+}
+
+model Transaction {
+  id      Int   @id @default(autoincrement())
+  groupId Int
+  group   Group @relation(fields: [groupId], references: [id])
+
+  type TransactionType
+
+  createdById Int
+  createdBy   User @relation("CreatedByTransactions", fields: [createdById], references: [id])
+
+  createdForId Int
+  createdFor   User @relation("CreatedForTransactions", fields: [createdForId], references: [id])
+
+  createdTime DateTime @default(now()) @db.Timestamptz
+  flags       Int?     @db.SmallInt
+  comment     String?  @db.VarChar(1000)
+
+  purchase    Purchase?
+  deposit     Deposit?
+  stockUpdate StockUpdate?
 }
 
 model Purchase {
-  id          Int       @id @default(autoincrement())
-  groupId     Int
-  group       Group     @relation(fields: [groupId], references: [id])
-
-  createdById  Int
-  createdBy    User     @relation("CreatedByPurchases", fields: [createdById], references: [id])
-
-  createdForId Int
-  createdFor   User     @relation("CreatedForPurchases", fields: [createdForId], references: [id])
-
-  createdTime DateTime  @default(now()) @db.Timestamptz
-  flags       Int?      @db.SmallInt
-  comment     String?   @db.VarChar(1000)
+  id            Int         @id @default(autoincrement())
+  transactionId Int         @unique
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
 
   items PurchasedItem[]
-
-  @@map("purchases")
 }
 
 model PurchasedItem {
-  transactionId Int
-  purchase      Purchase @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  id         Int      @id @default(autoincrement())
+  purchaseId Int
+  purchase   Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
 
-  itemId        Int?
-  item          Item?    @relation(fields: [itemId], references: [id], onDelete: SetNull)
+  itemId Int?
+  item   Item? @relation(fields: [itemId], references: [id], onDelete: SetNull)
 
-  displayName        String  @db.VarChar(100)
-  iconUrl            String? @db.VarChar(500)
-  purchasePrice      Decimal @db.Decimal(7,2)
-  purchasePriceName  String  @db.VarChar(30)
-  quantity           Int
+  displayName       String  @db.VarChar(100)
+  iconUrl           String? @db.VarChar(500)
+  purchasePrice     Decimal @db.Decimal(7, 2)
+  purchasePriceName String  @db.VarChar(30)
+  quantity          Int
 
-  @@map("purchased_items")
+  @@unique([purchaseId, itemId])
 }
 
 model Deposit {
-  id          Int       @id @default(autoincrement())
-  groupId     Int
-  group       Group     @relation(fields: [groupId], references: [id])
+  id            Int         @id @default(autoincrement())
+  transactionId Int         @unique
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
 
-  createdById  Int
-  createdBy    User     @relation("CreatedByDeposits", fields: [createdById], references: [id])
-
-  createdForId Int
-  createdFor   User     @relation("CreatedForDeposits", fields: [createdForId], references: [id])
-
-  createdTime DateTime  @default(now()) @db.Timestamptz
-  total       Decimal   @db.Decimal(7,2)
-  flags       Int?      @db.SmallInt
-  comment     String?   @db.VarChar(1000)
-
-  @@map("deposits")
+  total Decimal @db.Decimal(7, 2)
 }
 
 model StockUpdate {
-  id          Int       @id @default(autoincrement())
-  groupId     Int
-  group       Group     @relation(fields: [groupId], references: [id])
-
-  createdById Int
-  createdBy   User      @relation(fields: [createdById], references: [id])
-
-  createdTime DateTime  @default(now()) @db.Timestamptz
-  flags       Int?      @db.SmallInt
-  comment     String?   @db.VarChar(1000)
+  id            Int         @id @default(autoincrement())
+  transactionId Int         @unique
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
 
   items ItemStockUpdate[]
-
-  @@map("stock_updates")
 }
 
 model ItemStockUpdate {
-  transactionId Int
-  stockUpdate   StockUpdate @relation(fields: [transactionId], references: [id])
+  id            Int         @id @default(autoincrement())
+  stockUpdateId Int
+  stockUpdate   StockUpdate @relation(fields: [stockUpdateId], references: [id])
 
-  itemId        Int
-  item          Item        @relation(fields: [itemId], references: [id])
+  itemId Int
+  item   Item @relation(fields: [itemId], references: [id])
 
-  before        Int
-  after         Int
+  before Int
+  after  Int
 
-  @@map("item_stock_updates")
+  @@unique([stockUpdateId, itemId])
 }
 
 model FavoriteItem {
@@ -166,6 +161,4 @@ model FavoriteItem {
   item   Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
   @@id([userId, itemId])
-  @@unique([userId, itemId])
-  @@map("favorite_items")
 }

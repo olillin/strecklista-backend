@@ -18,6 +18,7 @@ export interface EnvironmentVariables {
     PGHOST?: string
     PGPORT?: string
     PGDATABASE?: string
+    DATABASE_URL?: string
 
     JWT_SECRET: string
     JWT_ISSUER?: string
@@ -51,10 +52,13 @@ export const DEFAULT_ENVIRONMENT: Partial<Concrete<EnvironmentVariables>> = {
 export function withDefaults(
     env: EnvironmentVariables
 ): Concrete<EnvironmentVariables> {
-    return Object.assign(
+    const environment: Concrete<EnvironmentVariables> = Object.assign(
         Object.assign({}, DEFAULT_ENVIRONMENT),
         env
     ) as Concrete<EnvironmentVariables>
+    if (environment.DATABASE_URL === undefined) {
+        const dbUrl = `postgresql://${environment.PGUSER}:${secret}@db:5432/strecklista?schema=publc`
+    }
 }
 
 export type FileEnvironmentVariables = EnvironmentVariables & {

@@ -4,8 +4,8 @@ import { getBareItem, getItem, type Price } from "./itemService"
 import type { Decimal } from "@prisma/client/runtime/client"
 import type { TransactionType as PrismaTransactionType } from "../../generated/prisma/enums"
 import type { PurchasedItem as PrismaPurchasedItem, ItemStockUpdate as PrismaItemStockUpdate } from "../../generated/prisma/client"
-import { PurchaseItem } from "../types"
-import { PurchasedItemCreateManyPurchaseInputEnvelope, PurchasedItemCreateWithoutPurchaseInput } from "../../generated/prisma/models"
+import { PostItemStockUpdate, PurchaseItem } from "../types"
+import { ItemStockUpdateCreateManyStockUpdateInput, PurchasedItemCreateWithoutPurchaseInput } from "../../generated/prisma/models"
 
 export type TransactionType = 'purchase' | 'deposit' | 'stockUpdate'
 export interface Transaction<T extends TransactionType> {
@@ -127,14 +127,14 @@ const selectTransactionData = {
 
 function parseTransaction(transaction: TransactionData): AnyTransaction {
     const flags = parseTransactionFlags(transaction.flags)
-    const basicTransaction = {
+    const basicTransaction: Transaction<'purchase'> = {
         type: 'purchase',
         id: transaction.id,
         createdBy: transaction.createdById,
         createdTime: transaction.createdTime,
         removed: flags.removed,
         comment: transaction.comment ?? undefined,
-    } satisfies Transaction<'purchase'>
+    }
 
     switch (transaction.type) {
         case 'PURCHASE': {
@@ -310,11 +310,16 @@ export async function createPurchase(
             }
 
             return {
-                item: item.id,
+                item: {
+                    connect: {
+                        id: item.id
+                    }
+                },
                 displayName: dbItem.displayName,
                 iconUrl: dbItem.iconUrl,
                 quantity: item.quantity,
                 purchasePrice: item.purchasePrice.price,
+                purchasePriceName: item.purchasePrice.displayName,
             } satisfies PurchasedItemCreateWithoutPurchaseInput
         })
     )
@@ -329,7 +334,9 @@ export async function createPurchase(
                 create: {
                     createdForId: createdFor,
                     items: {
-                        create: {}
+                        createMany: {
+                            data: purchasedItems
+                        }
                     }
                 }
             }
@@ -337,70 +344,7 @@ export async function createPurchase(
         select: selectTransactionData
     })
 
-    return parseTransaction(transaction) as Deposit
-
-    let purchase: Purchase | null = null
-    try {
-        await this.query('BEGIN')
-
-        // Create transaction
-        const dbTransaction = (await this.queryFirstRow(
-            q.CREATE_PURCHASE_WITH_COMMENT,
-            groupId,
-            createdBy,
-            createdFor,
-            comment,
-        ))!
-
-        const transaction = getTransaction(dbTransaction.id)
-
-        if (transaction.type === 'purchase') {
-            purchase = transaction as Purchase
-        } else {
-            throw new Error('Purchase returned wrong type after creation')
-        }
-
-    } catch (error) {
-        throw error
-    }
-
-    if (!purchase) {
-        throw new Error('Failed to get purchase after creation')
-    }
-
-    return purchase
-}
-
-private function addPurchasedItem(
-    purchaseId: number,
-    quantity: number,
-    purchasePrice: Price,
-    itemId: number,
-    displayName: string,
-    iconUrl?: string | null
-): Promise<tableType.PurchasedItems> {
-    if (iconUrl) {
-        return (queryFirstRow(
-            q.ADD_PURCHASED_ITEM_WITH_ICON, //
-            purchaseId,
-            quantity,
-            purchasePrice.price,
-            purchasePrice.displayName,
-            itemId,
-            displayName,
-            iconUrl
-        ))!
-    } else {
-        return (await this.queryFirstRow(
-            q.ADD_PURCHASED_ITEM, //
-            purchaseId,
-            quantity,
-            purchasePrice.price,
-            purchasePrice.displayName,
-            itemId,
-            displayName
-        ))!
-    }
+    return parseTransaction(transaction) as Purchase
 }
 
 // Stock updates
@@ -409,62 +353,46 @@ export async function createStockUpdate(groupId: number, createdBy: number, comm
         comment = null
     }
 
-    let stockUpdate: StockUpdate | null = null
-    try {
-        await this.query('BEGIN')
-
-        // Create transaction
-        const dbTransaction = (await this.queryFirstRow(
-            q.CREATE_STOCK_UPDATE_WITH_COMMENT,
-            groupId,
-            createdBy,
-            comment,
-        ))!
-
-        // Add item stock updates
-        await Promise.all(
-            items.map(async item => {
-                let dbItem
-                if (item.absolute === true) {
-                    dbItem = await this.getItem(item.id)
-                } else {
-                    dbItem = await this.getFullItem(item.id)
-                }
-                if (!dbItem) {
-                    throw new Error(
-                        `Item with id ${item.id} does not exist`
-                    )
-                }
-
-                console.log(`Adding stock update for item with id ${dbItem.id}`)
-
-                const after = item.quantity + (item.absolute === true ? 0 : (dbItem as tableType.FullItem).stock)
-
-                await this.query(
-                    q.ADD_ITEM_STOCK_UPDATE, //
-                    dbTransaction.id,
-                    dbItem.id,
-                    after,
+    // Map items
+    const stockedItems = await Promise.all(
+        items.map(async item => {
+            const currentStock = await getItem(item.id, 0).then(dbItem => dbItem?.stock)
+            if (currentStock === undefined) {
+                throw new Error(
+                    `Item with id ${item.id} does not exist`
                 )
-            })
-        )
-        const transaction = await this.getTransaction(dbTransaction.id)
+            }
 
-        if (transaction.type === 'stockUpdate') {
-            stockUpdate = transaction as StockUpdate
-        } else {
-            throw new Error('Stock update returned wrong type after creation')
-        }
+            const newStock = item.absolute
+                ? item.quantity
+                : currentStock + item.quantity
 
-        await this.query('COMMIT')
-    } catch (error) {
-        await this.query('ROLLBACK')
-        throw error
-    }
+            return {
+                itemId: item.id,
+                before: currentStock,
+                after: newStock
+            } satisfies ItemStockUpdateCreateManyStockUpdateInput
+        })
+    )
 
-    if (!stockUpdate) {
-        throw new Error('Failed to get stock update after creation')
-    }
+    const transaction: TransactionData = await prisma.transaction.create({
+        data: {
+            type: "STOCK_UPDATE",
+            groupId: groupId,
+            createdById: createdBy,
+            comment: comment,
+            stockUpdate: {
+                create: {
+                    items: {
+                        createMany: {
+                            data: stockedItems
+                        }
+                    }
+                }
+            }
+        },
+        select: selectTransactionData
+    })
 
-    return stockUpdate
+    return parseTransaction(transaction) as StockUpdate
 }

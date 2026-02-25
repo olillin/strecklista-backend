@@ -3,7 +3,7 @@ import {clientApi} from "../../config/gamma";
 import {GroupId, UserId} from "gammait";
 import {getGammaGroupId, getGammaUserId, getGroupId} from "../../middleware/validateToken";
 import {ApiError, sendError} from "../../errors";
-import {GroupResponse, ResponseBody} from "../../types";
+import {GroupResponse, ResponseBody} from "../../responses";
 import {getAuthorizedGroup} from "../../util/helpers";
 import { getUsersInGroup, OfflineGroup } from "../../services/userService";
 import {User, completeUser, completeGroup} from "../../services/gammaService"

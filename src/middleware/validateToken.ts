@@ -1,9 +1,24 @@
 import { Request, Response, NextFunction } from 'express'
 import { ApiError, sendError } from '../errors'
-import jwt from 'jsonwebtoken'
+import jwt, { JwtPayload } from 'jsonwebtoken'
 import env from '../config/env'
-import { LocalJwt } from '../types'
 import {GroupId, UserId} from 'gammait'
+import { isLoggedInUser, LoggedInUser } from '../routes/login'
+
+export type LocalJwt = JwtPayload & LoggedInUser
+
+export function isLocalJwt(value: unknown): value is LocalJwt {
+    if (!isLoggedInUser(value)) {
+        return false
+    }
+
+    const obj = value as object as Record<string, unknown>
+
+    return (
+        typeof obj.iss === "string" &&
+        typeof obj.exp === "number"
+    )
+}
 
 function validateToken(req: Request, res: Response, next: NextFunction) {
     console.log(`${req.method} to API: ${req.path}`)
@@ -50,28 +65,44 @@ function validateToken(req: Request, res: Response, next: NextFunction) {
 export default validateToken
 
 export function verifyToken(token: string): LocalJwt {
-    return jwt.verify(token, env.JWT_SECRET, {
+    const verifiedToken = jwt.verify(token, env.JWT_SECRET, {
         algorithms: ['HS256'],
         issuer: env.JWT_ISSUER,
-    }) as LocalJwt
+    })
+    if (!isLocalJwt(verifiedToken)) {
+        throw new Error("Verified token has invalid shape")
+    }
+    return verifiedToken
 }
 
 export function getUserId(res: Response): number {
-    const jwt: LocalJwt = res.locals.jwt
+    const jwt = res.locals.jwt
+    if (!isLocalJwt(jwt)) {
+        throw new Error("Token has invalid shape")
+    }
     return jwt.userId
 }
 
 export function getGammaUserId(res: Response): UserId {
-    const jwt: LocalJwt = res.locals.jwt
+    const jwt = res.locals.jwt
+    if (!isLocalJwt(jwt)) {
+        throw new Error("Token has invalid shape")
+    }
     return jwt.gammaUserId
 }
 
 export function getGroupId(res: Response): number {
-    const jwt: LocalJwt = res.locals.jwt
+    const jwt = res.locals.jwt
+    if (!isLocalJwt(jwt)) {
+        throw new Error("Token has invalid shape")
+    }
     return jwt.groupId
 }
 
 export function getGammaGroupId(res: Response): GroupId {
-    const jwt: LocalJwt = res.locals.jwt
+    const jwt = res.locals.jwt
+    if (!isLocalJwt(jwt)) {
+        throw new Error("Token has invalid shape")
+    }
     return jwt.gammaGroupId
 }

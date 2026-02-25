@@ -194,7 +194,7 @@ export const postStockUpdate = () => [
     body('comment').optional().isString().trim().isLength({ max: 1000 }).withMessage(ApiError.InvalidComment),
 ]
 
-export const itemSortModes = <const>[
+export const itemSortModes = [
     'popular',
     'cheap',
     'expensive',
@@ -204,7 +204,9 @@ export const itemSortModes = <const>[
     'name_z2a',
     'high_stock',
     'low_stock',
-]
+] as const
+export type ItemSortMode = typeof itemSortModes[number]
+
 export const getItems = () => [
     query('sort')
         .default('popular')

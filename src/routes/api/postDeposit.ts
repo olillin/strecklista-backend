@@ -1,12 +1,18 @@
 import { Request, Response } from 'express'
-import { database } from '../../config/clients'
 import {
     CreatedTransactionResponse,
-    PostDepositBody,
     ResponseBody,
-} from '../../types'
+} from '../../responses'
 import { getGroupId, getUserId } from '../../middleware/validateToken'
 import { sendError, unexpectedError } from '../../errors'
+import { createDeposit } from '../../services/transactionService'
+import { getUser } from '../../services/userService'
+
+export interface PostDepositBody {
+    userId: number
+    total: number
+    comment?: string
+}
 
 export default async function postDeposit(req: Request, res: Response) {
     const { userId: createdFor, total, comment } = req.body as PostDepositBody
@@ -14,14 +20,14 @@ export default async function postDeposit(req: Request, res: Response) {
     const groupId: number = getGroupId(res)
     const createdBy: number = getUserId(res)
 
-    const deposit = await database.createDeposit(
+    const deposit = await createDeposit(
         groupId,
         createdBy,
         createdFor,
-        comment,
+        comment ?? null,
         total,
     )
-    const user = await database.getFullUser(createdFor)
+    const user = await getUser(createdFor, groupId)
     if (!user) {
         sendError(
             res,
@@ -33,7 +39,7 @@ export default async function postDeposit(req: Request, res: Response) {
     }
     const balance = user.balance
     const body: ResponseBody<CreatedTransactionResponse> = {
-        data: { transaction: deposit, balance },
+        data: { transaction: deposit, balance: balance.toNumber() },
     }
 
     const resourceUri = req.baseUrl + `/group/transaction/${deposit.id}`

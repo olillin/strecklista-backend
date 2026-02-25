@@ -1,7 +1,7 @@
-import {GroupId, UserId} from 'gammait'
+import { GroupId, UserId } from 'gammait'
 import { prisma } from "../lib/prisma"
 import { Decimal } from '@prisma/client/runtime/client'
-import { UserSelect } from '../../generated/prisma/models'
+import { UserSelect } from '../generated/prisma/models'
 
 export interface OfflineGroup {
     id: number
@@ -12,6 +12,11 @@ export interface OfflineUser {
     id: number
     gammaId: UserId
     balance: Decimal
+}
+
+export interface OfflineGroupUser {
+    user: OfflineUser
+    group: OfflineGroup
 }
 
 // Groups
@@ -35,7 +40,7 @@ export async function createGroup(gammaGroupId: GroupId): Promise<OfflineGroup> 
 export async function addGroupUser(
     gammaGroupId: GroupId,
     gammaUserId: UserId
-) {
+): Promise<OfflineGroupUser> {
     return prisma.groupUser.create({
         data: {
             group: {
@@ -58,8 +63,44 @@ export async function addGroupUser(
                     }
                 }
             }
+        },
+        include: {
+            group: {
+                select: {
+                    gammaId: true
+                }
+            }
+        }
+    }).then(async groupUser => ({
+        user: (await getUser(groupUser.userId, groupUser.groupId))!,
+        group: {
+            id: groupUser.groupId,
+            gammaId: groupUser.group.gammaId as GroupId
+        }
+    } satisfies OfflineGroupUser))
+}
+
+export async function getUserInGroup(userId: number, groupId: number): Promise<OfflineGroupUser | null> {
+    const groupUser = await prisma.groupUser.findFirst({
+        where: {
+            userId: userId,
+            groupId: groupId
+        },
+        include: {
+            user: {
+                select: selectUserData(groupId)
+            },
+            group: true
         }
     })
+    if (groupUser === null) return null
+    return {
+        user: parseUser(groupUser.user),
+        group: {
+            id: groupUser.groupId,
+            gammaId: groupUser.group.gammaId as GroupId
+        }
+    }
 }
 
 export async function getGroup(groupId: number): Promise<OfflineGroup | null> {

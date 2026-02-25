@@ -1,16 +1,41 @@
 import {Request, RequestHandler, Response} from 'express'
 import { GroupId, UserId } from 'gammait'
 import jwt from 'jsonwebtoken'
-import { authorizationCode, clientApi, database } from '../config/clients'
+import { authorizationCode, clientApi } from '../config/gamma'
 import env from '../config/env'
 import {ApiError, sendError, tokenSignError} from '../errors'
-import {JWT, LoggedInUser} from '../types'
-import * as convert from '../util/convert'
 import { getAuthorizedGroup } from '../util/helpers'
+import { addGroupUser } from '../services/userService'
+import { toLoginResponse } from '../responses'
 
+export interface JWT {
+    access_token: string
+    expires_in: number
+}
 
+export interface LoggedInUser {
+    userId: number
+    groupId: number
+    gammaUserId: UserId
+    gammaGroupId: GroupId
+}
 
-function signJWT(user: LoggedInUser): Promise<JWT> {
+export function isLoggedInUser(value: unknown): value is LoggedInUser {
+    if (typeof value !== "object" || value === null) {
+        return false
+    }
+ 
+    const obj = value as Record<string, unknown>
+
+    return (
+        typeof obj.userId === "number" &&
+        typeof obj.groupId === "number" &&
+        "gammaUserId" in obj &&
+        "gammaGroupId" in obj
+    )
+}
+
+function signJwt(user: LoggedInUser): Promise<JWT> {
     return new Promise((resolve, reject) => {
         const expireSeconds = parseFloat(env.JWT_EXPIRES_IN)
 
@@ -77,17 +102,17 @@ export function login(): RequestHandler {
             }
             const gammaGroupId: GroupId = group.id
 
-            const dbUser = await database.softCreateGroupAndUser(gammaGroupId, gammaUserId)
+            const groupUser = await addGroupUser(gammaGroupId, gammaUserId)
 
-            signJWT({
-                userId: dbUser.id,
-                groupId: dbUser.group_id,
-                gammaUserId: dbUser.gamma_id,
-                gammaGroupId: dbUser.group_gamma_id,
+            signJwt({
+                userId: groupUser.user.id,
+                groupId: groupUser.group.id,
+                gammaUserId: groupUser.user.gammaId,
+                gammaGroupId: groupUser.group.gammaId,
             })
                 .then(token => {
-                    const body = convert.toLoginResponse(
-                        dbUser,
+                    const body = toLoginResponse(
+                        groupUser,
                         userInfo,
                         group,
                         token

@@ -1,6 +1,6 @@
 import {Request, Response} from "express";
 import {getGroupId} from "../../middleware/validateToken";
-import {ResponseBody, TransactionsResponse} from "../../types";
+import {ResponseBody, TransactionsResponse} from "../../responses";
 import * as transactionService from '../../services/transactionService'
 
 export default async function getTransactions(req: Request, res: Response) {

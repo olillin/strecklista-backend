@@ -1,25 +1,20 @@
 import {Request, Response} from "express";
-import {database} from "../../config/clients";
 import {getUserId} from "../../middleware/validateToken";
 import {ApiError, sendError} from "../../errors";
-import {ItemResponse, ResponseBody} from "../../types";
-import * as convert from "../../util/convert";
+import {ItemResponse, ResponseBody} from "../../responses";
+import * as itemService from "../../services/itemService"
 
 export default async function getItem(req: Request, res: Response) {
     const itemId = parseInt(req.params.id)
     const userId: number = getUserId(res)
 
-    const dbItemWithPrices = await database.getFullItemWithPrices(itemId, userId)
+    const item = await itemService.getItem(itemId, userId)
 
-    if (dbItemWithPrices.length === 0) {
+    if (item === null) {
         sendError(res, ApiError.ItemNotExist)
         return
     }
 
-    const data: ItemResponse = {
-        item: convert.toItem(dbItemWithPrices)
-    }
-    const body: ResponseBody<ItemResponse> = { data }
-
+    const body: ResponseBody<ItemResponse> = { data: { item } }
     res.json(body)
 }

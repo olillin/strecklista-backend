@@ -1,7 +1,8 @@
 import {Request, Response} from "express";
-import {ItemSortMode, ItemsResponse, ResponseBody} from "../../types";
+import {ItemsResponse, ResponseBody} from "../../responses";
 import {getGroupId, getUserId} from "../../middleware/validateToken";
 import {getItemsInGroup, Item} from "../../services/itemService"
+import { ItemSortMode } from "../../middleware/validators";
 
 type ItemCompareFunction = (a: Item, b: Item) => number
 const COMPARE = {

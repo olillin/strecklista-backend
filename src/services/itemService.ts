@@ -1,6 +1,6 @@
 import { prisma } from "../lib/prisma"
-import type { Item as PrismaItem } from "../../generated/prisma/client"
-import { ItemSelect, ItemUpdateInput } from '../../generated/prisma/models';
+import type { Item as PrismaItem } from "../generated/prisma/client"
+import { ItemSelect, ItemUpdateInput } from '../generated/prisma/models';
 import { Decimal } from '@prisma/client/runtime/client';
 import { getFlag } from "../util/helpers";
 
@@ -243,6 +243,7 @@ export interface ItemPatch {
     iconUrl?: string
     flags?: Partial<ItemFlags>
     prices?: Price[]
+    favorite?: boolean
 }
 
 export async function updateItem(

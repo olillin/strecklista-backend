@@ -1,6 +1,9 @@
 secrets/*
 !secrets/.gitkeep
 
+# Prisma client
+**/generated/prisma
+
 # IDE-files
 .idea/discord.xml
 
@@ -144,5 +147,3 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
-
-/generated/prisma

@@ -1,7 +1,7 @@
-import * as gammait from "gammait"
+import * as gamma from "gammait"
 import { GroupId, UserId } from "gammait"
-import { OfflineGroup, OfflineUser } from "./userService"
 import { groupAvatarUrl, userAvatarUrl } from "gammait/urls"
+import { OfflineGroup, OfflineUser } from "./userService"
 import { Decimal } from "@prisma/client/runtime/client"
 
 export interface Group {
@@ -24,9 +24,14 @@ export interface User {
     balance: Decimal
 }
 
+export type GammaUser = gamma.User | gamma.UserInfo
+export function isUserInfo(gammaUser: GammaUser): gammaUser is gamma.UserInfo {
+    return 'sub' in gammaUser
+}
+
 export const NOT_AVAILABLE: string = "N/A"
 
-export function completeGroup(offlineGroup: OfflineGroup, gammaGroup: gammait.Group | null): Group {
+export function completeGroup(offlineGroup: OfflineGroup, gammaGroup: gamma.Group | null): Group {
     return {
         id: offlineGroup.id,
         gammaId: offlineGroup.gammaId,
@@ -35,14 +40,31 @@ export function completeGroup(offlineGroup: OfflineGroup, gammaGroup: gammait.Gr
     }
 }
 
-export function completeUser(offlineUser: OfflineUser, gammaUser: gammait.User | null): User {
+export function completeUser(offlineUser: OfflineUser, gammaUser: GammaUser | null): User {
+    const names =
+        gammaUser === null
+            ? {
+                  nick:NOT_AVAILABLE,
+                  firstName:NOT_AVAILABLE,
+                  lastName:NOT_AVAILABLE,
+              }
+            : isUserInfo(gammaUser)
+            ? {
+                  nick: gammaUser.nickname,
+                  firstName: gammaUser.given_name,
+                  lastName: gammaUser.family_name,
+              }
+            : {
+                  nick: gammaUser.nick,
+                  firstName: gammaUser.firstName,
+                  lastName: gammaUser.lastName,
+              }
+
     return {
         id: offlineUser.id,
         gammaId: offlineUser.gammaId ?? NOT_AVAILABLE,
-        firstName: gammaUser?.firstName ?? NOT_AVAILABLE,
-        lastName: gammaUser?.lastName ?? NOT_AVAILABLE,
-        nick: gammaUser?.nick ?? NOT_AVAILABLE,
         avatarUrl: userAvatarUrl(offlineUser.gammaId),
         balance: offlineUser.balance,
+        ...names,
     }
 }

@@ -1,11 +1,12 @@
 import {getFlag, isValidComment} from "../util/helpers"
 import { prisma } from "../lib/prisma"
 import { getBareItem, getItem, type Price } from "./itemService"
-import type { Decimal } from "@prisma/client/runtime/client"
-import type { TransactionType as PrismaTransactionType } from "../../generated/prisma/enums"
-import type { PurchasedItem as PrismaPurchasedItem, ItemStockUpdate as PrismaItemStockUpdate } from "../../generated/prisma/client"
-import { PostItemStockUpdate, PurchaseItem } from "../types"
-import { ItemStockUpdateCreateManyStockUpdateInput, PurchasedItemCreateWithoutPurchaseInput, TransactionSelect } from "../../generated/prisma/models"
+import { Decimal } from "@prisma/client/runtime/client"
+import type { TransactionType as PrismaTransactionType } from "../generated/prisma/enums"
+import type { PurchasedItem as PrismaPurchasedItem, ItemStockUpdate as PrismaItemStockUpdate } from "../generated/prisma/client"
+import { PurchaseItem } from "../routes/api/postPurchase"
+import { ItemStockUpdateCreateManyStockUpdateInput, PurchasedItemCreateWithoutPurchaseInput, TransactionSelect } from "../generated/prisma/models"
+import { PostItemStockUpdate } from "../routes/api/postStockUpdate"
 
 export type TransactionType = 'purchase' | 'deposit' | 'stockUpdate'
 export interface Transaction<T extends TransactionType> {
@@ -290,7 +291,7 @@ export async function createPurchase(
     groupId: number,
     createdBy: number,
     createdFor: number,
-    comment: string | null | null,
+    comment: string | null,
     items: PurchaseItem[]
 ): Promise<Purchase> {
     if (!isValidComment(comment)) {
@@ -316,7 +317,7 @@ export async function createPurchase(
                 displayName: dbItem.displayName,
                 iconUrl: dbItem.iconUrl,
                 quantity: item.quantity,
-                purchasePrice: item.purchasePrice.price,
+                purchasePrice: new Decimal(item.purchasePrice.price),
                 purchasePriceName: item.purchasePrice.displayName,
             } satisfies PurchasedItemCreateWithoutPurchaseInput
         })

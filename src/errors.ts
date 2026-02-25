@@ -1,6 +1,12 @@
 import { Location } from 'express-validator'
-import { ErrorDefinition, ErrorResolvable, ResponseBody } from './types'
+import { ResponseBody } from './responses'
 import { Response } from 'express'
+
+export interface ErrorDefinition {
+    code: number
+    message: string
+}
+export type ErrorResolvable = ErrorDefinition | ApiError
 
 // Pre-defined errors
 export enum ApiError {

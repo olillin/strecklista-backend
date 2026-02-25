@@ -1,5 +1,5 @@
 import {Request, Response} from "express";
-import {ResponseBody, TransactionResponse} from "../../types";
+import {ResponseBody, TransactionResponse} from "../../responses";
 import * as transactionService from '../../services/transactionService'
 
 export default async function getTransaction(req: Request, res: Response) {

@@ -5,7 +5,7 @@ import * as validators from '../middleware/validators'
 import * as apiRoutes from '../routes/api'
 import setHeader from "../middleware/setHeader";
 import {ApiError, sendError} from "../errors";
-import {ErrorResolvable} from "../types";
+import {ErrorResolvable} from "../errors";
 
 async function createApiRouter(): Promise<Router> {
     const api = Router()

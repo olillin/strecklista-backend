@@ -1,8 +1,27 @@
 import {Request, Response} from "express";
-import {database} from "../../config/clients";
-import {CreatedTransactionResponse, PostPurchaseBody, ResponseBody} from "../../types";
+import {CreatedTransactionResponse, ResponseBody} from "../../responses";
 import {getGroupId, getUserId} from "../../middleware/validateToken";
 import {sendError, unexpectedError} from "../../errors";
+import { Price } from "../../services/itemService";
+import { createPurchase } from "../../services/transactionService";
+import { getUser } from "../../services/userService";
+
+export interface JsonPrice {
+    price: number
+    displayName: string
+}
+
+export interface PurchaseItem {
+    id: number
+    quantity: number
+    purchasePrice: JsonPrice
+}
+
+export interface PostPurchaseBody {
+    userId: number
+    items: PurchaseItem[]
+    comment?: string
+}
 
 export default async function postPurchase(req: Request, res: Response) {
     const {userId: createdFor, items, comment} = req.body as PostPurchaseBody
@@ -10,15 +29,15 @@ export default async function postPurchase(req: Request, res: Response) {
     const groupId: number = getGroupId(res)
     const createdBy: number = getUserId(res)
 
-    const purchase = await database.createPurchase(groupId, createdBy, createdFor, comment, items)
-    const user = await database.getFullUser(createdFor)
+    const purchase = await createPurchase(groupId, createdBy, createdFor, comment ?? null, items)
+    const user = await getUser(createdFor, groupId)
     if (!user) {
         sendError(res, unexpectedError("Failed to get user balance after creating purchase"))
         return
     }
     const balance = user.balance
     const body: ResponseBody<CreatedTransactionResponse> = {
-        data: {transaction: purchase, balance},
+        data: {transaction: purchase, balance: balance.toNumber()},
     }
 
     const resourceUri = req.baseUrl + `/group/transaction/${purchase.id}`

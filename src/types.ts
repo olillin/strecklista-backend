@@ -4,30 +4,7 @@ import { itemSortModes } from './middleware/validators'
 import { ApiError } from './errors'
 import { Item, Price } from './services/itemService'
 import { Transaction, TransactionType } from './services/transactionService'
-
-// #region Basic types
-export interface Group {
-    id: number
-    gammaId: GroupId
-
-    prettyName: string
-    avatarUrl: string
-}
-
-export interface User {
-    id: number
-    gammaId: UserId
-
-    firstName: string
-    lastName: string
-    nick: string
-    avatarUrl: string
-
-    balance: number
-}
-
-
-// #endregion Basic types
+import { User, Group } from './services/gammaService'
 
 // #region Response types
 export type ResponseBody<T> = [T] extends [never]

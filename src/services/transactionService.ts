@@ -5,7 +5,7 @@ import type { Decimal } from "@prisma/client/runtime/client"
 import type { TransactionType as PrismaTransactionType } from "../../generated/prisma/enums"
 import type { PurchasedItem as PrismaPurchasedItem, ItemStockUpdate as PrismaItemStockUpdate } from "../../generated/prisma/client"
 import { PostItemStockUpdate, PurchaseItem } from "../types"
-import { ItemStockUpdateCreateManyStockUpdateInput, PurchasedItemCreateWithoutPurchaseInput } from "../../generated/prisma/models"
+import { ItemStockUpdateCreateManyStockUpdateInput, PurchasedItemCreateWithoutPurchaseInput, TransactionSelect } from "../../generated/prisma/models"
 
 export type TransactionType = 'purchase' | 'deposit' | 'stockUpdate'
 export interface Transaction<T extends TransactionType> {
@@ -122,7 +122,7 @@ const selectTransactionData = {
             items: true
         }
     },
-}
+} satisfies TransactionSelect
 
 
 function parseTransaction(transaction: TransactionData): AnyTransaction {
@@ -187,7 +187,6 @@ export async function getTransaction(transactionId: number): Promise<AnyTransact
             `Transaction with id ${transactionId} does not exist`
         )
     }
-
     return parseTransaction(transaction)
 }
 
@@ -227,7 +226,6 @@ export async function getTransactionsInGroup(
         },
         select: selectTransactionData
     })
-
     return transactions.map(transaction => parseTransaction(transaction))
 }
 

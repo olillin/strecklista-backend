@@ -1,14 +1,29 @@
 import {GroupId, UserId} from 'gammait'
 import { prisma } from "../lib/prisma"
-import type { Group, User, GroupUser } from "../../generated/prisma/client"
+import { Decimal } from '@prisma/client/runtime/client'
+import { UserSelect } from '../../generated/prisma/models'
+
+export interface OfflineGroup {
+    id: number
+    gammaId: GroupId
+}
+
+export interface OfflineUser {
+    id: number
+    gammaId: UserId
+    balance: Decimal
+}
 
 // Groups
-export async function createGroup(gammaGroupId: GroupId): Promise<Group> {
+export async function createGroup(gammaGroupId: GroupId): Promise<OfflineGroup> {
     return prisma.group.create({
         data: {
             gammaId: gammaGroupId
         }
-    })
+    }).then(group => ({
+        id: group.id,
+        gammaId: group.gammaId as GroupId
+    } satisfies OfflineGroup))
 }
 
 /**
@@ -47,11 +62,18 @@ export async function addGroupUser(
     })
 }
 
-export async function getGroup(groupId: number): Promise<Group | null> {
+export async function getGroup(groupId: number): Promise<OfflineGroup | null> {
     return prisma.group.findFirst({
         where: {
             id: groupId
         }
+    }).then(group => {
+        if (group === null) return null
+
+        return {
+            id: group.id,
+            gammaId: group.gammaId as GroupId,
+        } satisfies OfflineGroup
     })
 }
 
@@ -68,28 +90,106 @@ export async function gammaGroupExists(gammaGroupId: GroupId): Promise<boolean> 
 }
 
 // Users
-export async function getUser(userId: number): Promise<User | null> {
-    return prisma.user.findFirst({
-        where: {
-            id: userId
-        }
-    })
+interface UserData {
+    id: number
+    gammaId: string
+    receivedDeposits: {
+        total: Decimal
+    }[]
+    receivedPurchases: {
+        items: {
+            purchasePrice: Decimal
+            quantity: number
+        }[]
+    }[]
 }
 
-export async function getGroupUsersFromUser(userId: number): Promise<GroupUser[] | null> {
+function selectUserData(groupId: number) {
+    return {
+        id: true,
+        gammaId: true,
+        receivedDeposits: {
+            where: {
+                transaction: {
+                    groupId: groupId
+                }
+            },
+            select: {
+                total: true
+            }
+        },
+        receivedPurchases: {
+            where: {
+                transaction: {
+                    groupId: groupId
+                }
+            },
+            select: {
+                items: {
+                    select: {
+                        purchasePrice: true,
+                        quantity: true,
+                    }
+                }
+            }
+        },
+    } satisfies UserSelect
+}
+
+
+function parseUser(user: UserData): OfflineUser {
+    const totalDeposited: Decimal = user.receivedDeposits
+        .reduce((sum, deposit) => sum.add(deposit.total), new Decimal(0))
+    const totalPurchased: Decimal = user.receivedPurchases
+        .reduce((sum, purchase) =>
+            sum.add(purchase.items.reduce((purchaseSum, item) =>
+                purchaseSum.add(item.purchasePrice.mul(item.quantity)), new Decimal(0))), new Decimal(0))
+    const balance: Decimal = totalDeposited.sub(totalPurchased)
+
+    return {
+        id: user.id,
+        gammaId: user.gammaId as UserId,
+        balance: balance,
+    }
+}
+
+export async function getUser(userId: number, groupId: number): Promise<OfflineUser | null> {
+    const user: UserData | null = await prisma.user.findFirst({
+        where: {
+            id: userId
+        },
+        select: selectUserData(groupId)
+    })
+    if (user === null) return null
+    return parseUser(user)
+}
+
+export async function getUserGroups(userId: number): Promise<OfflineGroup[] | null> {
     return prisma.groupUser.findMany({
         where: {
             userId: userId
+        },
+        select: {
+            group: true
         }
-    })
+    }).then(groupUsers => groupUsers.map(groupUser => ({
+        id: groupUser.group.id,
+        gammaId: groupUser.group.gammaId as GroupId,
+    } satisfies OfflineGroup)))
 }
 
-export async function getUsersInGroup(groupId: number): Promise<GroupUser[]> {
-    return prisma.groupUser.findMany({
+export async function getUsersInGroup(groupId: number): Promise<OfflineUser[]> {
+    const users: {user: UserData}[] = await prisma.groupUser.findMany({
         where: {
             groupId: groupId
+        },
+        select: {
+            user: {
+                select: selectUserData(groupId)
+            }
         }
     })
+    return users.map(groupUser => parseUser(groupUser.user))
 }
 
 export async function isUserInGroup(userId: number, groupId: number): Promise<boolean> {

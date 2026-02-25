@@ -1,7 +1,9 @@
 import { body, Meta, oneOf, param, query } from 'express-validator'
-import { database } from '../config/clients'
 import { verifyToken } from './validateToken'
 import { ApiError } from '../errors'
+import { isUserInGroup } from '../services/userService'
+import { isItemVisible, itemExistsInGroup, itemNameExistsInGroup } from '../services/itemService'
+import { transactionExistsInGroup } from '../services/transactionService'
 
 //#region Util
 function getGroupId(meta: Meta): number {
@@ -29,7 +31,7 @@ export async function checkUserExistsInGroup(
 
     // Check if user exists
     const groupId = getGroupId(meta)
-    const exists = await database.userExistsInGroup(userId, groupId)
+    const exists = await isUserInGroup(userId, groupId)
     if (!exists) {
         throw ApiError.UserNotExist
     }
@@ -40,7 +42,7 @@ export async function checkItemExistsInGroup(
     meta: Meta
 ): Promise<void> {
     const groupId = getGroupId(meta)
-    const exists = await database.itemExistsInGroup(parseInt(value), groupId)
+    const exists = await itemExistsInGroup(parseInt(value), groupId)
     if (!exists) {
         throw ApiError.ItemNotExist
     }
@@ -51,7 +53,7 @@ export async function checkTransactionExistsInGroup(
     meta: Meta
 ): Promise<void> {
     const groupId = getGroupId(meta)
-    const exists = await database.transactionExistsInGroup(
+    const exists = await transactionExistsInGroup(
         parseInt(value),
         groupId
     )
@@ -70,7 +72,7 @@ export async function checkItemVisible(value: string): Promise<void> {
     }
 
     // Check if visible
-    const visible = await database.isItemVisible(id)
+    const visible = await isItemVisible(id)
     if (!visible) {
         throw ApiError.PurchaseInvisible
     }
@@ -81,7 +83,7 @@ export async function checkDisplayNameUniqueInGroup(
     meta: Meta
 ): Promise<void> {
     const groupId = getGroupId(meta)
-    const nameExists = await database.itemNameExistsInGroup(value, groupId)
+    const nameExists = await itemNameExistsInGroup(value, groupId)
     if (nameExists) {
         throw ApiError.DisplayNameNotUnique
     }

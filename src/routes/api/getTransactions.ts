@@ -1,7 +1,7 @@
 import {Request, Response} from "express";
-import {database} from "../../config/clients";
 import {getGroupId} from "../../middleware/validateToken";
 import {ResponseBody, TransactionsResponse} from "../../types";
+import * as transactionService from '../../services/transactionService'
 
 export default async function getTransactions(req: Request, res: Response) {
     const limit = parseInt(req.query.limit as string)
@@ -9,9 +9,8 @@ export default async function getTransactions(req: Request, res: Response) {
 
     const groupId: number = getGroupId(res)
 
-    const count = await database.countTransactionsInGroup(groupId)
-
-    const transactions = await database.getTransactionsInGroup(groupId, limit, offset)
+    const count = await transactionService.countTransactionsInGroup(groupId)
+    const transactions = await transactionService.getTransactionsInGroup(groupId, limit, offset)
 
     let previousOffset = offset - limit
     const clamped = previousOffset < 0

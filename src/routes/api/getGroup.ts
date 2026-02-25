@@ -1,15 +1,17 @@
 import {NextFunction, Request, Response} from "express";
-import {clientApi, database} from "../../config/clients";
-import {UserId} from "gammait";
-import {getGammaUserId, getGroupId} from "../../middleware/validateToken";
+import {clientApi} from "../../config/gamma";
+import {GroupId, UserId} from "gammait";
+import {getGammaGroupId, getGammaUserId, getGroupId} from "../../middleware/validateToken";
 import {ApiError, sendError} from "../../errors";
-import * as convert from "../../util/convert";
-import {GroupResponse, ResponseBody, User} from "../../types";
+import {GroupResponse, ResponseBody} from "../../types";
 import {getAuthorizedGroup} from "../../util/helpers";
+import { getUsersInGroup, OfflineGroup } from "../../services/userService";
+import {User, completeUser, completeGroup} from "../../services/gammaService"
 
 export default async function getGroup(req: Request, res: Response, next: NextFunction) {
     try {
         const gammaUserId: UserId = getGammaUserId(res)
+        const gammaGroupId: GroupId = getGammaGroupId(res)
         const groupId = getGroupId(res)
 
         // Get group
@@ -29,30 +31,30 @@ export default async function getGroup(req: Request, res: Response, next: NextFu
         }
 
         // Get members
-        const fullUsersInGroup = await database.getFullUsersInGroup(groupId)
-        let userPromises: Promise<User>[]
+        const offlineUsers = await getUsersInGroup(groupId)
+        let members: User[]
         try {
-            userPromises = fullUsersInGroup.map(async dbUser => {
-                const gammaUser = await clientApi.getUser(dbUser.gamma_id)
+            members = await Promise.all(offlineUsers.map(async offlineUser => {
+                const gammaUser = await clientApi.getUser(offlineUser.gammaId)
                     .catch(() => null)
-                if (!gammaUser) {
-                    console.warn(`Failed to get user ${dbUser.gamma_id} in group ${dbUser.group_gamma_id} from Gamma`)
+                if (gammaUser === null) {
+                    console.warn(`Failed to get user ${offlineUser.gammaId} in group ${gammaGroup.id} from Gamma`)
                 }
-                return convert.toUser(dbUser, gammaUser)
-            })
+                return completeUser(offlineUser, gammaUser)
+            }))
         } catch (e) {
             const message = `Failed to get users from gamma: ${e}`
             console.error(message)
             sendError(res, ApiError.InvalidGammaResponse)
             return
         }
-        const members = await Promise.all(userPromises)
 
-        const dbGroup: tableType.Groups = {
-            id: fullUsersInGroup[0].group_id,
-            gamma_id: fullUsersInGroup[0].group_gamma_id,
+        const offlineGroup: OfflineGroup = {
+            id: groupId,
+            gammaId: gammaGroupId,
         }
-        const group = convert.toGroup(dbGroup, gammaGroup)
+        const group = completeGroup(offlineGroup, gammaGroup)
+
         const body: ResponseBody<GroupResponse> = { data: { group, members } }
         res.json(body)
     } catch (error) {

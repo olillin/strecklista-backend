@@ -1,6 +1,6 @@
 import { prisma } from "../lib/prisma"
 import type { Item as PrismaItem } from "../../generated/prisma/client"
-import { ItemUpdateInput } from '../../generated/prisma/models';
+import { ItemSelect, ItemUpdateInput } from '../../generated/prisma/models';
 import { Decimal } from '@prisma/client/runtime/client';
 import { getFlag } from "../util/helpers";
 
@@ -73,79 +73,108 @@ export async function createItem(
 		return {
 			id: item.id,
 			createdTime: item.createdTime,
-			icon: item.iconUrl,
+			icon: item.iconUrl ?? undefined,
 			displayName: item.displayName,
 			prices: item.prices,
 			stock: 0,
 			timesPurchased: 0,
 			visible: true,
 			favorite: false,
-		}
+		} satisfies Item
     })
 }
 
-type ItemWithPrices = PrismaItem & {prices: Price[]}
+interface ItemData {
+    id: number,
+    displayName: string,
+    createdTime: Date,
+    groupId: number,
+    flags: number | null,
+    iconUrl: string | null,
+    prices: Price[],
 
-export async function getItem(itemId: number, userId: number): Promise<Item | null> {
-    const item = await prisma.item.findFirst({
-        where: {
-            id: itemId
-        },
-        include: {
-            prices: true,
+    favorites: {
+        itemId: number
+    }[],
 
-            favorites: {
-                where: {
-                    userId: userId,
-                },
-                select: {
-                    itemId: true
-                },
+    purchasedItems: {
+        quantity: number,
+        purchase: {
+            transaction: {
+                createdTime: Date
+            }
+        }
+    }[],
+
+    itemStockUpdates: {
+        after: number,
+        stockUpdate: {
+            transaction: {
+                createdTime: Date
+            }
+        }
+    }[]
+}
+
+function selectItemData(userId: number) {
+    return {
+        id: true,
+        displayName: true,
+        createdTime: true,
+        groupId: true,
+        flags: true,
+        iconUrl: true,
+        prices: true,
+
+        favorites: {
+            where: {
+                userId: userId,
             },
+            select: {
+                itemId: true
+            },
+        },
 
-            purchasedItems: {
-                select: {
-                    quantity: true,
-                    purchase: {
-                        select: {
-                            transaction: {
-                                select: {
-                                    createdTime: true
-                                }
+        purchasedItems: {
+            select: {
+                quantity: true,
+                purchase: {
+                    select: {
+                        transaction: {
+                            select: {
+                                createdTime: true
                             }
                         }
                     }
                 }
-            },
+            }
+        },
 
-            itemStockUpdates: {
-                orderBy: {
-                    stockUpdate: {
-                        transaction: {
-                            createdTime: 'desc'
-                        }
+        itemStockUpdates: {
+            orderBy: {
+                stockUpdate: {
+                    transaction: {
+                        createdTime: 'desc'
                     }
-                },
-                select: {
-                    after: true,
-                    stockUpdate: {
-                        select: {
-                            transaction: {
-                                select: {
-                                    createdTime: true
-                                }
+                }
+            },
+            select: {
+                after: true,
+                stockUpdate: {
+                    select: {
+                        transaction: {
+                            select: {
+                                createdTime: true
                             }
                         }
                     }
                 }
             }
         }
-    })
+    } satisfies ItemSelect
+}
 
-    if (item === null) {
-        return null
-    }
-
+function parseItem(item: ItemData): Item {
     // Calculate stock
     const latestStockUpdate = item.itemStockUpdates[0]
     const latestStock: number = latestStockUpdate.after
@@ -175,7 +204,30 @@ export async function getItem(itemId: number, userId: number): Promise<Item | nu
     }
 }
 
-export function getBareItem(itemId: number): Promise<ItemWithPrices | null> {
+export async function getItem(itemId: number, userId: number): Promise<Item | null> {
+    const item: ItemData | null = await prisma.item.findFirst({
+        where: {
+            id: itemId
+        },
+        select: selectItemData(userId)
+    })
+    if (item === null) return null
+    return parseItem(item)
+}
+
+export async function getItemsInGroup(groupId: number, userId: number): Promise<Item[]> {
+    const items: ItemData[] = await prisma.item.findMany({
+        where: {
+            groupId: groupId
+        },
+        select: selectItemData(userId)
+    })
+    return items.map(item => parseItem(item))
+}
+
+export type BareItemWithPrices = PrismaItem & {prices: Price[]}
+
+export function getBareItem(itemId: number): Promise<BareItemWithPrices | null> {
     return prisma.item.findFirst({
         where: {
             id: itemId
@@ -308,10 +360,13 @@ export async function isItemVisible(itemId: number): Promise<boolean> {
     return ((item.flags ?? 0) & ItemFlag.INVISIBLE) === 0
 }
 
-export async function deleteItem(itemId: number): Promise<void> {
+export async function deleteItem(itemId: number, groupId: number): Promise<void> {
     return prisma.item.delete({
         where: {
-            id: itemId
+            id: itemId,
+            group: {
+                id: groupId
+            }
         }
     }).then(() => undefined)
 }

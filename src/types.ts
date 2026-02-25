@@ -2,7 +2,8 @@ import { GroupId, UserId } from 'gammait'
 import { JwtPayload } from 'jsonwebtoken'
 import { itemSortModes } from './middleware/validators'
 import { ApiError } from './errors'
-import { Decimal } from '@prisma/client/runtime/client'
+import { Item, Price } from './services/itemService'
+import { Transaction, TransactionType } from './services/transactionService'
 
 // #region Basic types
 export interface Group {
@@ -25,66 +26,7 @@ export interface User {
     balance: number
 }
 
-export interface Item {
-    id: number
-    createdTime: Date
-    icon?: string
-    displayName: string
-    prices: Price[]
-    stock: number
-    timesPurchased: number
-    visible: boolean
-    favorite: boolean
-}
 
-export interface Price {
-    price: Decimal
-    displayName: string
-}
-
-export type TransactionType = 'purchase' | 'deposit' | 'stockUpdate'
-export interface Transaction<T extends TransactionType> {
-    type: T
-    id: number
-
-    createdBy: number
-    createdTime: Date
-
-    removed: boolean
-
-    comment?: string
-}
-export type AnyTransaction = Purchase | Deposit | StockUpdate
-
-export interface Purchase extends Transaction<'purchase'> {
-    createdFor: number
-    items: PurchasedItem[]
-}
-
-export interface PurchasedItem {
-    item: {
-        id?: number
-        displayName: string
-        icon?: string
-    }
-    quantity: number
-    purchasePrice: Price
-}
-
-export interface Deposit extends Transaction<'deposit'> {
-    createdFor: number
-    total: number
-}
-
-export interface StockUpdate extends Transaction<'stockUpdate'> {
-    items: ItemStockUpdate[]
-}
-
-export interface ItemStockUpdate {
-    id: number
-    before: number
-    after: number
-}
 // #endregion Basic types
 
 // #region Response types

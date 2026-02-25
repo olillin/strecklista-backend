@@ -13,11 +13,9 @@ import {
     User,
     UserResponse,
 } from '../types'
-import * as tableType from '../database/types'
-import {FullItemWithPrices} from '../database/types'
 import * as gamma from 'gammait'
 import {groupAvatarUrl, userAvatarUrl} from 'gammait/urls'
-import {getFlag, getTransactionFlags, ItemFlags} from "../flags";
+import {getFlag, parseTransactionFlags, ItemFlags} from "../flags";
 
 export function splitFullItemWithPrices(
     fullItemWithPrices: tableType.FullItemWithPrices[]

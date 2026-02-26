@@ -1,8 +1,12 @@
-import {GroupWithPost} from 'gammait'
+import { GroupWithPost } from 'gammait'
 import environment from '../config/env'
 
-export function getAuthorizedGroup(groups: GroupWithPost[]): GroupWithPost | undefined {
-    return groups.find(group => group.superGroup.id === environment.SUPER_GROUP_ID)
+export function getAuthorizedGroup(
+    groups: GroupWithPost[]
+): GroupWithPost | undefined {
+    return groups.find(
+        group => group.superGroup.id === environment.SUPER_GROUP_ID
+    )
 }
 
 export function isValidComment(comment: string | undefined | null): boolean {
@@ -14,7 +18,10 @@ export function isValidComment(comment: string | undefined | null): boolean {
  * @param bits The bitfield data
  * @param flagIndex Which flag to get, as an index from the least significant bit
  */
-export function getFlag(bits: number | null | undefined, flagIndex: number): boolean {
+export function getFlag(
+    bits: number | null | undefined,
+    flagIndex: number
+): boolean {
     if (!bits) return false
     return !!((bits >> flagIndex) & 0b1)
 }

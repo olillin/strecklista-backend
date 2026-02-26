@@ -1,9 +1,9 @@
-import {Request, Response} from "express";
-import {getUserId} from "../../middleware/validateToken";
-import {ItemResponse, ResponseBody} from "../../responses";
-import { updateItem, Price, ItemPatch } from "../../services/itemService";
-import { JsonPrice } from "./postPurchase";
-import { Decimal } from "@prisma/client/runtime/client";
+import { Request, Response } from 'express'
+import { getUserId } from '../../middleware/validateToken'
+import { ItemResponse, ResponseBody } from '../../responses'
+import { updateItem, Price, ItemPatch } from '../../services/itemService'
+import { JsonPrice } from './postPurchase'
+import { Decimal } from '@prisma/client/runtime/client'
 
 export interface PatchItemBody {
     icon?: string
@@ -26,18 +26,23 @@ export default async function patchItem(req: Request, res: Response) {
 
 function createItemPatch(body: PatchItemBody): ItemPatch {
     const { icon, displayName, visible, favorite, prices: jsonPrices } = body
-    const prices = jsonPrices?.map(price => ({
-        displayName: price.displayName,
-        price: new Decimal(price.price)
-    } satisfies Price))
+    const prices = jsonPrices?.map(
+        price =>
+            ({
+                displayName: price.displayName,
+                price: new Decimal(price.price),
+            }) satisfies Price
+    )
     return {
         displayName,
         iconUrl: icon,
         prices,
         favorite,
-        flags: visible === undefined ? undefined
-            : {
-                invisible: !visible,
-            },
+        flags:
+            visible === undefined
+                ? undefined
+                : {
+                      invisible: !visible,
+                  },
     }
 }

@@ -16,5 +16,5 @@ Backend of the "strecklista" developed by
 ## Acknowledgements
 
 - [Erik Persson](https://github.com/erikpersson0884) for developing the frontend
-intended to be used with this service
-([erikpersson0884/strecklista](https://github.com/erikpersson0884/strecklista)).
+  intended to be used with this service
+  ([erikpersson0884/strecklista](https://github.com/erikpersson0884/strecklista)).

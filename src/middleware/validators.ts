@@ -2,7 +2,11 @@ import { body, Meta, oneOf, param, query } from 'express-validator'
 import { verifyToken } from './validateToken'
 import { ApiError } from '../errors'
 import { isUserInGroup } from '../services/userService'
-import { isItemVisible, itemExistsInGroup, itemNameExistsInGroup } from '../services/itemService'
+import {
+    isItemVisible,
+    itemExistsInGroup,
+    itemNameExistsInGroup,
+} from '../services/itemService'
 import { transactionExistsInGroup } from '../services/transactionService'
 
 //#region Util
@@ -53,10 +57,7 @@ export async function checkTransactionExistsInGroup(
     meta: Meta
 ): Promise<void> {
     const groupId = getGroupId(meta)
-    const exists = await transactionExistsInGroup(
-        parseInt(value),
-        groupId
-    )
+    const exists = await transactionExistsInGroup(parseInt(value), groupId)
     if (!exists) {
         throw ApiError.TransactionNotExist
     }
@@ -129,9 +130,7 @@ export const patchTransaction = () => [
         .withMessage(ApiError.InvalidTransactionId)
         .bail()
         .custom(checkTransactionExistsInGroup),
-    body('removed')
-        .optional()
-        .isBoolean({ strict: true })
+    body('removed').optional().isBoolean({ strict: true }),
 ]
 
 export const postPurchase = () => [
@@ -161,7 +160,12 @@ export const postPurchase = () => [
     body('items.*.purchasePrice').exists().isObject(),
     body('items.*.purchasePrice.price').exists().isDecimal(),
     body('items.*.purchasePrice.displayName').exists().isString().trim(),
-    body('comment').optional().isString().trim().isLength({ max: 1000 }).withMessage(ApiError.InvalidComment),
+    body('comment')
+        .optional()
+        .isString()
+        .trim()
+        .isLength({ max: 1000 })
+        .withMessage(ApiError.InvalidComment),
 ]
 
 export const postDeposit = () => [
@@ -172,7 +176,12 @@ export const postDeposit = () => [
         .bail()
         .custom(checkUserExistsInGroup),
     body('total').exists().isDecimal().withMessage(ApiError.InvalidTotal),
-    body('comment').optional().isString().trim().isLength({ max: 1000 }).withMessage(ApiError.InvalidComment),
+    body('comment')
+        .optional()
+        .isString()
+        .trim()
+        .isLength({ max: 1000 })
+        .withMessage(ApiError.InvalidComment),
 ]
 
 export const postStockUpdate = () => [
@@ -191,7 +200,12 @@ export const postStockUpdate = () => [
         .isInt()
         .withMessage(ApiError.StockItemCount),
     body('items.*.absolute').optional().isBoolean(),
-    body('comment').optional().isString().trim().isLength({ max: 1000 }).withMessage(ApiError.InvalidComment),
+    body('comment')
+        .optional()
+        .isString()
+        .trim()
+        .isLength({ max: 1000 })
+        .withMessage(ApiError.InvalidComment),
 ]
 
 export const itemSortModes = [
@@ -205,7 +219,7 @@ export const itemSortModes = [
     'high_stock',
     'low_stock',
 ] as const
-export type ItemSortMode = typeof itemSortModes[number]
+export type ItemSortMode = (typeof itemSortModes)[number]
 
 export const getItems = () => [
     query('sort')

@@ -1,10 +1,14 @@
-import {Request, Response} from "express";
-import {clientApi} from "../../config/gamma";
-import {getGammaUserId, getGroupId, getUserId} from "../../middleware/validateToken";
-import {ApiError, sendError} from "../../errors";
-import {ResponseBody, toUserResponse, UserResponse} from "../../responses";
-import {UserId} from "gammait";
-import {getAuthorizedGroup} from "../../util/helpers";
+import { Request, Response } from 'express'
+import { clientApi } from '../../config/gamma'
+import {
+    getGammaUserId,
+    getGroupId,
+    getUserId,
+} from '../../middleware/validateToken'
+import { ApiError, sendError } from '../../errors'
+import { ResponseBody, toUserResponse, UserResponse } from '../../responses'
+import { UserId } from 'gammait'
+import { getAuthorizedGroup } from '../../util/helpers'
 import * as userService from '../../services/userService'
 
 export default async function getUser(req: Request, res: Response) {

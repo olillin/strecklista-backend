@@ -1,7 +1,7 @@
-import {Request, Response} from "express";
-import {ResponseBody, TransactionResponse} from "../../responses";
-import {getGroupId, getUserId} from "../../middleware/validateToken";
-import { createStockUpdate } from "../../services/transactionService";
+import { Request, Response } from 'express'
+import { ResponseBody, TransactionResponse } from '../../responses'
+import { getGroupId, getUserId } from '../../middleware/validateToken'
+import { createStockUpdate } from '../../services/transactionService'
 
 export interface PostStockUpdateBody {
     items: PostItemStockUpdate[]
@@ -15,14 +15,19 @@ export interface PostItemStockUpdate {
 }
 
 export default async function postStockUpdate(req: Request, res: Response) {
-    const {items, comment} = req.body as PostStockUpdateBody
+    const { items, comment } = req.body as PostStockUpdateBody
 
     const groupId: number = getGroupId(res)
     const createdBy: number = getUserId(res)
 
-    const stockUpdate = await createStockUpdate(groupId, createdBy, comment ?? null, items)
+    const stockUpdate = await createStockUpdate(
+        groupId,
+        createdBy,
+        comment ?? null,
+        items
+    )
     const body: ResponseBody<TransactionResponse> = {
-        data: {transaction: stockUpdate},
+        data: { transaction: stockUpdate },
     }
 
     const resourceUri = req.baseUrl + `/group/transaction/${stockUpdate.id}`

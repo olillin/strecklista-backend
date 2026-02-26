@@ -84,33 +84,60 @@ const errorDefinitions: { [key in ApiError]: ErrorDefinition } = {
     [ApiError.NoPermission]: err(403, 'No permission to access this service'),
 
     // Gamma
-    [ApiError.GammaToken]: err(502, 'Failed to get token from Gamma, your authorization code may be invalid'),
-    [ApiError.InvalidGammaResponse]: err(502, 'Received an invalid response from Gamma'),
+    [ApiError.GammaToken]: err(
+        502,
+        'Failed to get token from Gamma, your authorization code may be invalid'
+    ),
+    [ApiError.InvalidGammaResponse]: err(
+        502,
+        'Received an invalid response from Gamma'
+    ),
     [ApiError.UnreachableGamma]: err(504, 'Unable to reach Gamma'),
     [ApiError.FailedGetGroups]: err(502, 'Failed to get groups for user'),
 
     // Login
     [ApiError.NoAuthorizationCode]: err(401, 'No authorization code provided'),
-    [ApiError.AuthorizationCodeUsed]: err(401, 'Authorization code has already been used'),
+    [ApiError.AuthorizationCodeUsed]: err(
+        401,
+        'Authorization code has already been used'
+    ),
 
     // Create purchase
-    [ApiError.PurchaseItemCount]: err(400, 'Item count must be an integer greater than 0'),
+    [ApiError.PurchaseItemCount]: err(
+        400,
+        'Item count must be an integer greater than 0'
+    ),
     [ApiError.PurchaseNothing]: err(400, 'Must purchase at least one item'),
-    [ApiError.PurchaseInvisible]: err(403, 'Cannot purchase a non-visible item'),
-    [ApiError.InvalidComment]: err(400, 'Comment must not be longer than 1000 characters'),
+    [ApiError.PurchaseInvisible]: err(
+        403,
+        'Cannot purchase a non-visible item'
+    ),
+    [ApiError.InvalidComment]: err(
+        400,
+        'Comment must not be longer than 1000 characters'
+    ),
 
     // Create deposit
     [ApiError.InvalidTotal]: err(400, 'Total must be a number'),
 
     // Create stock update
     [ApiError.StockItemCount]: err(400, 'Item quantity must be an integer'),
-    [ApiError.StockNothing]: err(400, 'Must update the stock of at least one item'),
+    [ApiError.StockNothing]: err(
+        400,
+        'Must update the stock of at least one item'
+    ),
 
     // Delete transaction
-    [ApiError.CannotDeleteTransaction]: err(405, "Transactions cannot be deleted, please use PATCH and the 'removed' flag"),
+    [ApiError.CannotDeleteTransaction]: err(
+        405,
+        "Transactions cannot be deleted, please use PATCH and the 'removed' flag"
+    ),
 
     // List purchase
-    [ApiError.InvalidLimit]: err(400, 'Limit must be an integer between 1 and 100'),
+    [ApiError.InvalidLimit]: err(
+        400,
+        'Limit must be an integer between 1 and 100'
+    ),
     [ApiError.InvalidOffset]: err(400, 'Offset must be a positive integer'),
 
     // Create/modify Item
@@ -135,16 +162,25 @@ export function getErrorMessage(error: ApiError): string {
 }
 
 // #region Parameterized Errors
-export function missingRequiredPropertyError(name: string, location: Location): ErrorDefinition {
+export function missingRequiredPropertyError(
+    name: string,
+    location: Location
+): ErrorDefinition {
     return err(400, `Missing required property '${name}' in ${location}`)
 }
 
-export function invalidPropertyError(name: string, location: Location): ErrorDefinition {
+export function invalidPropertyError(
+    name: string,
+    location: Location
+): ErrorDefinition {
     return err(400, `Property '${name}' is invalid in ${location}`)
 }
 
 export function unexpectedError(details: string) {
-    return err(500, `An unexpected issue occured. Please create an issue on GitHub. Details: ${details}`)
+    return err(
+        500,
+        `An unexpected issue occured. Please create an issue on GitHub. Details: ${details}`
+    )
 }
 
 export function tokenSignError(details: string): ErrorDefinition {
@@ -163,7 +199,11 @@ export function resolveError(error: ErrorResolvable): ErrorDefinition {
 
 export function sendError(res: Response, error: ErrorResolvable): void
 export function sendError(res: Response, code: number, message: string): void
-export function sendError(res: Response, a: number | ErrorResolvable, b?: string): void {
+export function sendError(
+    res: Response,
+    a: number | ErrorResolvable,
+    b?: string
+): void {
     if (res.headersSent) return
 
     let code: number

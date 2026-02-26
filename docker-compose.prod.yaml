@@ -15,8 +15,8 @@ services:
             - database-url
         environment:
             NODE_ENV: production
-            GAMMA_REDIRECT_URI: "YOUR GAMMA REDIRECT URI"
-            GAMMA_CLIENT_ID: "YOUR GAMMA CLIENT ID"
+            GAMMA_REDIRECT_URI: 'YOUR GAMMA REDIRECT URI'
+            GAMMA_CLIENT_ID: 'YOUR GAMMA CLIENT ID'
             GAMMA_CLIENT_SECRET_FILE: /run/secrets/gamma-client-secret
             GAMMA_API_AUTHORIZATION_FILE: /run/secrets/gamma-api-authorization
             JWT_SECRET_FILE: /run/secrets/jwt-secret

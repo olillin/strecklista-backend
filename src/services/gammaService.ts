@@ -1,8 +1,8 @@
-import * as gamma from "gammait"
-import { GroupId, UserId } from "gammait"
-import { groupAvatarUrl, userAvatarUrl } from "gammait/urls"
-import { OfflineGroup, OfflineUser } from "./userService"
-import { Decimal } from "@prisma/client/runtime/client"
+import * as gamma from 'gammait'
+import { GroupId, UserId } from 'gammait'
+import { groupAvatarUrl, userAvatarUrl } from 'gammait/urls'
+import { OfflineGroup, OfflineUser } from './userService'
+import { Decimal } from '@prisma/client/runtime/client'
 
 export interface Group {
     id: number
@@ -29,9 +29,12 @@ export function isUserInfo(gammaUser: GammaUser): gammaUser is gamma.UserInfo {
     return 'sub' in gammaUser
 }
 
-export const NOT_AVAILABLE: string = "N/A"
+export const NOT_AVAILABLE: string = 'N/A'
 
-export function completeGroup(offlineGroup: OfflineGroup, gammaGroup: gamma.Group | null): Group {
+export function completeGroup(
+    offlineGroup: OfflineGroup,
+    gammaGroup: gamma.Group | null
+): Group {
     return {
         id: offlineGroup.id,
         gammaId: offlineGroup.gammaId,
@@ -40,25 +43,28 @@ export function completeGroup(offlineGroup: OfflineGroup, gammaGroup: gamma.Grou
     }
 }
 
-export function completeUser(offlineUser: OfflineUser, gammaUser: GammaUser | null): User {
+export function completeUser(
+    offlineUser: OfflineUser,
+    gammaUser: GammaUser | null
+): User {
     const names =
         gammaUser === null
             ? {
-                  nick:NOT_AVAILABLE,
-                  firstName:NOT_AVAILABLE,
-                  lastName:NOT_AVAILABLE,
+                  nick: NOT_AVAILABLE,
+                  firstName: NOT_AVAILABLE,
+                  lastName: NOT_AVAILABLE,
               }
             : isUserInfo(gammaUser)
-            ? {
-                  nick: gammaUser.nickname,
-                  firstName: gammaUser.given_name,
-                  lastName: gammaUser.family_name,
-              }
-            : {
-                  nick: gammaUser.nick,
-                  firstName: gammaUser.firstName,
-                  lastName: gammaUser.lastName,
-              }
+              ? {
+                    nick: gammaUser.nickname,
+                    firstName: gammaUser.given_name,
+                    lastName: gammaUser.family_name,
+                }
+              : {
+                    nick: gammaUser.nick,
+                    firstName: gammaUser.firstName,
+                    lastName: gammaUser.lastName,
+                }
 
     return {
         id: offlineUser.id,

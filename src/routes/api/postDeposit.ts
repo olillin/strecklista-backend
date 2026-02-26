@@ -1,8 +1,5 @@
 import { Request, Response } from 'express'
-import {
-    CreatedTransactionResponse,
-    ResponseBody,
-} from '../../responses'
+import { CreatedTransactionResponse, ResponseBody } from '../../responses'
 import { getGroupId, getUserId } from '../../middleware/validateToken'
 import { sendError, unexpectedError } from '../../errors'
 import { createDeposit } from '../../services/transactionService'
@@ -25,7 +22,7 @@ export default async function postDeposit(req: Request, res: Response) {
         createdBy,
         createdFor,
         comment ?? null,
-        total,
+        total
     )
     const user = await getUser(createdFor, groupId)
     if (!user) {

@@ -2,11 +2,11 @@ import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
-console.log("Adding example data")
+console.log('Adding example data')
 
 async function main() {
     // Group 1
-    console.log("Creating group 1")
+    console.log('Creating group 1')
     const group1 = await prisma.group.create({
         data: {
             gammaId: '3cf94646-2412-4896-bba9-5d2410ac0c62', // P.R.I.T. 25
@@ -75,7 +75,7 @@ async function main() {
     })
 
     // Group 1 Transactions
-    console.log("Creating group 1 transactions")
+    console.log('Creating group 1 transactions')
     await prisma.transaction.create({
         data: {
             groupId: group1.id,
@@ -150,7 +150,7 @@ async function main() {
     })
 
     // Group 2
-    console.log("Creating group 2")
+    console.log('Creating group 2')
     const group2 = await prisma.group.create({
         data: {
             gammaId: '8b2ac9fc-22c3-40f8-aa33-89b02d1a260b', // P.R.I.T. 24
@@ -203,7 +203,7 @@ async function main() {
     })
 
     // Group 2 Transactions
-    console.log("Creating group 2 transactions")
+    console.log('Creating group 2 transactions')
     await prisma.transaction.create({
         data: {
             groupId: group2.id,

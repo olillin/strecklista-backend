@@ -1,9 +1,15 @@
-import { JWT } from "./routes/login"
-import { User, Group, completeUser, completeGroup, GammaUser } from "./services/gammaService"
-import { Item } from "./services/itemService"
-import { Transaction, TransactionType } from "./services/transactionService"
-import { OfflineGroupUser } from "./services/userService"
-import * as gamma from "gammait"
+import { JWT } from './routes/login'
+import {
+    User,
+    Group,
+    completeUser,
+    completeGroup,
+    GammaUser,
+} from './services/gammaService'
+import { Item } from './services/itemService'
+import { Transaction, TransactionType } from './services/transactionService'
+import { OfflineGroupUser } from './services/userService'
+import * as gamma from 'gammait'
 
 export type ResponseBody<T> = [T] extends [never]
     ? { error: ResponseError }

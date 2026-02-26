@@ -1,9 +1,9 @@
-import {Request, RequestHandler, Response} from 'express'
+import { Request, RequestHandler, Response } from 'express'
 import { GroupId, GroupWithPost, UserId, UserInfo } from 'gammait'
 import jwt from 'jsonwebtoken'
 import { authorizationCode, clientApi } from '../config/gamma'
 import env from '../config/env'
-import {ApiError, sendError, tokenSignError, unexpectedError} from '../errors'
+import { ApiError, sendError, tokenSignError, unexpectedError } from '../errors'
 import { getAuthorizedGroup } from '../util/helpers'
 import { softAddGroupUser } from '../services/userService'
 import { toLoginResponse } from '../responses'
@@ -21,17 +21,17 @@ export interface LoggedInUser {
 }
 
 export function isLoggedInUser(value: unknown): value is LoggedInUser {
-    if (typeof value !== "object" || value === null) {
+    if (typeof value !== 'object' || value === null) {
         return false
     }
- 
+
     const obj = value as Record<string, unknown>
 
     return (
-        typeof obj.userId === "number" &&
-        typeof obj.groupId === "number" &&
-        "gammaUserId" in obj &&
-        "gammaGroupId" in obj
+        typeof obj.userId === 'number' &&
+        typeof obj.groupId === 'number' &&
+        'gammaUserId' in obj &&
+        'gammaGroupId' in obj
     )
 }
 
@@ -76,20 +76,26 @@ export function login(): RequestHandler {
         try {
             await authorizationCode.generateToken(code)
         } catch (error) {
-            const unreachable = (error as NodeJS.ErrnoException)?.code === 'ENOTFOUND'
-                || (error as NodeJS.ErrnoException)?.code === 'ECONNREFUSED'
-                if (unreachable) {
-                    console.warn(`Unable to reach Gamma when logging in user: ${(error as Error).message}`)
-                    sendError(res, ApiError.UnreachableGamma)
+            const unreachable =
+                (error as NodeJS.ErrnoException)?.code === 'ENOTFOUND' ||
+                (error as NodeJS.ErrnoException)?.code === 'ECONNREFUSED'
+            if (unreachable) {
+                console.warn(
+                    `Unable to reach Gamma when logging in user: ${(error as Error).message}`
+                )
+                sendError(res, ApiError.UnreachableGamma)
+            } else {
+                console.error(`Failed to get token from Gamma: ${error}`)
+                if (
+                    error instanceof Error &&
+                    (error as Error).message.includes('400')
+                ) {
+                    sendError(res, ApiError.AuthorizationCodeUsed)
                 } else {
-                    console.error(`Failed to get token from Gamma: ${error}`)
-                    if (error instanceof Error && (error as Error).message.includes('400')) {
-                        sendError(res, ApiError.AuthorizationCodeUsed)
-                    } else {
-                        sendError(res, ApiError.GammaToken)
-                    }
+                    sendError(res, ApiError.GammaToken)
                 }
-                return
+            }
+            return
         }
 
         let userInfo: UserInfo
@@ -130,12 +136,7 @@ export function login(): RequestHandler {
             gammaGroupId: groupUser.group.gammaId,
         })
             .then(token => {
-                const body = toLoginResponse(
-                    groupUser,
-                    userInfo,
-                    group,
-                    token
-                )
+                const body = toLoginResponse(groupUser, userInfo, group, token)
                 res.json(body)
             })
             .catch(error => {

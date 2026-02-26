@@ -1,8 +1,8 @@
-import { prisma } from "../lib/prisma"
-import type { Item as PrismaItem } from "../generated/prisma/client"
-import { ItemSelect, ItemUpdateInput } from '../generated/prisma/models';
-import { Decimal } from '@prisma/client/runtime/client';
-import { getFlag } from "../util/helpers";
+import { prisma } from '../lib/prisma'
+import type { Item as PrismaItem } from '../generated/prisma/client'
+import { ItemSelect, ItemUpdateInput } from '../generated/prisma/models'
+import { Decimal } from '@prisma/client/runtime/client'
+import { getFlag } from '../util/helpers'
 
 export interface Item {
     id: number
@@ -22,7 +22,7 @@ export interface Price {
 }
 
 export enum ItemFlag {
-    INVISIBLE = 0
+    INVISIBLE = 0,
 }
 
 export interface ItemFlags {
@@ -65,59 +65,61 @@ export async function createItem(
     prices: Price[],
     iconUrl?: string
 ): Promise<Item> {
-    return prisma.item.create({
-        data: {
-            groupId: groupId,
-            displayName: displayName,
-            prices: {
-                createMany: {
-                    data: prices
-                }
+    return prisma.item
+        .create({
+            data: {
+                groupId: groupId,
+                displayName: displayName,
+                prices: {
+                    createMany: {
+                        data: prices,
+                    },
+                },
+                iconUrl: iconUrl,
             },
-            iconUrl: iconUrl
-        },
-        include: {
-            prices: true,
-        }
-    }).then(item => {
-		return {
-			id: item.id,
-			createdTime: item.createdTime,
-			icon: item.iconUrl ?? undefined,
-			displayName: item.displayName,
-			prices: item.prices,
-			stock: 0,
-			timesPurchased: 0,
-			visible: true,
-			favorite: false,
-		} satisfies Item
-    })
+            include: {
+                prices: true,
+            },
+        })
+        .then(item => {
+            return {
+                id: item.id,
+                createdTime: item.createdTime,
+                icon: item.iconUrl ?? undefined,
+                displayName: item.displayName,
+                prices: item.prices,
+                stock: 0,
+                timesPurchased: 0,
+                visible: true,
+                favorite: false,
+            } satisfies Item
+        })
 }
 
 interface ItemData {
-    id: number,
-    displayName: string,
-    createdTime: Date,
-    groupId: number,
-    flags: number | null,
-    iconUrl: string | null,
-    prices: Price[],
+    id: number
+    displayName: string
+    createdTime: Date
+    groupId: number
+    flags: number | null
+    iconUrl: string | null
+    prices: Price[]
 
     favorites: {
         itemId: number
-    }[],
+    }[]
 
     purchasedItems: {
-        quantity: number,
+        quantity: number
         purchase: {
             transaction: {
                 createdTime: Date
             }
         }
-    }[],
+    }[]
 
     itemStockUpdates: {
-        after: number,
+        after: number
         stockUpdate: {
             transaction: {
                 createdTime: Date
@@ -141,7 +143,7 @@ function selectItemData(userId: number) {
                 userId: userId,
             },
             select: {
-                itemId: true
+                itemId: true,
             },
         },
 
@@ -152,21 +154,21 @@ function selectItemData(userId: number) {
                     select: {
                         transaction: {
                             select: {
-                                createdTime: true
-                            }
-                        }
-                    }
-                }
-            }
+                                createdTime: true,
+                            },
+                        },
+                    },
+                },
+            },
         },
 
         itemStockUpdates: {
             orderBy: {
                 stockUpdate: {
                     transaction: {
-                        createdTime: 'desc'
-                    }
-                }
+                        createdTime: 'desc',
+                    },
+                },
             },
             select: {
                 after: true,
@@ -174,13 +176,13 @@ function selectItemData(userId: number) {
                     select: {
                         transaction: {
                             select: {
-                                createdTime: true
-                            }
-                        }
-                    }
-                }
-            }
-        }
+                                createdTime: true,
+                            },
+                        },
+                    },
+                },
+            },
+        },
     } satisfies ItemSelect
 }
 
@@ -188,14 +190,21 @@ function parseItem(item: ItemData): Item {
     // Calculate stock
     const latestStockUpdate = item.itemStockUpdates[0]
     const latestStock: number = latestStockUpdate?.after ?? 0
-    const latestStockDate: Date | undefined = latestStockUpdate?.stockUpdate.transaction.createdTime
+    const latestStockDate: Date | undefined =
+        latestStockUpdate?.stockUpdate.transaction.createdTime
     const purchasedAfterStock: number = item.purchasedItems
-        .filter(p => latestStockUpdate === undefined
-            || p.purchase.transaction.createdTime >= latestStockDate)
+        .filter(
+            p =>
+                latestStockUpdate === undefined ||
+                p.purchase.transaction.createdTime >= latestStockDate
+        )
         .reduce((sum, p) => sum + p.quantity, 0)
     const stock: number = latestStock - purchasedAfterStock
 
-    const totalPurchased: number = item.purchasedItems.reduce((sum, p) => sum + p.quantity, 0)
+    const totalPurchased: number = item.purchasedItems.reduce(
+        (sum, p) => sum + p.quantity,
+        0
+    )
 
     // Get other properties
     const flags = parseItemFlags(item.flags ?? 0)
@@ -214,37 +223,45 @@ function parseItem(item: ItemData): Item {
     }
 }
 
-export async function getItem(itemId: number, userId: number): Promise<Item | null> {
+export async function getItem(
+    itemId: number,
+    userId: number
+): Promise<Item | null> {
     const item: ItemData | null = await prisma.item.findFirst({
         where: {
-            id: itemId
+            id: itemId,
         },
-        select: selectItemData(userId)
+        select: selectItemData(userId),
     })
     if (item === null) return null
     return parseItem(item)
 }
 
-export async function getItemsInGroup(groupId: number, userId: number): Promise<Item[]> {
+export async function getItemsInGroup(
+    groupId: number,
+    userId: number
+): Promise<Item[]> {
     const items: ItemData[] = await prisma.item.findMany({
         where: {
-            groupId: groupId
+            groupId: groupId,
         },
-        select: selectItemData(userId)
+        select: selectItemData(userId),
     })
     return items.map(item => parseItem(item))
 }
 
-export type BareItemWithPrices = PrismaItem & {prices: Price[]}
+export type BareItemWithPrices = PrismaItem & { prices: Price[] }
 
-export function getBareItem(itemId: number): Promise<BareItemWithPrices | null> {
+export function getBareItem(
+    itemId: number
+): Promise<BareItemWithPrices | null> {
     return prisma.item.findFirst({
         where: {
-            id: itemId
+            id: itemId,
         },
         include: {
             prices: true,
-        }
+        },
     })
 }
 
@@ -266,31 +283,31 @@ export async function updateItem(
     const queuedChanges: (() => Promise<any>)[] = []
 
     const updateFlags = async (flags: Partial<ItemFlags>) => {
-        const currentFlags: ItemFlags = await getBareItem(itemId).then(
-            item => parseItemFlags(item?.flags ?? 0)
+        const currentFlags: ItemFlags = await getBareItem(itemId).then(item =>
+            parseItemFlags(item?.flags ?? 0)
         )
         const newFlags: ItemFlags = Object.assign(currentFlags, flags)
         updateData.flags = serializeItemFlags(newFlags)
     }
 
     const updatePrices = (prices: Price[]) => {
-        queuedChanges.push(() => 
+        queuedChanges.push(() =>
             prisma.price.deleteMany({
-                where: {itemId: itemId}
+                where: { itemId: itemId },
             })
-          )
+        )
         queuedChanges.push(() =>
             prisma.item.update({
                 where: {
-                    id: itemId
+                    id: itemId,
                 },
                 data: {
                     prices: {
                         createMany: {
-                            data: prices
-                        }
-                    }
-                }
+                            data: prices,
+                        },
+                    },
+                },
             })
         )
     }
@@ -319,15 +336,17 @@ export async function updateItem(
         }
     })
 
-    queuedChanges.push(() => prisma.item.update({
-        where: {
-            id: itemId
-        },
-        data: updateData,
-        include: {
-            prices: true
-        }
-    }))
+    queuedChanges.push(() =>
+        prisma.item.update({
+            where: {
+                id: itemId,
+            },
+            data: updateData,
+            include: {
+                prices: true,
+            },
+        })
+    )
 
     await prisma.$transaction(async () => {
         for (const change of queuedChanges) {
@@ -342,57 +361,66 @@ export async function updateItem(
     return item
 }
 
-export async function itemExistsInGroup(itemId: number, groupId: number): Promise<boolean> {
-    return prisma.item.findFirst({
-        where: {
-            id: itemId,
-            groupId: groupId,
-        }
-    }).then(item => item !== null)
+export async function itemExistsInGroup(
+    itemId: number,
+    groupId: number
+): Promise<boolean> {
+    return prisma.item
+        .findFirst({
+            where: {
+                id: itemId,
+                groupId: groupId,
+            },
+        })
+        .then(item => item !== null)
 }
 
 export async function itemNameExistsInGroup(
     name: string,
     groupId: number
 ): Promise<boolean> {
-    return prisma.item.findFirst({
-        where: {
-            displayName: name,
-            groupId: groupId,
-        }
-    }).then(item => item !== null)
+    return prisma.item
+        .findFirst({
+            where: {
+                displayName: name,
+                groupId: groupId,
+            },
+        })
+        .then(item => item !== null)
 }
 
 export async function isItemVisible(itemId: number): Promise<boolean> {
     const item = await getBareItem(itemId)
     if (item === null) {
-        throw new Error("Item does not exist")
+        throw new Error('Item does not exist')
     }
     return ((item.flags ?? 0) & ItemFlag.INVISIBLE) === 0
 }
 
-export async function deleteItem(itemId: number, groupId: number): Promise<void> {
-    return prisma.item.delete({
-        where: {
-            id: itemId,
-            group: {
-                id: groupId
-            }
-        }
-    }).then(() => undefined)
+export async function deleteItem(
+    itemId: number,
+    groupId: number
+): Promise<void> {
+    return prisma.item
+        .delete({
+            where: {
+                id: itemId,
+                group: {
+                    id: groupId,
+                },
+            },
+        })
+        .then(() => undefined)
 }
 
 // Prices
-export async function addPrice(
-    itemId: number,
-    price: Price,
-): Promise<Price> {
+export async function addPrice(itemId: number, price: Price): Promise<Price> {
     return prisma.price.create({
         data: {
             itemId: itemId,
             price: price.price,
             displayName: price.displayName,
-        }
+        },
     })
 }
 
@@ -401,32 +429,44 @@ export async function addFavorite(
     userId: number,
     itemId: number
 ): Promise<void> {
-    return prisma.favoriteItem.create({
-        data: {
-             userId: userId,
-             itemId: itemId
-        }
-    }).then(() => undefined)
+    return prisma.favoriteItem
+        .create({
+            data: {
+                userId: userId,
+                itemId: itemId,
+            },
+        })
+        .then(() => undefined)
 }
 
-export async function removeFavorite(userId: number, itemId: number): Promise<void> {
-    return prisma.favoriteItem.delete({
-        where: {
-             userId_itemId: {
-                 userId: userId,
-                 itemId: itemId
-             }
-        }
-    }).then(() => undefined)
+export async function removeFavorite(
+    userId: number,
+    itemId: number
+): Promise<void> {
+    return prisma.favoriteItem
+        .delete({
+            where: {
+                userId_itemId: {
+                    userId: userId,
+                    itemId: itemId,
+                },
+            },
+        })
+        .then(() => undefined)
 }
 
-export async function hasFavorite(userId: number, itemId: number): Promise<boolean> {
-    return prisma.favoriteItem.findFirst({
-        where: {
-            userId: userId,
-            itemId: itemId
-        }
-    }).then(favoriteItem => {
-        return favoriteItem !== null
-    })
+export async function hasFavorite(
+    userId: number,
+    itemId: number
+): Promise<boolean> {
+    return prisma.favoriteItem
+        .findFirst({
+            where: {
+                userId: userId,
+                itemId: itemId,
+            },
+        })
+        .then(favoriteItem => {
+            return favoriteItem !== null
+        })
 }

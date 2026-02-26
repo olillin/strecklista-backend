@@ -1,12 +1,19 @@
-import {getFlag, isValidComment} from "../util/helpers"
-import { prisma } from "../lib/prisma"
-import { getBareItem, getItem, type Price } from "./itemService"
-import { Decimal } from "@prisma/client/runtime/client"
-import type { TransactionType as PrismaTransactionType } from "../generated/prisma/enums"
-import type { PurchasedItem as PrismaPurchasedItem, ItemStockUpdate as PrismaItemStockUpdate } from "../generated/prisma/client"
-import { PurchaseItem } from "../routes/api/postPurchase"
-import { ItemStockUpdateCreateManyStockUpdateInput, PurchasedItemCreateWithoutPurchaseInput, TransactionSelect } from "../generated/prisma/models"
-import { PostItemStockUpdate } from "../routes/api/postStockUpdate"
+import { getFlag, isValidComment } from '../util/helpers'
+import { prisma } from '../lib/prisma'
+import { getBareItem, getItem, type Price } from './itemService'
+import { Decimal } from '@prisma/client/runtime/client'
+import type { TransactionType as PrismaTransactionType } from '../generated/prisma/enums'
+import type {
+    PurchasedItem as PrismaPurchasedItem,
+    ItemStockUpdate as PrismaItemStockUpdate,
+} from '../generated/prisma/client'
+import { PurchaseItem } from '../routes/api/postPurchase'
+import {
+    ItemStockUpdateCreateManyStockUpdateInput,
+    PurchasedItemCreateWithoutPurchaseInput,
+    TransactionSelect,
+} from '../generated/prisma/models'
+import { PostItemStockUpdate } from '../routes/api/postStockUpdate'
 
 export type TransactionType = 'purchase' | 'deposit' | 'stockUpdate'
 export interface Transaction<T extends TransactionType> {
@@ -53,7 +60,7 @@ export interface ItemStockUpdate {
 }
 
 export enum TransactionFlag {
-    REMOVED = 0
+    REMOVED = 0,
 }
 
 export interface TransactionFlags {
@@ -64,7 +71,9 @@ export interface TransactionFlags {
  * Get all transaction flags from a flag int
  * @param bits The bitfield data
  */
-export function parseTransactionFlags(bits: number | null | undefined): TransactionFlags {
+export function parseTransactionFlags(
+    bits: number | null | undefined
+): TransactionFlags {
     return {
         removed: getFlag(bits, TransactionFlag.REMOVED),
     }
@@ -75,7 +84,9 @@ export function parseTransactionFlags(bits: number | null | undefined): Transact
  * @param flags The transaction flags
  * @return The bitfield
  */
-export function serializeTransactionFlags(flags: Partial<TransactionFlags>): number {
+export function serializeTransactionFlags(
+    flags: Partial<TransactionFlags>
+): number {
     return Number(flags.removed) << TransactionFlag.REMOVED
 }
 
@@ -91,16 +102,16 @@ interface TransactionData {
     purchase: {
         createdForId: number
         items: PrismaPurchasedItem[]
-    } | null,
+    } | null
 
     deposit: {
         createdForId: number
         total: Decimal
-    } | null,
+    } | null
 
     stockUpdate: {
         items: PrismaItemStockUpdate[]
-    } | null,
+    } | null
 }
 
 const selectTransactionData = {
@@ -114,17 +125,16 @@ const selectTransactionData = {
 
     purchase: {
         include: {
-            items: true
-        }
+            items: true,
+        },
     },
     deposit: true,
     stockUpdate: {
         include: {
-            items: true
-        }
+            items: true,
+        },
     },
 } satisfies TransactionSelect
-
 
 function parseTransaction(transaction: TransactionData): AnyTransaction {
     const flags = parseTransactionFlags(transaction.flags)
@@ -153,7 +163,7 @@ function parseTransaction(transaction: TransactionData): AnyTransaction {
                     purchasePrice: {
                         price: item.purchasePrice,
                         displayName: item.purchasePriceName,
-                    }
+                    },
                 })),
             } satisfies Purchase
         }
@@ -169,24 +179,25 @@ function parseTransaction(transaction: TransactionData): AnyTransaction {
             return {
                 ...basicTransaction,
                 type: 'stockUpdate',
-                items: transaction.stockUpdate!.items
+                items: transaction.stockUpdate!.items,
             } satisfies StockUpdate
         }
     }
 }
 
-export async function getTransaction(transactionId: number): Promise<AnyTransaction> {
-    const transaction: TransactionData | null = await prisma.transaction.findFirst({
-        where: {
-            id: transactionId
-        },
-        select: selectTransactionData
-    })
+export async function getTransaction(
+    transactionId: number
+): Promise<AnyTransaction> {
+    const transaction: TransactionData | null =
+        await prisma.transaction.findFirst({
+            where: {
+                id: transactionId,
+            },
+            select: selectTransactionData,
+        })
 
     if (!transaction) {
-        throw new Error(
-            `Transaction with id ${transactionId} does not exist`
-        )
+        throw new Error(`Transaction with id ${transactionId} does not exist`)
     }
     return parseTransaction(transaction)
 }
@@ -195,19 +206,23 @@ export async function transactionExistsInGroup(
     transactionId: number,
     groupId: number
 ): Promise<boolean> {
-    return await prisma.transaction.findFirst({
-        where: {
-            id: transactionId,
-            groupId: groupId
-        }
-    }).then(transaction => transaction !== null)
+    return await prisma.transaction
+        .findFirst({
+            where: {
+                id: transactionId,
+                groupId: groupId,
+            },
+        })
+        .then(transaction => transaction !== null)
 }
 
-export async function countTransactionsInGroup(groupId: number): Promise<number> {
+export async function countTransactionsInGroup(
+    groupId: number
+): Promise<number> {
     return await prisma.transaction.count({
         where: {
-            groupId: groupId
-        }
+            groupId: groupId,
+        },
     })
 }
 
@@ -218,38 +233,41 @@ export async function getTransactionsInGroup(
 ): Promise<Array<AnyTransaction>> {
     const transactions = await prisma.transaction.findMany({
         where: {
-            groupId: groupId
+            groupId: groupId,
         },
         skip: offset,
         take: limit,
         orderBy: {
-            createdTime: 'desc'
+            createdTime: 'desc',
         },
-        select: selectTransactionData
+        select: selectTransactionData,
     })
     return transactions.map(transaction => parseTransaction(transaction))
 }
 
-export async function updateTransaction(transactionId: number, flags: Partial<TransactionFlags>): Promise<AnyTransaction> {
-    const currentFlags: TransactionFlags = await prisma.transaction.findFirst({
-        where: {
-            id: transactionId
-        },
-        select: {
-            flags: true
-        }
-    }).then(
-        transaction => parseTransactionFlags(transaction?.flags ?? 0)
-    )
+export async function updateTransaction(
+    transactionId: number,
+    flags: Partial<TransactionFlags>
+): Promise<AnyTransaction> {
+    const currentFlags: TransactionFlags = await prisma.transaction
+        .findFirst({
+            where: {
+                id: transactionId,
+            },
+            select: {
+                flags: true,
+            },
+        })
+        .then(transaction => parseTransactionFlags(transaction?.flags ?? 0))
     const newFlags: TransactionFlags = Object.assign(currentFlags, flags)
     const transaction: TransactionData = await prisma.transaction.update({
         where: {
-            id: transactionId
+            id: transactionId,
         },
         data: {
-            flags: serializeTransactionFlags(newFlags)
+            flags: serializeTransactionFlags(newFlags),
         },
-        select: selectTransactionData
+        select: selectTransactionData,
     })
 
     return parseTransaction(transaction)
@@ -261,7 +279,7 @@ export async function createDeposit(
     createdBy: number,
     createdFor: number,
     comment: string | null,
-    total: number,
+    total: number
 ): Promise<Deposit> {
     if (!isValidComment(comment)) {
         comment = null
@@ -269,18 +287,18 @@ export async function createDeposit(
 
     const transaction: TransactionData = await prisma.transaction.create({
         data: {
-            type: "DEPOSIT",
+            type: 'DEPOSIT',
             groupId: groupId,
             createdById: createdBy,
             comment: comment,
             deposit: {
                 create: {
                     createdForId: createdFor,
-                    total: total
-                }
-            }
+                    total: total,
+                },
+            },
         },
-        select: selectTransactionData
+        select: selectTransactionData,
     })
 
     return parseTransaction(transaction) as Deposit
@@ -303,16 +321,14 @@ export async function createPurchase(
         items.map(async item => {
             const dbItem = await getBareItem(item.id)
             if (!dbItem) {
-                throw new Error(
-                    `Item with id ${item.id} does not exist`
-                )
+                throw new Error(`Item with id ${item.id} does not exist`)
             }
 
             return {
                 item: {
                     connect: {
-                        id: item.id
-                    }
+                        id: item.id,
+                    },
                 },
                 displayName: dbItem.displayName,
                 iconUrl: dbItem.iconUrl,
@@ -325,7 +341,7 @@ export async function createPurchase(
 
     const transaction: TransactionData = await prisma.transaction.create({
         data: {
-            type: "PURCHASE",
+            type: 'PURCHASE',
             groupId: groupId,
             createdById: createdBy,
             comment: comment,
@@ -334,20 +350,25 @@ export async function createPurchase(
                     createdForId: createdFor,
                     items: {
                         createMany: {
-                            data: purchasedItems
-                        }
-                    }
-                }
-            }
+                            data: purchasedItems,
+                        },
+                    },
+                },
+            },
         },
-        select: selectTransactionData
+        select: selectTransactionData,
     })
 
     return parseTransaction(transaction) as Purchase
 }
 
 // Stock updates
-export async function createStockUpdate(groupId: number, createdBy: number, comment: string | null | null, items: PostItemStockUpdate[]): Promise<StockUpdate> {
+export async function createStockUpdate(
+    groupId: number,
+    createdBy: number,
+    comment: string | null | null,
+    items: PostItemStockUpdate[]
+): Promise<StockUpdate> {
     if (!isValidComment(comment)) {
         comment = null
     }
@@ -355,11 +376,11 @@ export async function createStockUpdate(groupId: number, createdBy: number, comm
     // Map items
     const stockedItems = await Promise.all(
         items.map(async item => {
-            const currentStock = await getItem(item.id, 0).then(dbItem => dbItem?.stock)
+            const currentStock = await getItem(item.id, 0).then(
+                dbItem => dbItem?.stock
+            )
             if (currentStock === undefined) {
-                throw new Error(
-                    `Item with id ${item.id} does not exist`
-                )
+                throw new Error(`Item with id ${item.id} does not exist`)
             }
 
             const newStock = item.absolute
@@ -369,14 +390,14 @@ export async function createStockUpdate(groupId: number, createdBy: number, comm
             return {
                 itemId: item.id,
                 before: currentStock,
-                after: newStock
+                after: newStock,
             } satisfies ItemStockUpdateCreateManyStockUpdateInput
         })
     )
 
     const transaction: TransactionData = await prisma.transaction.create({
         data: {
-            type: "STOCK_UPDATE",
+            type: 'STOCK_UPDATE',
             groupId: groupId,
             createdById: createdBy,
             comment: comment,
@@ -384,13 +405,13 @@ export async function createStockUpdate(groupId: number, createdBy: number, comm
                 create: {
                     items: {
                         createMany: {
-                            data: stockedItems
-                        }
-                    }
-                }
-            }
+                            data: stockedItems,
+                        },
+                    },
+                },
+            },
         },
-        select: selectTransactionData
+        select: selectTransactionData,
     })
 
     return parseTransaction(transaction) as StockUpdate

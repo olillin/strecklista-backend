@@ -32,7 +32,7 @@ However if an error occurs the request will not contain a data object and instea
 ### General Errors
 
 | Code | Message                                                                              |
-|------|--------------------------------------------------------------------------------------|
+| ---- | ------------------------------------------------------------------------------------ |
 | 400  | Invalid user ID                                                                      |
 | 404  | User does not exist                                                                  |
 | 400  | Invalid item ID                                                                      |
@@ -166,7 +166,7 @@ extends [Transaction](#transaction)
 
 ```javascript
 {
-  "type": "stockUpdate", 
+  "type": "stockUpdate",
   "items": [
     {
       "id": int,
@@ -241,7 +241,7 @@ The generated JWT token and data about the authenticated user and their group.
 #### Errors
 
 | Code | Message                                                                |
-|------|------------------------------------------------------------------------|
+| ---- | ---------------------------------------------------------------------- |
 | 404  | Unable to find user in gamma                                           |
 | 500  | Failed to sign JWT: \<details\>                                        |
 | 502  | Failed to get token from Gamma, your authorization code may be invalid |
@@ -338,16 +338,16 @@ List transactions in currently authenticated user's group.
 
 #### Parameters
 
-| Name   | Required | Type                  | Description                                  |
-|--------|----------|-----------------------|----------------------------------------------|
-| limit  | N        | number (default: 50)  | How many purchases to list at most           |
-| offset | N        | number (default: 0)   | How many purchases to skip over in the start |
+| Name   | Required | Type                 | Description                                  |
+| ------ | -------- | -------------------- | -------------------------------------------- |
+| limit  | N        | number (default: 50) | How many purchases to list at most           |
+| offset | N        | number (default: 0)  | How many purchases to skip over in the start |
 
 #### Response
 
 A paginated list of transactions with the newest first.  
-Unless offset is 0 a *previous* url is provnded to get the previous page of the list with the same limit or lower.  
-Unless at the end of the list a *next* url is provided to get the next page of the list with the same limit.
+Unless offset is 0 a _previous_ url is provnded to get the previous page of the list with the same limit or lower.  
+Unless at the end of the list a _next_ url is provided to get the next page of the list with the same limit.
 
 ```javascript
 {
@@ -416,10 +416,10 @@ Unless at the end of the list a *next* url is provided to get the next page of t
 
 #### Errors
 
-| Code   | Error                                      |
-|--------|--------------------------------------------|
-| 400    | Limit must be an integer between 1 and 100 |
-| 400    | Offset must be a positive integer          |
+| Code | Error                                      |
+| ---- | ------------------------------------------ |
+| 400  | Limit must be an integer between 1 and 100 |
+| 400  | Offset must be a positive integer          |
 
 ### GET /group/transaction/\<id\>
 
@@ -437,10 +437,10 @@ Get a specific transaction.
 
 #### Errors
 
-| Code  | Error                      |
-|-------|----------------------------|
-| 400   | Invalid transaction ID     |
-| 404   | Transaction does not exist |
+| Code | Error                      |
+| ---- | -------------------------- |
+| 400  | Invalid transaction ID     |
+| 404  | Transaction does not exist |
 
 ### PATCH /group/transaction/<id\>
 
@@ -448,8 +448,8 @@ Update an existing transaction.
 
 #### Body
 
-| Name    | Required | Type    | Description |
-|---------|----------|---------|-------------|
+| Name    | Required | Type    | Description                                                                               |
+| ------- | -------- | ------- | ----------------------------------------------------------------------------------------- |
 | removed | N        | boolean | If true, the transaction will be ignored in calculations of user balances and item stocks |
 
 #### Response
@@ -489,10 +489,10 @@ The transaction after the update:
 
 #### Errors
 
-| Code  | Error                      |
-|-------|----------------------------|
-| 400   | Invalid transaction ID     |
-| 404   | Transaction does not exist |
+| Code | Error                      |
+| ---- | -------------------------- |
+| 400  | Invalid transaction ID     |
+| 404  | Transaction does not exist |
 
 ### POST /group/purchase
 
@@ -500,11 +500,11 @@ Add a new purchase to a user. The user making the purchase is saved from auth.
 
 #### Body
 
-| Name    | Required | Type                                                            | Description                     |
-|---------|----------|-----------------------------------------------------------------|---------------------------------|
-| userId  | Y        | Numeric user id                                                 | The user to add the purchase to |
-| items   | Y        | {   “id”: int,   “quantity”: int   “purchasePrice”: Price }\[\] | The items to purchase           |
-| comment | N        | string                                                          | An optional comment             |
+| Name    | Required | Type                                                      | Description                     |
+| ------- | -------- | --------------------------------------------------------- | ------------------------------- |
+| userId  | Y        | Numeric user id                                           | The user to add the purchase to |
+| items   | Y        | { “id”: int, “quantity”: int “purchasePrice”: Price }\[\] | The items to purchase           |
+| comment | N        | string                                                    | An optional comment             |
 
 #### Response
 
@@ -546,7 +546,7 @@ The newly created transaction:
 #### Errors
 
 | Code | Error                                           |
-|------|-------------------------------------------------|
+| ---- | ----------------------------------------------- |
 | 400  | Item count must be greater than 0               |
 | 400  | Must purchase at least one item                 |
 | 400  | Comment must not be longer than 1000 characters |
@@ -559,7 +559,7 @@ The newly created transaction:
 #### Body
 
 | Name    | Required | Type            | Description                                  |
-|---------|----------|-----------------|----------------------------------------------|
+| ------- | -------- | --------------- | -------------------------------------------- |
 | userId  | Y        | Numeric user id | The user to add the deposit to               |
 | total   | Y        | decimal         | How much to add to the user's balance in SEK |
 | comment | N        | string          | An optional comment                          |
@@ -595,10 +595,10 @@ The newly created transaction:
 
 #### Errors
 
-| Code  | Error                  |
-|-------|------------------------|
-| 400   | Total must be a number |
-| 404   | User does not exist    |
+| Code | Error                  |
+| ---- | ---------------------- |
+| 400  | Total must be a number |
+| 404  | User does not exist    |
 
 ### POST /group/stock
 
@@ -607,7 +607,7 @@ Create a new [stock update](#stockupdate).
 #### Body
 
 | Name    | Required | Type                                  | Description         |
-|---------|----------|---------------------------------------|---------------------|
+| ------- | -------- | ------------------------------------- | ------------------- |
 | items   | Y        | [ItemStockUpdate](#itemstockupdate)[] |                     |
 | comment | N        | string                                | An optional comment |
 
@@ -636,7 +636,7 @@ The newly created transaction:
           "before": 0,
           "after": 20
         },
-        { 
+        {
           "id": 2,
           "before": 3,
           "after": 80
@@ -651,7 +651,7 @@ The newly created transaction:
 #### Errors
 
 | Code | Error                              |
-|------|------------------------------------|
+| ---- | ---------------------------------- |
 | 404  | Item with id \<id\> does not exist |
 
 ### GET /group/item
@@ -660,10 +660,10 @@ List available items for the group
 
 #### Parameters
 
-| Name        | Required | Type                                                                                  | Description                                  |
-|-------------|----------|---------------------------------------------------------------------------------------|----------------------------------------------|
-| sort        | N        | *One of these strings:* popular (default) cheap expensive new old name\_a2z name\_z2a | How to sort products                         |
-| visibleOnly | N        | bool (default: true)                                                                  | Whether or not to exclude invisible products |
+| Name        | Required | Type                                                                                | Description                                  |
+| ----------- | -------- | ----------------------------------------------------------------------------------- | -------------------------------------------- |
+| sort        | N        | _One of these strings:_ popular (default) cheap expensive new old name_a2z name_z2a | How to sort products                         |
+| visibleOnly | N        | bool (default: true)                                                                | Whether or not to exclude invisible products |
 
 #### Response
 
@@ -685,7 +685,7 @@ A list of items sorted depending on the sort parameter.
             "price": 12.0,
           }
         ],
-        "stock": 19, 
+        "stock": 19,
         "timesPurchased": 3,
         "visible": true,
         "favorite": true
@@ -714,7 +714,7 @@ A list of items sorted depending on the sort parameter.
 #### Errors
 
 | Code | Error              |
-|------|--------------------|
+| ---- | ------------------ |
 | 400  | Unknown sort order |
 
 ### POST /group/item
@@ -724,7 +724,7 @@ Create a new item
 #### Body
 
 | Name        | Required | Type                | Description                |
-|-------------|----------|---------------------|----------------------------|
+| ----------- | -------- | ------------------- | -------------------------- |
 | displayName | Y        | string              | The item name to display   |
 | prices      | Y        | [Price](#price)\[\] | Prices for the item in SEK |
 | icon        | N        | string              | The URL of the item icon   |
@@ -736,7 +736,7 @@ Responds with the created item (same response as [GET /group/item/\<id\>](#get-g
 #### Errors
 
 | Code | Error                                |
-|------|--------------------------------------|
+| ---- | ------------------------------------ |
 | 400  | An item must have at least one price |
 | 403  | Display name is not unique           |
 
@@ -782,7 +782,7 @@ Get info about an item.
 #### Errors
 
 | Code | Error               |
-|------|---------------------|
+| ---- | ------------------- |
 | 400  | Invalid item ID     |
 | 404  | Item does not exist |
 
@@ -796,7 +796,7 @@ Update an existing item.
 #### Body
 
 | Name        | Required | Type                | Description                                                    |
-|-------------|----------|---------------------|----------------------------------------------------------------|
+| ----------- | -------- | ------------------- | -------------------------------------------------------------- |
 | icon        | N        | string              | The URL of the item icon                                       |
 | displayName | N        | string              | The name to display next to the item                           |
 | prices      | N        | [Price](#price)\[\] | Prices for the item in SEK                                     |
@@ -809,10 +809,10 @@ The item after the update (same as [GET /group/item/\<id\>](https://docs.google.
 
 #### Errors
 
-| Code  | Error                      |
-|-------|----------------------------|
-| 403   | Display name is not unique |
-| 404   | Item does not exist        |
+| Code | Error                      |
+| ---- | -------------------------- |
+| 403  | Display name is not unique |
+| 404  | Item does not exist        |
 
 ### DELETE /group/item/\<id\>
 
@@ -820,6 +820,6 @@ Delete an item
 
 #### Errors
 
-| Code  | Error               |
-|-------|---------------------|
-| 404   | Item does not exist |
+| Code | Error               |
+| ---- | ------------------- |
+| 404  | Item does not exist |

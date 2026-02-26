@@ -1,8 +1,8 @@
-import {Request, Response} from "express";
-import {getUserId} from "../../middleware/validateToken";
-import {ApiError, sendError} from "../../errors";
-import {ItemResponse, ResponseBody} from "../../responses";
-import * as itemService from "../../services/itemService"
+import { Request, Response } from 'express'
+import { getUserId } from '../../middleware/validateToken'
+import { ApiError, sendError } from '../../errors'
+import { ItemResponse, ResponseBody } from '../../responses'
+import * as itemService from '../../services/itemService'
 
 export default async function getItem(req: Request, res: Response) {
     const itemId = parseInt(req.params.id)

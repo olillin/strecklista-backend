@@ -1,17 +1,15 @@
 {
-  "include": [
-    "src"
-  ],
-  "compilerOptions": {
-    "target": "es2022",
-    "module": "es2022",
-    "moduleResolution": "bundler",
-    "rootDir": "./src",
-    "outDir": "./out",
-    "esModuleInterop": true,
-    "removeComments": true,
-    "forceConsistentCasingInFileNames": true,
-    "strict": true,
-    "skipLibCheck": true
-  }
+    "include": ["src"],
+    "compilerOptions": {
+        "target": "es2022",
+        "module": "es2022",
+        "moduleResolution": "bundler",
+        "rootDir": "./src",
+        "outDir": "./out",
+        "esModuleInterop": true,
+        "removeComments": true,
+        "forceConsistentCasingInFileNames": true,
+        "strict": true,
+        "skipLibCheck": true
+    }
 }

@@ -29,6 +29,16 @@ export interface ItemFlags {
     invisible: boolean
 }
 
+export function getTopPrice(item: Item): Decimal {
+    return item.prices.reduce((max, price) => {
+        if (price.price.greaterThan(max)) {
+            return price.price
+        } else {
+            return max
+        }
+    }, new Decimal(0))
+}
+
 /**
  * Parse item flags from a bitfield
  * @param bits The bitfield data
@@ -177,7 +187,7 @@ function selectItemData(userId: number) {
 function parseItem(item: ItemData): Item {
     // Calculate stock
     const latestStockUpdate = item.itemStockUpdates[0]
-    const latestStock: number = latestStockUpdate.after
+    const latestStock: number = latestStockUpdate?.after ?? 0
     const latestStockDate: Date | undefined = latestStockUpdate?.stockUpdate.transaction.createdTime
     const purchasedAfterStock: number = item.purchasedItems
         .filter(p => latestStockUpdate === undefined

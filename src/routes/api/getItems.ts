@@ -1,14 +1,14 @@
 import {Request, Response} from "express";
 import {ItemsResponse, ResponseBody} from "../../responses";
 import {getGroupId, getUserId} from "../../middleware/validateToken";
-import {getItemsInGroup, Item} from "../../services/itemService"
+import {getItemsInGroup, getTopPrice, Item} from "../../services/itemService"
 import { ItemSortMode } from "../../middleware/validators";
 
 type ItemCompareFunction = (a: Item, b: Item) => number
 const COMPARE = {
     TIMES_PURCHASED_DESC: (a, b) => b.timesPurchased - a.timesPurchased,
-    PRICE_ASC: (a, b) => a.prices[0].price.sub(b.prices[0].price).toNumber(),
-    PRICE_DESC: (a, b) => b.prices[0].price.sub(a.prices[0].price).toNumber(),
+    PRICE_ASC: (a, b) => getTopPrice(a).sub(getTopPrice(b)).toNumber(),
+    PRICE_DESC: (a, b) => getTopPrice(b).sub(getTopPrice(a)).toNumber(),
     CREATED_TIME_ASC: (a, b) => a.createdTime.getTime() - b.createdTime.getTime(),
     CREATED_TIME_DESC: (a, b) => b.createdTime.getTime() - a.createdTime.getTime(),
     NAME_ASC: (a, b) => a.displayName.localeCompare(b.displayName),

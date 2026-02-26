@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express'
 import validateToken from '../middleware/validateToken'
 import validationErrorHandler from '../middleware/validationErrorHandler'
 import * as validators from '../middleware/validators'
-import * as apiRoutes from '../routes/api'
+import * as apiRoutes from '../routes/api/index'
 import setHeader from "../middleware/setHeader";
 import {ApiError, sendError} from "../errors";
 import {ErrorResolvable} from "../errors";

@@ -1,6 +1,10 @@
 secrets/*
 !secrets/.gitkeep
 
+# Build output
+out/
+bundle/
+
 # Prisma client
 **/generated/prisma
 

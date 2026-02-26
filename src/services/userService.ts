@@ -2,6 +2,7 @@ import { GroupId, UserId } from 'gammait'
 import { prisma } from "../lib/prisma"
 import { Decimal } from '@prisma/client/runtime/client'
 import { UserSelect } from '../generated/prisma/models'
+import { PrismaClient } from '@prisma/client/extension'
 
 export interface OfflineGroup {
     id: number
@@ -37,51 +38,76 @@ export async function createGroup(gammaGroupId: GroupId): Promise<OfflineGroup> 
  * @param gammaUserId user id from Gamma
  * @return the full information of the user with `gammaUserId` in the group with `gammaGroupId`
  */
-export async function addGroupUser(
+export async function softAddGroupUser(
     gammaGroupId: GroupId,
     gammaUserId: UserId
 ): Promise<OfflineGroupUser> {
-    return prisma.groupUser.create({
-        data: {
-            group: {
-                connectOrCreate: {
-                    create: {
-                        gammaId: gammaGroupId
-                    },
-                    where: {
-                        gammaId: gammaGroupId
+    const createGroupUser = async (gammaGroupId: GroupId, gammaUserId: UserId, tx: PrismaClient): Promise<OfflineGroupUser> => {
+        const groupUser = await tx.groupUser.create({
+            data: {
+                group: {
+                    connectOrCreate: {
+                        create: {
+                            gammaId: gammaGroupId
+                        },
+                        where: {
+                            gammaId: gammaGroupId
+                        }
+                    }
+                },
+                user: {
+                    connectOrCreate: {
+                        create: {
+                            gammaId: gammaUserId
+                        },
+                        where: {
+                            gammaId: gammaUserId
+                        }
                     }
                 }
             },
-            user: {
-                connectOrCreate: {
-                    create: {
-                        gammaId: gammaUserId
-                    },
-                    where: {
-                        gammaId: gammaUserId
+            include: {
+                group: {
+                    select: {
+                        gammaId: true
                     }
                 }
             }
-        },
-        include: {
+        })
+
+        return {
+            user: (await getUser(groupUser.userId, groupUser.groupId))!,
             group: {
-                select: {
-                    gammaId: true
-                }
+                id: groupUser.groupId,
+                gammaId: groupUser.group.gammaId as GroupId
             }
         }
-    }).then(async groupUser => ({
-        user: (await getUser(groupUser.userId, groupUser.groupId))!,
-        group: {
-            id: groupUser.groupId,
-            gammaId: groupUser.group.gammaId as GroupId
+    }
+
+    return prisma.$transaction<OfflineGroupUser>(async (tx) => {
+        const groupUser = await tx.groupUser.findFirst({
+            where: {
+                user: {
+                    gammaId: gammaUserId,
+                },
+                group: {
+                    gammaId: gammaGroupId,
+                },
+            }
+        })
+        if (groupUser != null) {
+             const offlineGroupUser = await _getUserInGroup(groupUser.userId, groupUser.groupId, tx)
+             if (offlineGroupUser == null) {
+                 throw new Error("Group user is suddenly null")
+             }
+             return offlineGroupUser
         }
-    } satisfies OfflineGroupUser))
+        return createGroupUser(gammaGroupId, gammaUserId, tx)
+    })
 }
 
-export async function getUserInGroup(userId: number, groupId: number): Promise<OfflineGroupUser | null> {
-    const groupUser = await prisma.groupUser.findFirst({
+async function _getUserInGroup(userId: number, groupId: number, tx: PrismaClient): Promise<OfflineGroupUser | null> {
+    const groupUser = await tx.groupUser.findFirst({
         where: {
             userId: userId,
             groupId: groupId
@@ -101,6 +127,10 @@ export async function getUserInGroup(userId: number, groupId: number): Promise<O
             gammaId: groupUser.group.gammaId as GroupId
         }
     }
+}
+
+export async function getUserInGroup(userId: number, groupId: number): Promise<OfflineGroupUser | null> {
+    return _getUserInGroup(userId, groupId, prisma)
 }
 
 export async function getGroup(groupId: number): Promise<OfflineGroup | null> {

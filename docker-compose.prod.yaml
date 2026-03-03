@@ -5,7 +5,7 @@ name: strecklista-backend
 
 services:
     server:
-        image: ghcr.io/olillin/strecklista-packend
+        image: 'ghcr.io/olillin/strecklista-backend/app:latest'
         container_name: strecklista-backend-server
         restart: always
         secrets:
@@ -29,14 +29,14 @@ services:
             db:
                 condition: service_healthy
     db:
-        image: postgres
+        image: postgres:18
         container_name: strecklista-backend-db
         restart: always
         user: postgres
         secrets:
             - postgres-password
         volumes:
-            - db-data:/var/lib/postgresql/data
+            - db-data:/var/lib/postgresql
         environment:
             - POSTGRES_DB=strecklista
             - POSTGRES_PASSWORD_FILE=/run/secrets/postgres-password

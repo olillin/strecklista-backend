@@ -24,12 +24,10 @@ services:
             db:
                 condition: service_healthy
     db:
-        image: postgres
+        image: postgres:18
         container_name: strecklista-backend-dev-db
         restart: unless-stopped
         user: postgres
-        volumes:
-            - dev-db-data:/var/lib/postgresql/data
         environment:
             - POSTGRES_DB=strecklista
             - POSTGRES_PASSWORD=secret-dev-password
@@ -42,5 +40,3 @@ services:
             interval: 10s
             timeout: 5s
             retries: 5
-volumes:
-    dev-db-data:

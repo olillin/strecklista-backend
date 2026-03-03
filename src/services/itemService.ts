@@ -331,6 +331,7 @@ export async function updateItem(
                 } else {
                     queuedChanges.push(() => removeFavorite(userId, itemId))
                 }
+                break
             default:
                 throw new Error(`Illegal key ${key}`)
         }

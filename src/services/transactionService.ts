@@ -10,7 +10,7 @@ import type {
 import { PurchaseItem } from '../routes/api/postPurchase'
 import {
     ItemStockUpdateCreateManyStockUpdateInput,
-    PurchasedItemCreateWithoutPurchaseInput,
+    PurchasedItemUncheckedCreateWithoutPurchaseInput,
     TransactionSelect,
 } from '../generated/prisma/models'
 import { PostItemStockUpdate } from '../routes/api/postStockUpdate'
@@ -325,17 +325,13 @@ export async function createPurchase(
             }
 
             return {
-                item: {
-                    connect: {
-                        id: item.id,
-                    },
-                },
+                itemId: item.id,
                 displayName: dbItem.displayName,
                 iconUrl: dbItem.iconUrl,
                 quantity: item.quantity,
                 purchasePrice: new Decimal(item.purchasePrice.price),
                 purchasePriceName: item.purchasePrice.displayName,
-            } satisfies PurchasedItemCreateWithoutPurchaseInput
+            } satisfies PurchasedItemUncheckedCreateWithoutPurchaseInput
         })
     )
 

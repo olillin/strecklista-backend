@@ -1,42 +1,48 @@
-import {Request, Response} from "express";
-import {database} from "../../config/clients";
-import {getUserId} from "../../middleware/validateToken";
-import {ItemResponse, PatchItemBody, ResponseBody} from "../../types";
-import {LegalItemColumn} from "../../database/client";
-import {ItemFlagsMap} from "../../flags";
+import { Request, Response } from 'express'
+import { getUserId } from '../../middleware/validateToken'
+import { ItemResponse, ResponseBody } from '../../responses'
+import { updateItem, Price, ItemPatch } from '../../services/itemService'
+import { JsonPrice } from './postPurchase'
+import { Decimal } from '@prisma/client/runtime/client'
+
+export interface PatchItemBody {
+    icon?: string
+    displayName?: string
+    prices?: JsonPrice[]
+    visible?: boolean
+    favorite?: boolean
+}
 
 export default async function patchItem(req: Request, res: Response) {
     const userId: number = getUserId(res)
-
     const itemId = parseInt(req.params.id)
-    const { icon, displayName, visible, favorite, prices } = req.body as PatchItemBody
 
-    const flags: Partial<ItemFlagsMap> = {
-        invisible: visible === undefined ? undefined : !visible
-    }
+    const patch = createItemPatch(req.body as PatchItemBody)
+    const newItem = await updateItem(itemId, userId, patch)
 
-    // Update Items table
-    const columns: (LegalItemColumn | undefined)[] = [
-        'icon_url',
-        'display_name',
-        'favorite'
-    ]
-    const values = [icon, displayName, favorite]
-    for (let i = 0; i < values.length; i++) {
-        if (values[i] === undefined) columns[i] = undefined
-    }
-
-    const newItem = await database.updateItem(
-        itemId,
-        userId,
-        columns.filter(x => x !== undefined),
-        values.filter(x => x !== undefined),
-        flags,
-        prices,
-    )
-
-    const data: ItemResponse = { item: newItem }
-    const body: ResponseBody<ItemResponse> = { data }
-
+    const body: ResponseBody<ItemResponse> = { data: { item: newItem } }
     res.json(body)
+}
+
+function createItemPatch(body: PatchItemBody): ItemPatch {
+    const { icon, displayName, visible, favorite, prices: jsonPrices } = body
+    const prices = jsonPrices?.map(
+        price =>
+            ({
+                displayName: price.displayName,
+                price: new Decimal(price.price),
+            }) satisfies Price
+    )
+    return {
+        displayName,
+        iconUrl: icon,
+        prices,
+        favorite,
+        flags:
+            visible === undefined
+                ? undefined
+                : {
+                      invisible: !visible,
+                  },
+    }
 }

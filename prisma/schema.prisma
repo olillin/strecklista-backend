@@ -1,0 +1,167 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Group {
+  id      Int    @id @default(autoincrement())
+  gammaId String @unique @db.VarChar(64)
+
+  users        GroupUser[]
+  items        Item[]
+  transactions Transaction[]
+}
+
+model User {
+  id      Int    @id @default(autoincrement())
+  gammaId String @unique @db.VarChar(64)
+
+  groups GroupUser[]
+
+  createdTransactions Transaction[] @relation("CreatedByTransactions")
+  receivedPurchases   Purchase[]    @relation("ReceivedPurchases")
+  receivedDeposits    Deposit[]     @relation("ReceivedDeposits")
+
+  favoriteItems FavoriteItem[]
+}
+
+model GroupUser {
+  groupId Int
+  group   Group @relation(fields: [groupId], references: [id])
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  @@id([groupId, userId])
+}
+
+model Item {
+  id      Int   @id @default(autoincrement())
+  groupId Int
+  group   Group @relation(fields: [groupId], references: [id])
+
+  displayName String   @db.VarChar(100)
+  iconUrl     String?  @db.VarChar(500)
+  createdTime DateTime @default(now()) @db.Timestamptz
+  flags       Int?     @db.SmallInt
+
+  prices           Price[]
+  purchasedItems   PurchasedItem[]
+  itemStockUpdates ItemStockUpdate[]
+  favorites        FavoriteItem[]
+
+  @@unique([groupId, displayName])
+}
+
+model Price {
+  itemId Int
+  item   Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  displayName String  @db.VarChar(30)
+  price       Decimal @db.Decimal(7, 2)
+
+  @@id([itemId, displayName])
+}
+
+enum TransactionType {
+  PURCHASE
+  DEPOSIT
+  STOCK_UPDATE
+}
+
+model Transaction {
+  id      Int   @id @default(autoincrement())
+  groupId Int
+  group   Group @relation(fields: [groupId], references: [id])
+
+  type TransactionType
+
+  createdById Int
+  createdBy   User @relation("CreatedByTransactions", fields: [createdById], references: [id])
+
+  createdTime DateTime @default(now()) @db.Timestamptz
+  flags       Int?     @db.SmallInt
+  comment     String?  @db.VarChar(1000)
+
+  purchase    Purchase?
+  deposit     Deposit?
+  stockUpdate StockUpdate?
+}
+
+model Purchase {
+  id            Int         @id @default(autoincrement())
+  transactionId Int         @unique
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+
+  createdForId Int
+  createdFor   User @relation("ReceivedPurchases", fields: [createdForId], references: [id])
+
+  items PurchasedItem[]
+}
+
+model PurchasedItem {
+  id         Int      @id @default(autoincrement())
+  purchaseId Int
+  purchase   Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+
+  itemId Int?
+  item   Item? @relation(fields: [itemId], references: [id], onDelete: SetNull)
+
+  displayName       String  @db.VarChar(100)
+  iconUrl           String? @db.VarChar(500)
+  purchasePrice     Decimal @db.Decimal(7, 2)
+  purchasePriceName String  @db.VarChar(30)
+  quantity          Int
+
+  @@unique([purchaseId, itemId])
+}
+
+model Deposit {
+  id            Int         @id @default(autoincrement())
+  transactionId Int         @unique
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+
+  createdForId Int
+  createdFor   User @relation("ReceivedDeposits", fields: [createdForId], references: [id])
+
+  total Decimal @db.Decimal(7, 2)
+}
+
+model StockUpdate {
+  id            Int         @id @default(autoincrement())
+  transactionId Int         @unique
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+
+  items ItemStockUpdate[]
+}
+
+model ItemStockUpdate {
+  id            Int         @id @default(autoincrement())
+  stockUpdateId Int
+  stockUpdate   StockUpdate @relation(fields: [stockUpdateId], references: [id])
+
+  itemId Int
+  item   Item @relation(fields: [itemId], references: [id])
+
+  before Int
+  after  Int
+
+  @@unique([stockUpdateId, itemId])
+}
+
+model FavoriteItem {
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  itemId Int
+  item   Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@id([userId, itemId])
+}

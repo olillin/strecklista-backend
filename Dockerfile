@@ -62,7 +62,7 @@ COPY package.json .
 # Copy the production dependencies from the deps stage and also
 # the built application from the build stage into the image.
 COPY --from=deps /usr/src/app/node_modules ./node_modules
-COPY --from=build /usr/src/app/out ./out
+COPY --from=build /usr/src/app/bundle ./bundle
 
 
 # Expose the port that the application listens on.

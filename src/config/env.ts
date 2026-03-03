@@ -13,11 +13,7 @@ export interface EnvironmentVariables {
     GAMMA_REDIRECT_URI: string
     GAMMA_API_AUTHORIZATION: string
 
-    PGPASSWORD?: string
-    PGUSER?: string
-    PGHOST?: string
-    PGPORT?: string
-    PGDATABASE?: string
+    DATABASE_URL: string
 
     JWT_SECRET: string
     JWT_ISSUER?: string
@@ -31,22 +27,16 @@ type Concrete<Type> = {
     [Property in keyof Type]-?: Type[Property]
 }
 
-export const DEFAULT_ENVIRONMENT: Partial<Concrete<EnvironmentVariables>> = {
+export const DEFAULT_ENVIRONMENT = {
     PORT: '8080',
     SUPER_GROUP_ID: PRIT_SUPER_GROUP_ID,
     EXPOSE_CORS: 'false',
-
-    PGPASSWORD: 'postgres',
-    PGUSER: 'postgres',
-    PGHOST: 'localhost',
-    PGPORT: '5432',
-    PGDATABASE: 'strecklista',
 
     JWT_ISSUER: 'strecklista',
     JWT_EXPIRES_IN: '43200',
 
     TRUST_PROXY: 'false',
-}
+} as const satisfies Partial<Concrete<EnvironmentVariables>>
 
 export function withDefaults(
     env: EnvironmentVariables
@@ -54,7 +44,7 @@ export function withDefaults(
     return Object.assign(
         Object.assign({}, DEFAULT_ENVIRONMENT),
         env
-    ) as Concrete<EnvironmentVariables>
+    ) satisfies Concrete<EnvironmentVariables>
 }
 
 export type FileEnvironmentVariables = EnvironmentVariables & {
@@ -94,6 +84,7 @@ export const requiredEnvironment: readonly (keyof EnvironmentVariables)[] = [
     'GAMMA_CLIENT_SECRET',
     'GAMMA_API_AUTHORIZATION',
     'GAMMA_REDIRECT_URI',
+    'DATABASE_URL',
     'JWT_SECRET',
 ]
 requiredEnvironment.forEach(required => {

@@ -1,24 +1,24 @@
-import {Request, Response} from "express";
-import {clientApi, database} from "../../config/clients";
-import {getGammaUserId, getUserId} from "../../middleware/validateToken";
-import {ApiError, sendError} from "../../errors";
-import {ResponseBody, UserResponse} from "../../types";
-import * as convert from "../../util/convert";
-import {UserId} from "gammait";
-import {getAuthorizedGroup} from "../../util/helpers";
+import { Request, Response } from 'express'
+import { clientApi } from '../../config/gamma'
+import {
+    getGammaUserId,
+    getGroupId,
+    getUserId,
+} from '../../middleware/validateToken'
+import { ApiError, sendError } from '../../errors'
+import { ResponseBody, toUserResponse, UserResponse } from '../../responses'
+import { UserId } from 'gammait'
+import { getAuthorizedGroup } from '../../util/helpers'
+import * as userService from '../../services/userService'
 
 export default async function getUser(req: Request, res: Response) {
     const userId: number = getUserId(res)
+    const groupId: number = getGroupId(res)
     const gammaUserId: UserId = getGammaUserId(res)
     console.log(`Getting user info for: ${userId}`)
 
     // Get requests
-    const dbUserPromise = database.getFullUser(userId).catch(reason => {
-        if (!res.headersSent) {
-            console.log(reason)
-            sendError(res, 500, 'Failed to fetch user from database')
-        }
-    })
+    const offlineGroupUserPromise = userService.getUserInGroup(userId, groupId)
     const gammaUserPromise = clientApi.getUser(gammaUserId).catch(reason => {
         if (!res.headersSent) {
             console.log(reason)
@@ -33,8 +33,8 @@ export default async function getUser(req: Request, res: Response) {
     })
 
     // Await promises
-    const dbUser = await dbUserPromise
-    if (dbUser === undefined) {
+    const offlineGroupUser = await offlineGroupUserPromise
+    if (!offlineGroupUser) {
         sendError(res, 404, 'User does not exist')
         return
     }
@@ -56,7 +56,7 @@ export default async function getUser(req: Request, res: Response) {
     }
 
     const body: ResponseBody<UserResponse> = {
-        data: convert.toUserResponse(dbUser, gammaUser, group),
+        data: toUserResponse(offlineGroupUser, gammaUser, group),
     }
     res.json(body)
 }

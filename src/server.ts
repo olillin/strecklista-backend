@@ -1,6 +1,6 @@
 import express, { NextFunction, Request, Response } from 'express'
 import rateLimit from 'express-rate-limit'
-import { authorizationCode } from './config/clients'
+import { authorizationCode } from './config/gamma'
 import env from './config/env'
 import { sendError, unexpectedError } from './errors'
 import createApiRouter from './routers/api'

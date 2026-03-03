@@ -1,0 +1,62 @@
+# This is an example of how to run the backend in production using secret files
+# and using the image from GitHub Packages.
+
+name: strecklista-backend
+
+services:
+    server:
+        image: 'ghcr.io/olillin/strecklista-backend/app:latest'
+        container_name: strecklista-backend-server
+        restart: always
+        secrets:
+            - gamma-client-secret
+            - gamma-api-authorization
+            - jwt-secret
+            - database-url
+        environment:
+            NODE_ENV: production
+            GAMMA_REDIRECT_URI: 'YOUR GAMMA REDIRECT URI'
+            GAMMA_CLIENT_ID: 'YOUR GAMMA CLIENT ID'
+            GAMMA_CLIENT_SECRET_FILE: /run/secrets/gamma-client-secret
+            GAMMA_API_AUTHORIZATION_FILE: /run/secrets/gamma-api-authorization
+            JWT_SECRET_FILE: /run/secrets/jwt-secret
+            DATABASE_URL_FILE: /run/secrets/database-url
+
+        ports:
+            - '8080:8080'
+
+        depends_on:
+            db:
+                condition: service_healthy
+    db:
+        image: postgres:18
+        container_name: strecklista-backend-db
+        restart: always
+        user: postgres
+        secrets:
+            - postgres-password
+        volumes:
+            - db-data:/var/lib/postgresql
+        environment:
+            - POSTGRES_DB=strecklista
+            - POSTGRES_PASSWORD_FILE=/run/secrets/postgres-password
+        expose:
+            - 5432
+        healthcheck:
+            test: ['CMD', 'pg_isready']
+            interval: 10s
+            timeout: 5s
+            retries: 5
+volumes:
+    db-data:
+secrets:
+    gamma-client-secret:
+        file: secrets/gamma-client-secret.txt
+    gamma-api-authorization:
+        file: secrets/gamma-api-authorization.txt
+    jwt-secret:
+        file: secrets/jwt-secret.txt
+    database-url:
+        file: secrets/database-url.txt
+    postgres-password:
+        file: secrets/postgres-password.txt

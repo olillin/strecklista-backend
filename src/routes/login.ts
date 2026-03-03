@@ -1,16 +1,41 @@
-import {Request, RequestHandler, Response} from 'express'
-import { GroupId, UserId } from 'gammait'
+import { Request, RequestHandler, Response } from 'express'
+import { GroupId, GroupWithPost, UserId, UserInfo } from 'gammait'
 import jwt from 'jsonwebtoken'
-import { authorizationCode, clientApi, database } from '../config/clients'
+import { authorizationCode, clientApi } from '../config/gamma'
 import env from '../config/env'
-import {ApiError, sendError, tokenSignError} from '../errors'
-import {JWT, LoggedInUser} from '../types'
-import * as convert from '../util/convert'
+import { ApiError, sendError, tokenSignError, unexpectedError } from '../errors'
 import { getAuthorizedGroup } from '../util/helpers'
+import { softAddGroupUser } from '../services/userService'
+import { toLoginResponse } from '../responses'
 
+export interface JWT {
+    access_token: string
+    expires_in: number
+}
 
+export interface LoggedInUser {
+    userId: number
+    groupId: number
+    gammaUserId: UserId
+    gammaGroupId: GroupId
+}
 
-function signJWT(user: LoggedInUser): Promise<JWT> {
+export function isLoggedInUser(value: unknown): value is LoggedInUser {
+    if (typeof value !== 'object' || value === null) {
+        return false
+    }
+
+    const obj = value as Record<string, unknown>
+
+    return (
+        typeof obj.userId === 'number' &&
+        typeof obj.groupId === 'number' &&
+        'gammaUserId' in obj &&
+        'gammaGroupId' in obj
+    )
+}
+
+function signJwt(user: LoggedInUser): Promise<JWT> {
     return new Promise((resolve, reject) => {
         const expireSeconds = parseFloat(env.JWT_EXPIRES_IN)
 
@@ -43,67 +68,79 @@ function signJWT(user: LoggedInUser): Promise<JWT> {
 export function login(): RequestHandler {
     return async (req: Request, res: Response) => {
         res.setHeader('Allow', 'POST')
+
+        // Validate request
+        const code = (req.query.code ?? req.body.code) as string
+
+        // Get token from Gamma
         try {
-            // Validate request
-            const code = (req.query.code ?? req.body.code) as string
-
-            // Get token from Gamma
-            try {
-                await authorizationCode.generateToken(code)
-            } catch (error) {
-                const unreachable = (error as NodeJS.ErrnoException)?.code === 'ENOTFOUND'
-                    || (error as NodeJS.ErrnoException)?.code === 'ECONNREFUSED'
-                if (unreachable) {
-                    sendError(res, ApiError.UnreachableGamma)
+            await authorizationCode.generateToken(code)
+        } catch (error) {
+            const unreachable =
+                (error as NodeJS.ErrnoException)?.code === 'ENOTFOUND' ||
+                (error as NodeJS.ErrnoException)?.code === 'ECONNREFUSED'
+            if (unreachable) {
+                console.warn(
+                    `Unable to reach Gamma when logging in user: ${(error as Error).message}`
+                )
+                sendError(res, ApiError.UnreachableGamma)
+            } else {
+                console.error(`Failed to get token from Gamma: ${error}`)
+                if (
+                    error instanceof Error &&
+                    (error as Error).message.includes('400')
+                ) {
+                    sendError(res, ApiError.AuthorizationCodeUsed)
                 } else {
-                    console.error(`Failed to get token from Gamma: ${error}`)
-                    if (error instanceof Error && (error as Error).message.includes('400')) {
-                        sendError(res, ApiError.AuthorizationCodeUsed)
-                    } else {
-                        sendError(res, ApiError.GammaToken)
-                    }
+                    sendError(res, ApiError.GammaToken)
                 }
-                return
             }
+            return
+        }
 
-            const userInfo = await authorizationCode.userInfo()
-            const gammaUserId: UserId = userInfo.sub
-            const groups = await clientApi.getGroupsFor(gammaUserId)
-            const group = getAuthorizedGroup(groups)
-            if (!group) {
-                // User is not in the super group
-                sendError(res, ApiError.NoPermission)
-                return
-            }
-            const gammaGroupId: GroupId = group.id
-
-            const dbUser = await database.softCreateGroupAndUser(gammaGroupId, gammaUserId)
-
-            signJWT({
-                userId: dbUser.id,
-                groupId: dbUser.group_id,
-                gammaUserId: dbUser.gamma_id,
-                gammaGroupId: dbUser.group_gamma_id,
-            })
-                .then(token => {
-                    const body = convert.toLoginResponse(
-                        dbUser,
-                        userInfo,
-                        group,
-                        token
-                    )
-                    res.json(body)
-                })
-                .catch(error => {
-                    sendError(res, tokenSignError(String(error)))
-                })
+        let userInfo: UserInfo
+        let gammaUserId: UserId
+        let groups: GroupWithPost[]
+        try {
+            userInfo = await authorizationCode.userInfo()
+            gammaUserId = userInfo.sub
+            groups = await clientApi.getGroupsFor(gammaUserId)
         } catch (error) {
             if (
                 (error as NodeJS.ErrnoException).code === 'ENOTFOUND' ||
                 (error as NodeJS.ErrnoException).code === 'ECONNREFUSED'
             ) {
                 sendError(res, ApiError.UnreachableGamma)
+            } else {
+                const message = `Failed to fetch Gamma info for login: ${error}`
+                console.error(message)
+                sendError(res, unexpectedError(message))
             }
+            return
         }
+
+        const group = getAuthorizedGroup(groups)
+        if (!group) {
+            // User is not in the super group
+            sendError(res, ApiError.NoPermission)
+            return
+        }
+        const gammaGroupId: GroupId = group.id
+
+        const groupUser = await softAddGroupUser(gammaGroupId, gammaUserId)
+
+        signJwt({
+            userId: groupUser.user.id,
+            groupId: groupUser.group.id,
+            gammaUserId: groupUser.user.gammaId,
+            gammaGroupId: groupUser.group.gammaId,
+        })
+            .then(token => {
+                const body = toLoginResponse(groupUser, userInfo, group, token)
+                res.json(body)
+            })
+            .catch(error => {
+                sendError(res, tokenSignError(String(error)))
+            })
     }
 }

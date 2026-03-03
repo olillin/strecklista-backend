@@ -1,6 +1,13 @@
 secrets/*
 !secrets/.gitkeep
 
+# Build output
+out/
+bundle/
+
+# Prisma client
+**/generated/prisma
+
 # IDE-files
 .idea/discord.xml
 
@@ -84,6 +91,10 @@ web_modules/
 .env.test.local
 .env.production.local
 .env.local
+
+# direnv files
+.envrc
+.direnv/
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache

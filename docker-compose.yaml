@@ -1,54 +1,42 @@
-name: strecklista-backend
+# DO NOT USE IN PRODUCTION, THIS CONFIGURATION IS INTENTIONALLY INSECURE
+
+# This compose file builds and runs the backend locally for development.
+# Copy .env.example and fill out your Gamma Client credentials to get started.
+
+name: strecklista-backend-dev
 
 services:
     server:
         build:
             context: .
-        container_name: strecklista-backend-server
-        secrets:
-            - db-password
+        container_name: strecklista-backend-dev-server
+        restart: unless-stopped
         environment:
-            NODE_ENV: production
-            PGPASSWORD_FILE: /run/secrets/db-password
-            PGHOST: db
-            PGDATABASE: strecklista
+            NODE_ENV: development
+            DATABASE_URL: postgresql://postgres:secret-dev-password@db:5432/strecklista
+            JWT_SECRET: jwt-secret
         env_file: '.env'
-        restart: always
 
         ports:
             - '8080:8080'
 
-        # The commented out section below is an example of how to define a PostgreSQL
-        # database that your application can use. `depends_on` tells Docker Compose to
-        # start the database before your application. The `db-data` volume persists the
-        # database data between container restarts. The `db-password` secret is used
-        # to set the database password. You must create `db/password.txt` and add
-        # a password of your choosing to it before running `docker-compose up`.
         depends_on:
             db:
                 condition: service_healthy
     db:
-        image: postgres
-        container_name: strecklista-backend-db
-        restart: always
+        image: postgres:18
+        container_name: strecklista-backend-dev-db
+        restart: unless-stopped
         user: postgres
-        secrets:
-            - db-password
-        volumes:
-            - db-data:/var/lib/postgresql/data
-            - ./db:/docker-entrypoint-initdb.d
         environment:
             - POSTGRES_DB=strecklista
-            - POSTGRES_PASSWORD_FILE=/run/secrets/db-password
-        expose:
-            - 5432
+            - POSTGRES_PASSWORD=secret-dev-password
+
+        ports:
+            - '5432:5432'
+
         healthcheck:
             test: ['CMD', 'pg_isready']
             interval: 10s
             timeout: 5s
             retries: 5
-volumes:
-    db-data:
-secrets:
-    db-password:
-        file: secrets/password.txt

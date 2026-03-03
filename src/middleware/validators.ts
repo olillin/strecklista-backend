@@ -1,7 +1,13 @@
 import { body, Meta, oneOf, param, query } from 'express-validator'
-import { database } from '../config/clients'
 import { verifyToken } from './validateToken'
 import { ApiError } from '../errors'
+import { isUserInGroup } from '../services/userService'
+import {
+    isItemVisible,
+    itemExistsInGroup,
+    itemNameExistsInGroup,
+} from '../services/itemService'
+import { transactionExistsInGroup } from '../services/transactionService'
 
 //#region Util
 function getGroupId(meta: Meta): number {
@@ -29,7 +35,7 @@ export async function checkUserExistsInGroup(
 
     // Check if user exists
     const groupId = getGroupId(meta)
-    const exists = await database.userExistsInGroup(userId, groupId)
+    const exists = await isUserInGroup(userId, groupId)
     if (!exists) {
         throw ApiError.UserNotExist
     }
@@ -40,7 +46,7 @@ export async function checkItemExistsInGroup(
     meta: Meta
 ): Promise<void> {
     const groupId = getGroupId(meta)
-    const exists = await database.itemExistsInGroup(parseInt(value), groupId)
+    const exists = await itemExistsInGroup(parseInt(value), groupId)
     if (!exists) {
         throw ApiError.ItemNotExist
     }
@@ -51,10 +57,7 @@ export async function checkTransactionExistsInGroup(
     meta: Meta
 ): Promise<void> {
     const groupId = getGroupId(meta)
-    const exists = await database.transactionExistsInGroup(
-        parseInt(value),
-        groupId
-    )
+    const exists = await transactionExistsInGroup(parseInt(value), groupId)
     if (!exists) {
         throw ApiError.TransactionNotExist
     }
@@ -70,7 +73,7 @@ export async function checkItemVisible(value: string): Promise<void> {
     }
 
     // Check if visible
-    const visible = await database.isItemVisible(id)
+    const visible = await isItemVisible(id)
     if (!visible) {
         throw ApiError.PurchaseInvisible
     }
@@ -81,7 +84,7 @@ export async function checkDisplayNameUniqueInGroup(
     meta: Meta
 ): Promise<void> {
     const groupId = getGroupId(meta)
-    const nameExists = await database.itemNameExistsInGroup(value, groupId)
+    const nameExists = await itemNameExistsInGroup(value, groupId)
     if (nameExists) {
         throw ApiError.DisplayNameNotUnique
     }
@@ -127,9 +130,7 @@ export const patchTransaction = () => [
         .withMessage(ApiError.InvalidTransactionId)
         .bail()
         .custom(checkTransactionExistsInGroup),
-    body('removed')
-        .optional()
-        .isBoolean({ strict: true })
+    body('removed').optional().isBoolean({ strict: true }),
 ]
 
 export const postPurchase = () => [
@@ -159,7 +160,12 @@ export const postPurchase = () => [
     body('items.*.purchasePrice').exists().isObject(),
     body('items.*.purchasePrice.price').exists().isDecimal(),
     body('items.*.purchasePrice.displayName').exists().isString().trim(),
-    body('comment').optional().isString().trim().isLength({ max: 1000 }).withMessage(ApiError.InvalidComment),
+    body('comment')
+        .optional()
+        .isString()
+        .trim()
+        .isLength({ max: 1000 })
+        .withMessage(ApiError.InvalidComment),
 ]
 
 export const postDeposit = () => [
@@ -170,7 +176,12 @@ export const postDeposit = () => [
         .bail()
         .custom(checkUserExistsInGroup),
     body('total').exists().isDecimal().withMessage(ApiError.InvalidTotal),
-    body('comment').optional().isString().trim().isLength({ max: 1000 }).withMessage(ApiError.InvalidComment),
+    body('comment')
+        .optional()
+        .isString()
+        .trim()
+        .isLength({ max: 1000 })
+        .withMessage(ApiError.InvalidComment),
 ]
 
 export const postStockUpdate = () => [
@@ -189,10 +200,15 @@ export const postStockUpdate = () => [
         .isInt()
         .withMessage(ApiError.StockItemCount),
     body('items.*.absolute').optional().isBoolean(),
-    body('comment').optional().isString().trim().isLength({ max: 1000 }).withMessage(ApiError.InvalidComment),
+    body('comment')
+        .optional()
+        .isString()
+        .trim()
+        .isLength({ max: 1000 })
+        .withMessage(ApiError.InvalidComment),
 ]
 
-export const itemSortModes = <const>[
+export const itemSortModes = [
     'popular',
     'cheap',
     'expensive',
@@ -202,7 +218,9 @@ export const itemSortModes = <const>[
     'name_z2a',
     'high_stock',
     'low_stock',
-]
+] as const
+export type ItemSortMode = (typeof itemSortModes)[number]
+
 export const getItems = () => [
     query('sort')
         .default('popular')

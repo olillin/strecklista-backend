@@ -15,39 +15,10 @@ To be able to setup and run the server you will need the following:
 
 ## Getting started
 
-1. [Initial setup](#initial-setup)
-2. [Creating a Gamma client](#creating-a-gamma-client)
+1. [Creating a Gamma client](#creating-a-gamma-client)
+2. [Preparing the server](#preparing-the-server)
 3. [Starting the server](#starting-the-server)
-
-### Initial setup
-
-1. Start by cloning the repository by running this command in the terminal:
-
-    ```shell
-    git clone https://github.com/olillin/strecklista-backend
-    ```
-
-2. Create a `.env` file in the root of the project and copy the following
-   content into it:
-
-    ````env
-    GAMMA_CLIENT_ID=
-    GAMMA_CLIENT_SECRET=
-    GAMMA_API_AUTHORIZATION=
-    GAMMA_REDIRECT_URI=
-
-    JWT_SECRET=
-     ```
-
-    ````
-
-3. Generate a random string to be used when signing
-   [JWTs](https://auth0.com/docs/secure/tokens/json-web-tokens) and put it
-   after `JWT_SECRET=`, this string should be kept secret for security.
-
-4. Create a new file, `secrets/password.txt`. The content of this text file will
-   be used as the database password, so it should also be something secure and
-   secret. Put the password in this file now.
+4. [Initializing the database](#initializing-the-database)
 
 ### Creating a Gamma client
 
@@ -72,6 +43,22 @@ profile and group information.
 
     ![Client created](./images/gamma-2.png)
 
+### Preparing the server
+
+1. Download the `docker-compose.prod.yaml` file from this repository.
+
+2. Fill in the environment variables `GAMMA_CLIENT_ID` and `GAMMA_REDIRECT_URI`
+   from your newly created Gamma client.
+
+2. Create a directory `secrets` next to the compose file and create the
+   following files and paste your secrets inside:
+
+   - `gamma-client-secret.txt`
+   - `gamma-api-authorization.txt`
+   - `jwt-secret.txt`: Generate a random string to sign JWTs
+   - `postgres-password.txt`: Generate a random database password
+   - `database-url.txt`: In the format `postgresql://postgres:DATABASE PASSWORD@db:5432/strecklista`
+
 ### Starting the server
 
 Now you are ready to start the server. Run the following command in the
@@ -84,6 +71,10 @@ docker compose up -d
 It may take a while the first time the server starts as the
 [images](https://docs.docker.com/get-started/docker-concepts/the-basics/what-is-an-image)
 are being created.
+
+### Initializing the database
+
+Initialize the database with Prisma.
 
 ## Configuration
 
@@ -120,14 +111,18 @@ the `.env` you created earlier. See the list of available settings below.
 
 ### Gamma
 
+| Name                    | Type   | Default | Description                                                            |
+| ----------------------- | ------ | ------- | ---------------------------------------------------------------------- |
+| GAMMA_CLIENT_ID         | string |         | Public identifier of your Gamma client                                 |
+| GAMMA_CLIENT_SECRET     | string |         | Secret key of your Gamma client                                        |
+| GAMMA_API_AUTHORIZATION | string |         | Gamma API authorization header, should look like `pre-shared: xxxx...` |
+| GAMMA_REDIRECT_URI      | URI    |         | Redirect URI of your Gamma client                                      |
+
+### Prisma
+
 | Name                    | Type   | Default | Description                                                           |
 | ----------------------- | ------ | ------- | --------------------------------------------------------------------- |
-| GAMMA_CLIENT_ID         | string |         | Public identifier of your Gamma client                                |
-| GAMMA_CLIENT_SECRET     | string |         | Secret key of your Gamma client                                       |
-| GAMMA_API_AUTHORIZATION | string |         | Gamma API authorization header, should look like `pre-shared: xxxx... |
-| GAMMA_REDIRECT_URI      | URI    |         | Redirect URI of your Gamma client                                     |
-
-### PostgreSQL
+| DATABASE_URL            | string |         | The URL Prisma will use to connect to the databsae                    |
 
 > [!WARNING]
 > If using Docker Compose the connection to PostgreSQL is already configured and

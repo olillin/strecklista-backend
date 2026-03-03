@@ -2,6 +2,47 @@
 
 ## Index
 
+
+1. [General](#general)  
+   1.1 [API Endpoints Overview](#api-endpoints)  
+   1.2 [API Responses](#api-responses)  
+   1.3 [General Errors](#general-errors)  
+
+2. [Types](#types)  
+   2.1 [UserId](#userid)  
+   2.2 [GroupId](#groupid)  
+   2.3 [User](#user)  
+   2.4 [Group](#group)  
+   2.5 [Item](#item)  
+   2.6 [Price](#price)  
+   2.7 [Transaction](#transaction)  
+   2.8 [Purchase](#purchase)  
+   2.9 [PurchasedItem](#purchaseditem)  
+   2.10 [Deposit](#deposit)  
+   2.11 [StockUpdate](#stockupdate)  
+   2.12 [ItemStockUpdate](#itemstockupdate)  
+
+3. [Authorization](#authorization)  
+   3.1 [Authorization Flow](#authorization-flow)  
+   3.2 [GET /authorize](#get-authorize)  
+   3.3 [POST /login](#post-login)  
+
+4. [API Endpoints](#api-endpoints)  
+   4.1 [GET /user](#get-user)  
+   4.2 [GET /group](#get-group)  
+   4.3 [GET /group/transaction](#get-grouptransaction)  
+   4.4 [GET /group/transaction-id](#get-grouptransactionid)  
+   4.5 [PATCH /group/transaction-id](#patch-grouptransactionid)  
+   4.6 [POST /group/purchase](#post-grouppurchase)  
+   4.7 [POST /group/deposit](#post-groupdeposit)  
+   4.8 [POST /group/stock](#post-groupstock)  
+   4.9 [GET /group/item](#get-groupitem)  
+   4.10 [POST /group/item](#post-groupitem)  
+   4.11 [GET /group/item-id](#get-groupitemid)  
+   4.12 [PATCH /group/item-id](#patch-groupitemid)  
+   4.13 [DELETE /group/item-id](#delete-groupitemid)  
+
+
 ## General
 
 ### API Endpoints

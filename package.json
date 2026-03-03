@@ -25,6 +25,7 @@
     },
     "homepage": "https://github.com/olillin/strecklista-backend",
     "dependencies": {
+        "prisma": "^7.4.1",
         "@prisma/adapter-pg": "^7.4.1",
         "@prisma/client": "^7.4.1",
         "cors": "^2.8.5",
@@ -51,7 +52,6 @@
         "eslint-plugin-jsdoc": "^62.7.1",
         "globals": "^16.0.0",
         "prettier": "^3.8.1",
-        "prisma": "^7.4.1",
         "rollup": "^4.59.0",
         "ts-node": "^10.9.2",
         "typescript-eslint": "^8.56.1"

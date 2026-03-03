@@ -6,7 +6,7 @@
 
 # Want to help us make this template better? Share your feedback here: https://forms.gle/ybq9Krt8jtBL3iCk7
 
-ARG NODE_VERSION=22
+ARG NODE_VERSION=24
 
 ################################################################################
 # Use node image for base image for all stages.
@@ -42,6 +42,10 @@ RUN --mount=type=bind,source=package.json,target=package.json \
 
 # Copy the rest of the source files into the image.
 COPY . .
+
+# Generate the Prisma client
+RUN npx prisma generate
+
 # Run the build script.
 RUN npm run build
 
@@ -63,10 +67,10 @@ COPY package.json .
 # the built application from the build stage into the image.
 COPY --from=deps /usr/src/app/node_modules ./node_modules
 COPY --from=build /usr/src/app/bundle ./bundle
-
+COPY --from=build /usr/src/app/prisma ./prisma
 
 # Expose the port that the application listens on.
 EXPOSE 8080
 
 # Run the application.
-CMD npm start
+CMD ["npx prisma migrate deploy", "npm start"]

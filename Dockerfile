@@ -1,16 +1,8 @@
 # syntax=docker/dockerfile:1
 
-# Comments are provided throughout this file to help you get started.
-# If you need more help, visit the Dockerfile reference guide at
-# https://docs.docker.com/go/dockerfile-reference/
-
-# Want to help us make this template better? Share your feedback here: https://forms.gle/ybq9Krt8jtBL3iCk7
-
-ARG NODE_VERSION=24
-
 ################################################################################
 # Use node image for base image for all stages.
-FROM node:${NODE_VERSION}-alpine as base
+FROM node:24-alpine as base
 
 # Set working directory for all build stages.
 WORKDIR /usr/src/app
@@ -54,6 +46,9 @@ RUN npm run build
 # where the necessary files are copied from the build stage.
 FROM base as final
 
+# Add Prisma
+RUN yarn global add prisma@7.4.1
+
 # Use production node environment by default.
 ENV NODE_ENV production
 
@@ -65,7 +60,8 @@ COPY package.json .
 
 # Copy the production dependencies from the deps stage and also
 # the built application from the build stage into the image.
-COPY --from=deps /usr/src/app/node_modules ./node_modules
+COPY --from=build /usr/src/app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=build /usr/src/app/node_modules/prisma ./node_modules/prisma
 COPY --from=build /usr/src/app/bundle ./bundle
 COPY --from=build /usr/src/app/prisma ./prisma
 

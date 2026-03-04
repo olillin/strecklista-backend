@@ -87,14 +87,28 @@ export const requiredEnvironment: readonly (keyof EnvironmentVariables)[] = [
     'DATABASE_URL',
     'JWT_SECRET',
 ]
-requiredEnvironment.forEach(required => {
-    if (!(required in process.env)) {
-        console.error(`Missing required environment variable: ${required}`)
-        process.exit()
-    }
-})
 
 const environment: Concrete<EnvironmentVariables> = withDefaults(
     resolveFileEnvironment(process.env as unknown as FileEnvironmentVariables)
 )
+
+/**
+ * Validates that all required environment variables are present.
+ *
+ * If any variable is missing an error is printed and the process exits.
+ */
+function checkRequiredEnvironment() {
+    const missing = requiredEnvironment.filter(
+        required => !(required in environment)
+    )
+
+    if (missing.length > 0) {
+        console.error(
+            `Missing required environment variables: ${missing.join(', ')}`
+        )
+        process.exit()
+    }
+}
+checkRequiredEnvironment()
+
 export default environment

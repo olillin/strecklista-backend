@@ -98,4 +98,3 @@ npx prisma db seed
 
 See [DEPLOYMENT](./docs/DEPLOYMENT.md) for more info about configuring the
 server.
-

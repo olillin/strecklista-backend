@@ -3,6 +3,7 @@ import { ItemsResponse, ResponseBody } from '../../responses'
 import { getGroupId, getUserId } from '../../middleware/validateToken'
 import { getItemsInGroup, getTopPrice, Item } from '../../services/itemService'
 import { ItemSortMode } from '../../middleware/validators'
+import { convertDecimalToNumber } from '../../util/decimalToNumber'
 
 type ItemCompareFunction = (a: Item, b: Item) => number
 const COMPARE = {
@@ -48,6 +49,8 @@ export default async function getItems(req: Request, res: Response) {
         items.sort(compare)
     }
 
-    const body: ResponseBody<ItemsResponse> = { data: { items } }
+    const body: ResponseBody<ItemsResponse> = {
+        data: { items: convertDecimalToNumber(items) },
+    }
     res.json(body)
 }

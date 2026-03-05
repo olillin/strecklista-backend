@@ -4,6 +4,7 @@ import {
     TransactionFlags,
     updateTransaction,
 } from '../../services/transactionService'
+import { convertDecimalToNumber } from '../../util/decimalToNumber'
 
 export interface PatchTransactionBody {
     removed?: boolean
@@ -20,7 +21,9 @@ export default async function patchTransaction(req: Request, res: Response) {
     // Update transactions table
     const newTransaction = await updateTransaction(transactionId, flags)
 
-    const data: TransactionResponse = { transaction: newTransaction }
+    const data: TransactionResponse = {
+        transaction: convertDecimalToNumber(newTransaction),
+    }
     const body: ResponseBody<TransactionResponse> = { data }
 
     res.json(body)

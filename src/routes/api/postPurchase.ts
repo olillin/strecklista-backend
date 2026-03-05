@@ -2,9 +2,9 @@ import { Request, Response } from 'express'
 import { CreatedTransactionResponse, ResponseBody } from '../../responses'
 import { getGroupId, getUserId } from '../../middleware/validateToken'
 import { sendError, unexpectedError } from '../../errors'
-import { Price } from '../../services/itemService'
 import { createPurchase } from '../../services/transactionService'
 import { getUser } from '../../services/userService'
+import { convertDecimalToNumber } from '../../util/decimalToNumber'
 
 export interface JsonPrice {
     price: number
@@ -48,7 +48,10 @@ export default async function postPurchase(req: Request, res: Response) {
     }
     const balance = user.balance
     const body: ResponseBody<CreatedTransactionResponse> = {
-        data: { transaction: purchase, balance: balance.toNumber() },
+        data: {
+            transaction: convertDecimalToNumber(purchase),
+            balance: balance.toNumber(),
+        },
     }
 
     const resourceUri = req.baseUrl + `/group/transaction/${purchase.id}`

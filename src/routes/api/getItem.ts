@@ -3,6 +3,7 @@ import { getUserId } from '../../middleware/validateToken'
 import { ApiError, sendError } from '../../errors'
 import { ItemResponse, ResponseBody } from '../../responses'
 import * as itemService from '../../services/itemService'
+import { convertDecimalToNumber } from '../../util/decimalToNumber'
 
 export default async function getItem(req: Request, res: Response) {
     const itemId = parseInt(req.params.id)
@@ -15,6 +16,8 @@ export default async function getItem(req: Request, res: Response) {
         return
     }
 
-    const body: ResponseBody<ItemResponse> = { data: { item } }
+    const body: ResponseBody<ItemResponse> = {
+        data: { item: convertDecimalToNumber(item) },
+    }
     res.json(body)
 }

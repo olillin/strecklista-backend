@@ -78,7 +78,11 @@ export async function createItem(
                 iconUrl: iconUrl,
             },
             include: {
-                prices: true,
+                prices: {
+                    omit: {
+                        itemId: true,
+                    },
+                },
             },
         })
         .then(item => {
@@ -136,7 +140,11 @@ function selectItemData(userId: number) {
         groupId: true,
         flags: true,
         iconUrl: true,
-        prices: true,
+        prices: {
+            omit: {
+                itemId: true,
+            },
+        },
 
         favorites: {
             where: {
@@ -260,7 +268,11 @@ export function getBareItem(
             id: itemId,
         },
         include: {
-            prices: true,
+            prices: {
+                omit: {
+                    itemId: true,
+                },
+            },
         },
     })
 }
@@ -344,7 +356,11 @@ export async function updateItem(
             },
             data: updateData,
             include: {
-                prices: true,
+                prices: {
+                    omit: {
+                        itemId: true,
+                    },
+                },
             },
         })
     )

@@ -1,6 +1,9 @@
 import { GroupId, UserId } from 'gammait'
 import { prisma } from '../lib/prisma'
-import { Decimal } from '@prisma/client/runtime/client'
+import {
+    Decimal,
+    PrismaClientKnownRequestError,
+} from '@prisma/client/runtime/client'
 import { UserSelect } from '../generated/prisma/models'
 import { PrismaClient } from '@prisma/client/extension'
 
@@ -43,11 +46,13 @@ export async function createGroup(
  * Create a group and user if they do not exist
  * @param gammaGroupId group id from Gamma
  * @param gammaUserId user id from Gamma
+ * @param maxRetries Max amount of times to retry on fail caused by contention.
  * @return the full information of the user with `gammaUserId` in the group with `gammaGroupId`
  */
 export async function softAddGroupUser(
     gammaGroupId: GroupId,
-    gammaUserId: UserId
+    gammaUserId: UserId,
+    maxRetries: number = 5
 ): Promise<OfflineGroupUser> {
     const createGroupUser = async (
         gammaGroupId: GroupId,
@@ -87,7 +92,7 @@ export async function softAddGroupUser(
         })
 
         return {
-            user: (await getUser(groupUser.userId, groupUser.groupId))!,
+            user: (await _getUser(groupUser.userId, groupUser.groupId, tx))!,
             group: {
                 id: groupUser.groupId,
                 gammaId: groupUser.group.gammaId as GroupId,
@@ -96,28 +101,38 @@ export async function softAddGroupUser(
     }
 
     return prisma.$transaction<OfflineGroupUser>(async tx => {
-        const groupUser = await tx.groupUser.findFirst({
-            where: {
-                user: {
-                    gammaId: gammaUserId,
-                },
-                group: {
-                    gammaId: gammaGroupId,
-                },
-            },
-        })
-        if (groupUser != null) {
-            const offlineGroupUser = await _getUserInGroup(
-                groupUser.userId,
-                groupUser.groupId,
-                tx
-            )
-            if (offlineGroupUser == null) {
-                throw new Error('Group user is suddenly null')
+        for (let i = 0; i <= maxRetries; i++) {
+            try {
+                const groupUser = await tx.groupUser.findFirst({
+                    where: {
+                        user: {
+                            gammaId: gammaUserId,
+                        },
+                        group: {
+                            gammaId: gammaGroupId,
+                        },
+                    },
+                })
+                if (groupUser != null) {
+                    const offlineGroupUser = await _getUserInGroup(
+                        groupUser.userId,
+                        groupUser.groupId,
+                        tx
+                    )
+                    if (offlineGroupUser == null) {
+                        throw new Error('Group user is suddenly null')
+                    }
+                    return offlineGroupUser
+                }
+                return createGroupUser(gammaGroupId, gammaUserId, tx)
+            } catch (error) {
+                if (error instanceof PrismaClientKnownRequestError) {
+                    continue
+                }
+                throw error
             }
-            return offlineGroupUser
         }
-        return createGroupUser(gammaGroupId, gammaUserId, tx)
+        throw new Error('Failed to create user')
     })
 }
 
@@ -260,11 +275,12 @@ function parseUser(user: UserData): OfflineUser {
     }
 }
 
-export async function getUser(
+async function _getUser(
     userId: number,
-    groupId: number
+    groupId: number,
+    tx: PrismaClient
 ): Promise<OfflineUser | null> {
-    const user: UserData | null = await prisma.user.findFirst({
+    const user: UserData | null = await tx.user.findFirst({
         where: {
             id: userId,
         },
@@ -272,6 +288,13 @@ export async function getUser(
     })
     if (user === null) return null
     return parseUser(user)
+}
+
+export async function getUser(
+    userId: number,
+    groupId: number
+): Promise<OfflineUser | null> {
+    return _getUser(userId, groupId, prisma)
 }
 
 export async function getUserGroups(

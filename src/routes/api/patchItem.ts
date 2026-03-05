@@ -4,6 +4,7 @@ import { ItemResponse, ResponseBody } from '../../responses'
 import { updateItem, Price, ItemPatch } from '../../services/itemService'
 import { JsonPrice } from './postPurchase'
 import { Decimal } from '@prisma/client/runtime/client'
+import { convertDecimalToNumber } from '../../util/decimalToNumber'
 
 export interface PatchItemBody {
     icon?: string
@@ -14,13 +15,18 @@ export interface PatchItemBody {
 }
 
 export default async function patchItem(req: Request, res: Response) {
+    if (typeof req.params.id !== 'string') {
+        throw new Error('Invalid id, expected string but got array')
+    }
     const userId: number = getUserId(res)
     const itemId = parseInt(req.params.id)
 
     const patch = createItemPatch(req.body as PatchItemBody)
     const newItem = await updateItem(itemId, userId, patch)
 
-    const body: ResponseBody<ItemResponse> = { data: { item: newItem } }
+    const body: ResponseBody<ItemResponse> = {
+        data: { item: convertDecimalToNumber(newItem) },
+    }
     res.json(body)
 }
 

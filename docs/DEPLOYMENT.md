@@ -50,14 +50,13 @@ profile and group information.
 2. Fill in the environment variables `GAMMA_CLIENT_ID` and `GAMMA_REDIRECT_URI`
    from your newly created Gamma client.
 
-2. Create a directory `secrets` next to the compose file and create the
+3. Create a directory `secrets` next to the compose file and create the
    following files and paste your secrets inside:
-
-   - `gamma-client-secret.txt`
-   - `gamma-api-authorization.txt`
-   - `jwt-secret.txt`: Generate a random string to sign JWTs
-   - `postgres-password.txt`: Generate a random database password
-   - `database-url.txt`: In the format `postgresql://postgres:DATABASE PASSWORD@db:5432/strecklista`
+    - `gamma-client-secret.txt`
+    - `gamma-api-authorization.txt`
+    - `jwt-secret.txt`: Generate a random string to sign JWTs
+    - `postgres-password.txt`: Generate a random database password
+    - `database-url.txt`: In the format `postgresql://postgres:DATABASE PASSWORD@db:5432/strecklista`
 
 ### Starting the server
 
@@ -120,9 +119,9 @@ the `.env` you created earlier. See the list of available settings below.
 
 ### Prisma
 
-| Name                    | Type   | Default | Description                                                           |
-| ----------------------- | ------ | ------- | --------------------------------------------------------------------- |
-| DATABASE_URL            | string |         | The URL Prisma will use to connect to the databsae                    |
+| Name         | Type   | Default | Description                                        |
+| ------------ | ------ | ------- | -------------------------------------------------- |
+| DATABASE_URL | string |         | The URL Prisma will use to connect to the databsae |
 
 > [!WARNING]
 > If using Docker Compose the connection to PostgreSQL is already configured and

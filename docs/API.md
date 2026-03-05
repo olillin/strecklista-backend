@@ -2,11 +2,10 @@
 
 ## Index
 
-
 1. [General](#general)  
    1.1 [API Endpoints Overview](#api-endpoints)  
    1.2 [API Responses](#api-responses)  
-   1.3 [General Errors](#general-errors)  
+   1.3 [General Errors](#general-errors)
 
 2. [Types](#types)  
    2.1 [UserId](#userid)  
@@ -20,12 +19,12 @@
    2.9 [PurchasedItem](#purchaseditem)  
    2.10 [Deposit](#deposit)  
    2.11 [StockUpdate](#stockupdate)  
-   2.12 [ItemStockUpdate](#itemstockupdate)  
+   2.12 [ItemStockUpdate](#itemstockupdate)
 
 3. [Authorization](#authorization)  
    3.1 [Authorization Flow](#authorization-flow)  
    3.2 [GET /authorize](#get-authorize)  
-   3.3 [POST /login](#post-login)  
+   3.3 [POST /login](#post-login)
 
 4. [API Endpoints](#api-endpoints)  
    4.1 [GET /user](#get-user)  
@@ -40,8 +39,7 @@
    4.10 [POST /group/item](#post-groupitem)  
    4.11 [GET /group/item-id](#get-groupitemid)  
    4.12 [PATCH /group/item-id](#patch-groupitemid)  
-   4.13 [DELETE /group/item-id](#delete-groupitemid)  
-
+   4.13 [DELETE /group/item-id](#delete-groupitemid)
 
 ## General
 

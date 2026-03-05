@@ -8,6 +8,9 @@ export default async function deleteItem(
     next: NextFunction
 ): Promise<void> {
     try {
+        if (typeof req.params.id !== 'string') {
+            throw new Error('Invalid id, expected string but got array')
+        }
         const itemId = parseInt(req.params.id)
         const groupId = getGroupId(res)
 

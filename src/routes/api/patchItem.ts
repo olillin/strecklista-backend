@@ -15,6 +15,9 @@ export interface PatchItemBody {
 }
 
 export default async function patchItem(req: Request, res: Response) {
+    if (typeof req.params.id !== 'string') {
+        throw new Error('Invalid id, expected string but got array')
+    }
     const userId: number = getUserId(res)
     const itemId = parseInt(req.params.id)
 

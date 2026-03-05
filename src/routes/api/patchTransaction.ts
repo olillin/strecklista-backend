@@ -11,6 +11,9 @@ export interface PatchTransactionBody {
 }
 
 export default async function patchTransaction(req: Request, res: Response) {
+    if (typeof req.params.id !== 'string') {
+        throw new Error('Invalid id, expected string but got array')
+    }
     const transactionId = parseInt(req.params.id)
     const { removed } = req.body as PatchTransactionBody
 

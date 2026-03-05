@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import { TransactionResponse, ResponseBody } from '../../responses'
 import {
-    TransactionFlags,
+    TransactionPatch,
     updateTransaction,
 } from '../../services/transactionService'
 import { convertDecimalToNumber } from '../../util/decimalToNumber'
@@ -17,12 +17,12 @@ export default async function patchTransaction(req: Request, res: Response) {
     const transactionId = parseInt(req.params.id)
     const { removed } = req.body as PatchTransactionBody
 
-    const flags: Partial<TransactionFlags> = {
-        removed: removed,
+    const patch: TransactionPatch = {
+        removed,
     }
 
     // Update transactions table
-    const newTransaction = await updateTransaction(transactionId, flags)
+    const newTransaction = await updateTransaction(transactionId, patch)
 
     const data: TransactionResponse = {
         transaction: convertDecimalToNumber(newTransaction),

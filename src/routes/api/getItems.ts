@@ -28,9 +28,7 @@ export default async function getItems(req: Request, res: Response) {
     const userId: number = getUserId(res)
     const groupId: number = getGroupId(res)
 
-    const items: Item[] = (await getItemsInGroup(groupId, userId)).filter(
-        item => item.visible || !visibleOnly
-    )
+    const items: Item[] = await getItemsInGroup(groupId, userId, visibleOnly)
 
     // Sort by popularity by default and when two items are equal in order
     items.sort(COMPARE.TIMES_PURCHASED_DESC)

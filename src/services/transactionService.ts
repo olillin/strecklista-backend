@@ -1,4 +1,4 @@
-import { getFlag, isValidComment } from '../util/helpers'
+import { isValidComment } from '../util/helpers'
 import { prisma } from '../lib/prisma'
 import { getBareItem, getItem, type Price } from './itemService'
 import { Decimal } from '@prisma/client/runtime/client'
@@ -12,6 +12,7 @@ import {
     ItemStockUpdateCreateManyStockUpdateInput,
     PurchasedItemUncheckedCreateWithoutPurchaseInput,
     TransactionSelect,
+    TransactionUpdateInput,
 } from '../generated/prisma/models'
 import { PostItemStockUpdate } from '../routes/api/postStockUpdate'
 
@@ -59,35 +60,8 @@ export interface ItemStockUpdate {
     after: number
 }
 
-export enum TransactionFlag {
-    REMOVED = 0,
-}
-
-export interface TransactionFlags {
-    removed: boolean
-}
-
-/**
- * Get all transaction flags from a flag int
- * @param bits The bitfield data
- */
-export function parseTransactionFlags(
-    bits: number | null | undefined
-): TransactionFlags {
-    return {
-        removed: getFlag(bits, TransactionFlag.REMOVED),
-    }
-}
-
-/**
- * Convert a map of transaction flags to a bitfield
- * @param flags The transaction flags
- * @return The bitfield
- */
-export function serializeTransactionFlags(
-    flags: Partial<TransactionFlags>
-): number {
-    return Number(flags.removed) << TransactionFlag.REMOVED
+export interface TransactionPatch {
+    removed?: boolean
 }
 
 // Transactions
@@ -96,7 +70,7 @@ interface TransactionData {
     type: PrismaTransactionType
     createdById: number
     createdTime: Date
-    flags: number | null
+    removed: boolean
     comment: string | null
 
     purchase: {
@@ -120,7 +94,7 @@ const selectTransactionData = {
     groupId: true,
     createdById: true,
     createdTime: true,
-    flags: true,
+    removed: true,
     comment: true,
 
     purchase: {
@@ -137,13 +111,12 @@ const selectTransactionData = {
 } satisfies TransactionSelect
 
 function parseTransaction(transaction: TransactionData): AnyTransaction {
-    const flags = parseTransactionFlags(transaction.flags)
     const basicTransaction: Transaction<'purchase'> = {
         type: 'purchase',
         id: transaction.id,
         createdBy: transaction.createdById,
         createdTime: transaction.createdTime,
-        removed: flags.removed,
+        removed: transaction.removed,
         comment: transaction.comment ?? undefined,
     }
 
@@ -247,26 +220,17 @@ export async function getTransactionsInGroup(
 
 export async function updateTransaction(
     transactionId: number,
-    flags: Partial<TransactionFlags>
+    patch: TransactionPatch
 ): Promise<AnyTransaction> {
-    const currentFlags: TransactionFlags = await prisma.transaction
-        .findFirst({
-            where: {
-                id: transactionId,
-            },
-            select: {
-                flags: true,
-            },
-        })
-        .then(transaction => parseTransactionFlags(transaction?.flags ?? 0))
-    const newFlags: TransactionFlags = Object.assign(currentFlags, flags)
+    const data = patch.removed == undefined ? {} : {
+        removed: patch.removed
+    } satisfies TransactionUpdateInput
+
     const transaction: TransactionData = await prisma.transaction.update({
         where: {
             id: transactionId,
         },
-        data: {
-            flags: serializeTransactionFlags(newFlags),
-        },
+        data,
         select: selectTransactionData,
     })
 

@@ -226,6 +226,7 @@ function selectUserData(groupId: number) {
             where: {
                 transaction: {
                     groupId: groupId,
+                    removed: false,
                 },
             },
             select: {
@@ -236,6 +237,7 @@ function selectUserData(groupId: number) {
             where: {
                 transaction: {
                     groupId: groupId,
+                    removed: false,
                 },
             },
             select: {

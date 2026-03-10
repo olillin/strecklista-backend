@@ -4,6 +4,7 @@
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
+  previewFeatures = ["strictUndefinedChecks"]
 }
 
 datasource db {
@@ -50,7 +51,7 @@ model Item {
   displayName String   @db.VarChar(100)
   iconUrl     String?  @db.VarChar(500)
   createdTime DateTime @default(now()) @db.Timestamptz
-  flags       Int?     @db.SmallInt
+  invisible   Boolean  @default(false) @db.Boolean
 
   prices           Price[]
   purchasedItems   PurchasedItem[]
@@ -85,9 +86,9 @@ model Transaction {
 
   createdById Int
   createdBy   User @relation("CreatedByTransactions", fields: [createdById], references: [id])
-
   createdTime DateTime @default(now()) @db.Timestamptz
-  flags       Int?     @db.SmallInt
+
+  removed     Boolean  @default(false) @db.Boolean
   comment     String?  @db.VarChar(1000)
 
   purchase    Purchase?

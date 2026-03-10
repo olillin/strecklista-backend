@@ -1,8 +1,7 @@
 import { prisma } from '../lib/prisma'
-import type { Item as PrismaItem } from '../generated/prisma/client'
+import { type Item as PrismaItem, Prisma } from '../generated/prisma/client'
 import { ItemSelect, ItemUpdateInput } from '../generated/prisma/models'
 import { Decimal } from '@prisma/client/runtime/client'
-import { getFlag } from '../util/helpers'
 
 export interface Item {
     id: number
@@ -21,10 +20,6 @@ export interface Price {
     displayName: string
 }
 
-export enum ItemFlag {
-    INVISIBLE = 0,
-}
-
 export interface ItemFlags {
     invisible: boolean
 }
@@ -37,25 +32,6 @@ export function getTopPrice(item: Item): Decimal {
             return max
         }
     }, new Decimal(0))
-}
-
-/**
- * Parse item flags from a bitfield
- * @param bits The bitfield data
- */
-export function parseItemFlags(bits: number | null | undefined): ItemFlags {
-    return {
-        invisible: getFlag(bits, ItemFlag.INVISIBLE),
-    }
-}
-
-/**
- * Convert a map of item flags to a bitfield
- * @param flags The item flags
- * @return The bitfield
- */
-export function serializeItemFlags(flags: Partial<ItemFlags>): number {
-    return Number(flags.invisible) << ItemFlag.INVISIBLE
 }
 
 // Items
@@ -75,7 +51,7 @@ export async function createItem(
                         data: prices,
                     },
                 },
-                iconUrl: iconUrl,
+                iconUrl: iconUrl ?? null,
             },
             include: {
                 prices: {
@@ -105,7 +81,7 @@ interface ItemData {
     displayName: string
     createdTime: Date
     groupId: number
-    flags: number | null
+    invisible: boolean
     iconUrl: string | null
     prices: Price[]
 
@@ -138,7 +114,7 @@ function selectItemData(userId: number) {
         displayName: true,
         createdTime: true,
         groupId: true,
-        flags: true,
+        invisible: true,
         iconUrl: true,
         prices: {
             omit: {
@@ -214,8 +190,7 @@ function parseItem(item: ItemData): Item {
         0
     )
 
-    // Get other properties
-    const flags = parseItemFlags(item.flags ?? 0)
+    // Other properties
     const isFavorite = item.favorites.length !== 0
 
     return {
@@ -226,7 +201,7 @@ function parseItem(item: ItemData): Item {
         prices: item.prices,
         stock: stock,
         timesPurchased: totalPurchased,
-        visible: !flags.invisible,
+        visible: !item.invisible,
         favorite: isFavorite,
     }
 }
@@ -247,11 +222,13 @@ export async function getItem(
 
 export async function getItemsInGroup(
     groupId: number,
-    userId: number
+    userId: number,
+    visibleOnly: boolean = false
 ): Promise<Item[]> {
     const items: ItemData[] = await prisma.item.findMany({
         where: {
             groupId: groupId,
+            invisible: visibleOnly ? Prisma.skip : false,
         },
         select: selectItemData(userId),
     })
@@ -279,8 +256,8 @@ export function getBareItem(
 
 export interface ItemPatch {
     displayName?: string
-    iconUrl?: string
-    flags?: Partial<ItemFlags>
+    iconUrl?: string | null
+    invisible?: boolean
     prices?: Price[]
     favorite?: boolean
 }
@@ -288,19 +265,11 @@ export interface ItemPatch {
 export async function updateItem(
     itemId: number,
     userId: number,
-    data: ItemPatch
+    patch: ItemPatch
 ): Promise<Item> {
     const updateData: ItemUpdateInput = {}
 
     const queuedChanges: (() => Promise<any>)[] = []
-
-    const updateFlags = async (flags: Partial<ItemFlags>) => {
-        const currentFlags: ItemFlags = await getBareItem(itemId).then(item =>
-            parseItemFlags(item?.flags ?? 0)
-        )
-        const newFlags: ItemFlags = Object.assign(currentFlags, flags)
-        updateData.flags = serializeItemFlags(newFlags)
-    }
 
     const updatePrices = (prices: Price[]) => {
         queuedChanges.push(() =>
@@ -324,15 +293,13 @@ export async function updateItem(
         )
     }
 
-    Object.entries(data).forEach(([key, value]) => {
-        if (value === undefined || value === null) return
+    Object.entries(patch).forEach(([key, value]) => {
+        if (value === undefined) return
         switch (key) {
             case 'displayName':
             case 'iconUrl':
+            case 'invisible':
                 updateData[key] = value
-                break
-            case 'flags':
-                updateFlags(value)
                 break
             case 'prices':
                 updatePrices(value)
@@ -411,7 +378,7 @@ export async function isItemVisible(itemId: number): Promise<boolean> {
     if (item === null) {
         throw new Error('Item does not exist')
     }
-    return ((item.flags ?? 0) & ItemFlag.INVISIBLE) === 0
+    return !item.invisible
 }
 
 export async function deleteItem(

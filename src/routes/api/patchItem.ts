@@ -44,11 +44,6 @@ function createItemPatch(body: PatchItemBody): ItemPatch {
         iconUrl: icon,
         prices,
         favorite,
-        flags:
-            visible === undefined
-                ? undefined
-                : {
-                      invisible: !visible,
-                  },
+        invisible: visible != undefined ? !visible : undefined,
     }
 }

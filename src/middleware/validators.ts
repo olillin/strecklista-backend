@@ -112,6 +112,18 @@ export const getTransactions = () => [
         .default(0)
         .isInt({ min: 0 })
         .withMessage(ApiError.InvalidOffset),
+    query('createdBy')
+        .optional()
+        .isInt({ min: 1 })
+        .withMessage(ApiError.InvalidUserId)
+        .bail()
+        .custom(checkUserExistsInGroup),
+    query('createdFor')
+        .optional()
+        .isInt({ min: 1 })
+        .withMessage(ApiError.InvalidUserId)
+        .bail()
+        .custom(checkUserExistsInGroup),
 ]
 
 export const getTransaction = () => [

@@ -377,10 +377,16 @@ List transactions in currently authenticated user's group.
 
 #### Parameters
 
-| Name   | Required | Type                 | Description                                  |
-| ------ | -------- | -------------------- | -------------------------------------------- |
-| limit  | N        | number (default: 50) | How many purchases to list at most           |
-| offset | N        | number (default: 0)  | How many purchases to skip over in the start |
+| Name       | Required | Type                 | Description                                                 |
+| ---------- | -------- | -------------------- | ----------------------------------------------------------- |
+| limit      | N        | number (default: 50) | How many purchases to list at most                          |
+| offset     | N        | number (default: 0)  | How many purchases to skip over in the start                |
+| createdBy  | N        | number               | Include only transactions created by the user with this id  |
+| createdFor | N        | number               | Include only transactions created for the user with this id |
+
+> [!NOTE]
+> Filtering with `createdFor` will never return stock updates as these are not
+> considered to be created for a user.
 
 #### Response
 

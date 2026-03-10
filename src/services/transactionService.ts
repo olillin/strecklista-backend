@@ -3,9 +3,10 @@ import { prisma } from '../lib/prisma'
 import { getBareItem, getItem, type Price } from './itemService'
 import { Decimal } from '@prisma/client/runtime/client'
 import type { TransactionType as PrismaTransactionType } from '../generated/prisma/enums'
-import type {
-    PurchasedItem as PrismaPurchasedItem,
-    ItemStockUpdate as PrismaItemStockUpdate,
+import {
+    type PurchasedItem as PrismaPurchasedItem,
+    type ItemStockUpdate as PrismaItemStockUpdate,
+    Prisma,
 } from '../generated/prisma/client'
 import { PurchaseItem } from '../routes/api/postPurchase'
 import {
@@ -199,14 +200,37 @@ export async function countTransactionsInGroup(
     })
 }
 
+export interface GetTransactionsOptions {
+    createdBy?: number
+    createdFor?: number
+}
+
 export async function getTransactionsInGroup(
     groupId: number,
     limit: number,
-    offset: number
+    offset: number,
+    options: GetTransactionsOptions = {}
 ): Promise<Array<AnyTransaction>> {
     const transactions = await prisma.transaction.findMany({
         where: {
             groupId: groupId,
+            createdById: options.createdBy ?? Prisma.skip,
+            ...(options.createdFor == undefined
+                ? {}
+                : {
+                      OR: [
+                          {
+                              purchase: {
+                                  createdForId: options.createdFor,
+                              },
+                          },
+                          {
+                              deposit: {
+                                  createdForId: options.createdFor,
+                              },
+                          },
+                      ],
+                  }),
         },
         skip: offset,
         take: limit,
@@ -222,9 +246,12 @@ export async function updateTransaction(
     transactionId: number,
     patch: TransactionPatch
 ): Promise<AnyTransaction> {
-    const data = patch.removed == undefined ? {} : {
-        removed: patch.removed
-    } satisfies TransactionUpdateInput
+    const data =
+        patch.removed == undefined
+            ? {}
+            : ({
+                  removed: patch.removed,
+              } satisfies TransactionUpdateInput)
 
     const transaction: TransactionData = await prisma.transaction.update({
         where: {

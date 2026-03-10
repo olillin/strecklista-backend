@@ -11,4 +11,3 @@ export function getAuthorizedGroup(
 export function isValidComment(comment: string | undefined | null): boolean {
     return !!comment && comment.length > 1
 }
-

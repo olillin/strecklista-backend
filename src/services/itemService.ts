@@ -228,7 +228,7 @@ export async function getItemsInGroup(
     const items: ItemData[] = await prisma.item.findMany({
         where: {
             groupId: groupId,
-            invisible: visibleOnly ? Prisma.skip : false,
+            invisible: visibleOnly ? false : Prisma.skip
         },
         select: selectItemData(userId),
     })

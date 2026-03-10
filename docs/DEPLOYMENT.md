@@ -123,19 +123,6 @@ the `.env` you created earlier. See the list of available settings below.
 | ------------ | ------ | ------- | -------------------------------------------------- |
 | DATABASE_URL | string |         | The URL Prisma will use to connect to the databsae |
 
-> [!WARNING]
-> If using Docker Compose the connection to PostgreSQL is already configured and
-> should require no additional setup. If you need to configure these variables
-> you are likely doing something wrong or already know what you are doing.
-
-The server uses [pg](https://www.npmjs.com/package/pg) to communicate with
-PostgreSQL and the same environment variables are used. They can be found at:
-<https://www.postgresql.org/docs/current/libpq-envars.html>.
-
-> [!NOTE]
-> [docker-compose.yaml](../docker-compose.yaml) defines `PGPASSWORD` and
-> `POSTGRES_PASSWORD`. `PGPASSWORD` is the password the backend uses when
-> connecting to the database while `POSTGRES_PASSWORD` is the password the
-> database is created with. These should be the same and are set to the file
-> `secrets/password.txt` by default using the `_FILE` scheme described
-> [above](#file-tip).
+> [!IMPORTANT]
+> When using Docker Compose in production make sure that the password in
+> `DATABASE_URL` matches the `POSTGRES_PASSWORD` of the `db` service.

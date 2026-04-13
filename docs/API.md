@@ -40,6 +40,7 @@
    4.11 [GET /group/item-id](#get-groupitemid)  
    4.12 [PATCH /group/item-id](#patch-groupitemid)  
    4.13 [DELETE /group/item-id](#delete-groupitemid)
+   4.14 [POST /group/client](#post-group-client)
 
 ## General
 
@@ -303,16 +304,16 @@ Data about the user and their group.
     "user": {
       "balance": 0,
       "id": 1,
-      "gammaId": "7ba99a26-9ad3-4ad8-ab7f-5891c2d82a4b",
-      "nick": "Cal",
-      "firstName": "Oliver",
-      "lastName": "Lindell",
-      "avatarUrl": "https://auth.chalmers.it/images/...
+      "gammaId": "2f63a363-af22-480d-be49-531c1831933c",
+      "nick": "Dough",
+      "firstName": "Jane",
+      "lastName": "Doe",
+      "avatarUrl": "https://auth.chalmers.it/images/2f63a363-af22-480d-be49-531c1831933c"
     },
     "group": {
       "id": 1,
       "gammaId": "3cf94646-2412-4896-bba9-5d2410ac0c62",
-      "avatarUrl": "https://auth.chalmers.it/images/...,
+      "avatarUrl": "https://auth.chalmers.it/images/3cf94646-2412-4896-bba9-5d2410ac0c62",
       "prettyName": "P.R.I.T. 25"
     }
   }
@@ -351,20 +352,20 @@ The group and it's members:
       {
         "balance": 0,
         "id": 1,
-        "gammaId": "7ba99a26-9ad3-4ad8-ab7f-5891c2d82a4b",
-        "nick": "Cal",
-        "firstName": "Oliver",
-        "lastName": "Lindell",
-        "avatarUrl": "https://auth.chalmers.it/images/user/avatar/7ba99a26-9ad3-4ad8-ab7f-5891c2d82a4b"
+        "gammaId": "2f63a363-af22-480d-be49-531c1831933c",
+        "nick": "Dough",
+        "firstName": "Jane",
+        "lastName": "Doe",
+        "avatarUrl": "https://auth.chalmers.it/images/user/avatar/2f63a363-af22-480d-be49-531c1831933c"
       },
       {
         "balance": 0,
         "id": 1,
-        "gammaId": "b69e01cd-01d1-465e-adc5-99d017b7fd74",
-        "nick": "Göken",
-        "firstName": "Erik",
-        "lastName": "Persson",
-        "avatarUrl": "https://auth.chalmers.it/images/user/avatar/b69e01cd-01d1-465e-adc5-99d017b7fd74"
+        "gammaId": "9acb43d4-42f3-4f9d-9f37-bc156463e1a5",
+        "nick": "Smithed",
+        "firstName": "John",
+        "lastName": "Smith",
+        "avatarUrl": "https://auth.chalmers.it/images/user/avatar/9acb43d4-42f3-4f9d-9f37-bc156463e1a5"
       }
     ]
   }
@@ -868,3 +869,62 @@ Delete an item
 | Code | Error               |
 | ---- | ------------------- |
 | 404  | Item does not exist |
+
+### POST /group/client
+
+Create a new API client
+
+#### Body
+
+| Name        | Required | Type   | Description                |
+| ----------- | -------- | ------ | -------------------------- |
+| scopes      | Y        | string | Scopes                     |
+| displayName | Y        | string | The client name to display |
+| description | N        | string | An optional description    |
+
+#### Response
+
+Responds with the created client and credentials.
+
+```javascript
+{
+  "data": {
+    "secret": Item
+  }
+}
+```
+
+##### Example
+
+```javascript
+{
+  "data": {
+    "secret": "MIR5EUJQ7TOJI2M7BM987A9R9JGLBQML19A8S6S9CIOBRSG2ECCG",
+    "id": "01KP4C3XYVZNCQRAQ8D9MX21QK",
+    "scopes": "items transactions:write",
+    "group": {
+      "id": 1,
+      "gammaId": "3cf94646-2412-4896-bba9-5d2410ac0c62",
+      "prettyName": "P.R.I.T. 25",
+      "avatarUrl": "https://auth.chalmers.it/images/group/avatar/3cf94646-2412-4896-bba9-5d2410ac0c62"
+    },
+    "owner": {
+      "id": 1,
+      "gammaId": "2f63a363-af22-480d-be49-531c1831933c",
+      "firstName": "Jane",
+      "lastName": "Doe",
+      "nick": "Dough",
+      "avatarUrl": "https://auth.chalmers.it/images/user/avatar/2f63a363-af22-480d-be49-531c1831933c"
+    },
+    "displayName": "P.R.I.T. Scanner",
+    "description": "Beep beep!!"
+  }
+}
+```
+
+#### Errors
+
+| Code | Error                                |
+| ---- | ------------------------------------ |
+| 400  | An item must have at least one price |
+| 403  | Display name is not unique           |

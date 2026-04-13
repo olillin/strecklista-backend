@@ -5,6 +5,7 @@ import {
     completeUser,
     completeGroup,
     GammaUser,
+    UserProfile,
 } from './services/gammaService'
 import { Item } from './services/itemService'
 import {
@@ -64,6 +65,19 @@ export type TransactionsResponse = PaginatedResponse &
     DecimalToNumber<{
         transactions: Transaction<TransactionType>[]
     }>
+
+export interface ClientResponse {
+    id: string
+    scopes: string
+    group: Group
+    owner: UserProfile
+    displayName: string
+    description?: string
+}
+
+export interface NewClientResponse extends ClientResponse {
+    secret: string
+}
 
 export function toUserResponse(
     groupUser: OfflineGroupUser,

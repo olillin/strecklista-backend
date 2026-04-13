@@ -1,6 +1,6 @@
 import { body, Meta, oneOf, param, query } from 'express-validator'
 import { verifyToken } from './validateToken'
-import { ApiError } from '../errors'
+import { ApiError, ErrorResolvable, unsupportedScopesError } from '../errors'
 import { isUserInGroup } from '../services/userService'
 import {
     isItemVisible,
@@ -8,6 +8,7 @@ import {
     itemNameExistsInGroup,
 } from '../services/itemService'
 import { transactionExistsInGroup } from '../services/transactionService'
+import { clientNameExistsInGroup, isScope } from '../services/clientService'
 
 //#region Util
 function getGroupId(meta: Meta): number {
@@ -79,7 +80,7 @@ export async function checkItemVisible(value: string): Promise<void> {
     }
 }
 
-export async function checkDisplayNameUniqueInGroup(
+export async function checkItemDisplayNameUniqueInGroup(
     value: string,
     meta: Meta
 ): Promise<void> {
@@ -89,6 +90,27 @@ export async function checkDisplayNameUniqueInGroup(
         throw ApiError.DisplayNameNotUnique
     }
 }
+
+export async function checkValidScopes(value: string): Promise<void> {
+    const splitScopes = value.split(' ')
+    const unsupportedScopes = splitScopes.filter(scope => !isScope(scope))
+
+    if (unsupportedScopes.length > 0) {
+        throw unsupportedScopesError(unsupportedScopes.join(' '))
+    }
+}
+
+export async function checkClientDisplayNameUniqueInGroup(
+    value: string,
+    meta: Meta
+): Promise<void> {
+    const groupId = getGroupId(meta)
+    const nameExists = await clientNameExistsInGroup(value, groupId)
+    if (nameExists) {
+        throw ApiError.DisplayNameNotUnique
+    }
+}
+
 //#endregion Custom validators
 
 // Validation chains
@@ -251,7 +273,7 @@ export const postItem = () => [
         .trim()
         .notEmpty()
         .bail()
-        .custom(checkDisplayNameUniqueInGroup),
+        .custom(checkItemDisplayNameUniqueInGroup),
     body('prices')
         .exists()
         .isArray({ min: 1 })
@@ -291,7 +313,8 @@ export const patchItem = () => [
         .optional()
         .isString()
         .trim()
-        .custom(checkDisplayNameUniqueInGroup),
+        .notEmpty()
+        .custom(checkItemDisplayNameUniqueInGroup),
     body('prices')
         .optional()
         .isArray({ min: 1 })
@@ -308,4 +331,28 @@ export const deleteItem = () => [
         .withMessage(ApiError.InvalidItemId)
         .bail()
         .custom(checkItemExistsInGroup),
+]
+
+export const postClient = () => [
+    body('scopes')
+        .exists()
+        .isString()
+        .bail()
+        .trim()
+        .notEmpty()
+        .withMessage(ApiError.NoScopes)
+        .custom(checkValidScopes),
+    body('displayName')
+        .exists()
+        .isString()
+        .trim()
+        .isLength({
+            min: 1,
+            max: 50,
+        })
+        .bail()
+        .custom(checkClientDisplayNameUniqueInGroup),
+    body('description').optional().isString().trim().isLength({
+        max: 255,
+    }),
 ]

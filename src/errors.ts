@@ -61,6 +61,9 @@ export enum ApiError {
 
     // List items
     UnknownSortMode,
+
+    // Create API client
+    NoScopes,
 }
 
 function err(code: number, message: string): ErrorDefinition {
@@ -146,6 +149,9 @@ const errorDefinitions: { [key in ApiError]: ErrorDefinition } = {
 
     // List items
     [ApiError.UnknownSortMode]: err(400, 'Unknown sort order'),
+
+    // Create API client
+    [ApiError.NoScopes]: err(400, 'Client must have at least one scope'),
 }
 
 export function getErrorDefinition(error: ApiError): ErrorDefinition {
@@ -174,6 +180,12 @@ export function invalidPropertyError(
     location: Location
 ): ErrorDefinition {
     return err(400, `Property '${name}' is invalid in ${location}`)
+}
+
+export function unsupportedScopesError(
+    unsupportedScopes: string
+): ErrorDefinition {
+    return err(400, `Unsupported client scopes: ${unsupportedScopes}`)
 }
 
 export function unexpectedError(details: string) {

@@ -46,6 +46,10 @@ async function createApiRouter(): Promise<Router> {
             ['post', '/group/item', 'postItem'],
             ['patch', '/group/item/:id', 'patchItem'],
             ['delete', '/group/item/:id', 'deleteItem'],
+            // ['get', '/group/client/:id', 'getClient'],
+            ['post', '/group/client', 'postClient'],
+            // ['post', '/group/client/:id', 'updateClient'],
+            // ['delete', '/group/client/:id', 'deleteClient'],
         ]
 
     for (const [method, path, name] of routes) {

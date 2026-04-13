@@ -1,8 +1,15 @@
 import * as gamma from 'gammait'
 import { GroupId, UserId } from 'gammait'
 import { groupAvatarUrl, userAvatarUrl } from 'gammait/urls'
-import { OfflineGroup, OfflineUser } from './userService'
+import {
+    getGroup,
+    getUserInGroup,
+    OfflineGroup,
+    OfflineUser,
+} from './userService'
 import { Decimal } from '@prisma/client/runtime/client'
+import { clientApi } from '../config/gamma'
+import { getAuthorizedGroup } from '../util/helpers'
 
 export interface Group {
     id: number
@@ -12,7 +19,7 @@ export interface Group {
     avatarUrl: string
 }
 
-export interface User {
+export interface UserProfile {
     id: number
     gammaId: UserId
 
@@ -20,7 +27,9 @@ export interface User {
     lastName: string
     nick: string
     avatarUrl: string
+}
 
+export interface User extends UserProfile {
     balance: Decimal
 }
 
@@ -73,4 +82,34 @@ export function completeUser(
         balance: offlineUser.balance,
         ...names,
     }
+}
+
+export async function getCompleteUser(
+    userId: number,
+    groupId: number
+): Promise<User | null> {
+    const offlineGroupUser = await getUserInGroup(userId, groupId)
+    if (offlineGroupUser == null) return null
+
+    const gammaUser = await clientApi
+        .getUser(offlineGroupUser.user.gammaId)
+        .catch(() => null)
+    if (gammaUser == null) return null
+    return completeUser(offlineGroupUser.user, gammaUser)
+}
+
+export async function getCompleteAuthorizedGroup(
+    groupId: number,
+    gammaUserId: UserId
+): Promise<Group | null> {
+    const offlineGroup = await getGroup(groupId)
+    if (offlineGroup == null) return null
+
+    const gammaGroup = await clientApi
+        .getGroupsFor(gammaUserId)
+        .then(groups => getAuthorizedGroup(groups))
+        .catch(() => null)
+    if (gammaGroup == null) return null
+
+    return completeGroup(offlineGroup, gammaGroup)
 }

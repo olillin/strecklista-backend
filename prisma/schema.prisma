@@ -18,6 +18,8 @@ model Group {
   users        GroupUser[]
   items        Item[]
   transactions Transaction[]
+
+  apiClients    ApiClient[]
 }
 
 model User {
@@ -31,6 +33,8 @@ model User {
   receivedDeposits    Deposit[]     @relation("ReceivedDeposits")
 
   favoriteItems FavoriteItem[]
+
+  apiClients    ApiClient[]
 }
 
 model GroupUser {
@@ -165,4 +169,19 @@ model FavoriteItem {
   item   Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
   @@id([userId, itemId])
+}
+
+model ApiClient {
+  id      String @db.VarChar(26) @id @default(ulid())
+  salt    String @db.VarChar(31)
+  secret  String @db.VarChar(255)
+  scopes  String @db.VarChar(255)
+
+  groupId Int
+  group   Group @relation(fields: [groupId], references: [id])
+  ownerId Int
+  owner   User @relation(fields: [ownerId], references: [id])
+
+  displayName String @db.VarChar(50)
+  description String? @db.VarChar(255)
 }

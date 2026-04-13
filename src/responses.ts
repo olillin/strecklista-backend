@@ -68,7 +68,7 @@ export type TransactionsResponse = PaginatedResponse &
 
 export interface ClientResponse {
     id: string
-    scopes: string
+    scope: string
     group: Group
     owner: UserProfile
     displayName: string

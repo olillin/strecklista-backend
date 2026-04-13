@@ -175,7 +175,7 @@ model ApiClient {
   id      String @db.VarChar(26) @id @default(ulid())
   salt    String @db.VarChar(31)
   secret  String @db.VarChar(255)
-  scopes  String @db.VarChar(255)
+  scope   String @db.VarChar(255)
 
   groupId Int
   group   Group @relation(fields: [groupId], references: [id])

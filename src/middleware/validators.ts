@@ -1,6 +1,6 @@
 import { body, Meta, oneOf, param, query } from 'express-validator'
 import { verifyToken } from './validateToken'
-import { ApiError, ErrorResolvable, unsupportedScopesError } from '../errors'
+import { ApiError, unsupportedScopeError } from '../errors'
 import { isUserInGroup } from '../services/userService'
 import {
     isItemVisible,
@@ -91,12 +91,12 @@ export async function checkItemDisplayNameUniqueInGroup(
     }
 }
 
-export async function checkValidScopes(value: string): Promise<void> {
-    const splitScopes = value.split(' ')
-    const unsupportedScopes = splitScopes.filter(scope => !isScope(scope))
+export async function checkValidScope(value: string): Promise<void> {
+    const scopes = value.split(' ')
+    const unsupportedScopes = scopes.filter(scope => !isScope(scope))
 
     if (unsupportedScopes.length > 0) {
-        throw unsupportedScopesError(unsupportedScopes.join(' '))
+        throw unsupportedScopeError(unsupportedScopes.join(' '))
     }
 }
 
@@ -334,14 +334,14 @@ export const deleteItem = () => [
 ]
 
 export const postClient = () => [
-    body('scopes')
+    body('scope')
         .exists()
         .isString()
         .bail()
         .trim()
         .notEmpty()
-        .withMessage(ApiError.NoScopes)
-        .custom(checkValidScopes),
+        .withMessage(ApiError.NoScope)
+        .custom(checkValidScope),
     body('displayName')
         .exists()
         .isString()

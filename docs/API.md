@@ -878,7 +878,7 @@ Create a new API client
 
 | Name        | Required | Type   | Description                |
 | ----------- | -------- | ------ | -------------------------- |
-| scopes      | Y        | string | Scopes                     |
+| scope       | Y        | string | Scopes separated by spaces |
 | displayName | Y        | string | The client name to display |
 | description | N        | string | An optional description    |
 
@@ -901,7 +901,7 @@ Responds with the created client and credentials.
   "data": {
     "secret": "MIR5EUJQ7TOJI2M7BM987A9R9JGLBQML19A8S6S9CIOBRSG2ECCG",
     "id": "01KP4C3XYVZNCQRAQ8D9MX21QK",
-    "scopes": "items transactions:write",
+    "scope": "items.read transactions.write",
     "group": {
       "id": 1,
       "gammaId": "3cf94646-2412-4896-bba9-5d2410ac0c62",

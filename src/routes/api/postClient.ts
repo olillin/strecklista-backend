@@ -1,24 +1,25 @@
 import { Request, Response } from 'express'
 import { NewClientResponse, ResponseBody } from '../../responses'
 import { getGroupId, getUserId } from '../../middleware/validateToken'
-import { createClient, parseScopes } from '../../services/clientService'
+import { createClient, parseScope } from '../../services/clientService'
+import { unexpectedError } from '../../errors'
 
 export interface PostClientBody {
-    scopes: string
+    scope: string
     displayName: string
     description?: string
 }
 
 export default async function postItem(req: Request, res: Response) {
-    const { scopes, displayName, description } = req.body as PostClientBody
+    const { scope, displayName, description } = req.body as PostClientBody
     const userId: number = getUserId(res)
     const groupId: number = getGroupId(res)
 
-    const parsedScopes = parseScopes(scopes)
+    const parsedScope = parseScope(scope)
     const client = await createClient(
         groupId,
         userId,
-        parsedScopes,
+        parsedScope,
         displayName,
         description
     )
@@ -26,7 +27,7 @@ export default async function postItem(req: Request, res: Response) {
     const body: ResponseBody<NewClientResponse> = {
         data: {
             ...client,
-            scopes: client.scopes.join(' '),
+            scope: client.scope.join(' '),
         },
     }
     const resourceUri = req.baseUrl + `/group/client/${client.id}`

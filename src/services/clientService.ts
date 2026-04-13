@@ -11,7 +11,7 @@ import {
 
 export interface OfflineClient {
     id: string
-    scopes: Scope[]
+    scope: Scope[]
     group: Group
     owner: UserProfile
     displayName: string
@@ -23,11 +23,11 @@ export interface OfflineClientWithSecret extends OfflineClient {
 }
 
 export const supportedScopes = [
-    'transactions',
-    'transactions:write',
-    'items',
-    'items:write',
-    'group',
+    'transactions.read',
+    'transactions.write',
+    'items.read',
+    'items.write',
+    'group.read',
 ] as const
 export type Scope = (typeof supportedScopes)[number]
 
@@ -41,19 +41,19 @@ export function isScope(maybeScope: string): maybeScope is Scope {
 }
 
 /**
- * Parse a string of scopes.
- * @param scopes String containing scopes separated by a single space.
- * @returns The parsed list of scopes.
+ * Parse a scope string.
+ * @param scope String containing scope separated by a spaces.
+ * @returns The parsed scope list.
  * @throws If any scope is invalid.
  */
-export function parseScopes(scopes: string): Scope[] {
-    const splitScopes = scopes.split(' ')
-    splitScopes.forEach(scope => {
-        if (!isScope(scope)) {
-            throw new Error(`Unable to parse unknown scope '${scope}'`)
+export function parseScope(scope: string): Scope[] {
+    const splitScope = scope.split(' ')
+    splitScope.forEach(maybeScope => {
+        if (!isScope(maybeScope)) {
+            throw new Error(`Unable to parse unknown scope '${maybeScope}'`)
         }
     })
-    return splitScopes as Scope[]
+    return splitScope as Scope[]
 }
 
 /**
@@ -93,7 +93,7 @@ async function hashSecret(
 export async function createClient(
     groupId: number,
     ownerId: number,
-    scopes: Scope[],
+    scope: Scope[],
     displayName: string,
     description?: string | null
 ): Promise<OfflineClientWithSecret> {
@@ -102,8 +102,7 @@ export async function createClient(
 
     const storedSecret = await hashSecret(secret, salt)
     const storedSalt = toBase32hex(salt)
-    console.log(`Salt: ${storedSalt} (${storedSalt.length})`)
-    const storedScopes = scopes.join(' ')
+    const storedScope = scope.join(' ')
 
     return prisma.apiClient
         .create({
@@ -111,7 +110,7 @@ export async function createClient(
                 // Store the hashed secret
                 secret: storedSecret,
                 salt: storedSalt,
-                scopes: storedScopes,
+                scope: storedScope,
                 ownerId,
                 groupId,
                 displayName,
@@ -135,7 +134,7 @@ export async function createClient(
                 // Send the actual secret just this once
                 secret: secret,
                 id: client.id,
-                scopes: parseScopes(client.scopes),
+                scope: parseScope(client.scope),
                 group: group,
                 owner: {
                     id: user.id,

@@ -12,6 +12,9 @@
         "format": "prettier . --write -l",
         "lint": "eslint",
         "fixlint": "eslint --fix",
+        "prisma:generate": "prisma generate",
+        "prisma:push": "prisma db push",
+        "prisma:seed": "prisma db seed",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "repository": {

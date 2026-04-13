@@ -15,6 +15,7 @@ To be able to setup and run the server you will need the following:
 
 - A [Gamma](https://auth.chalmers.it) account
 - [NodeJS](https://nodejs.org/en/download)
+- [pnpm](https://pnpm.io/installation)
 - [Git](https://git-scm.com/downloads)
 - [Docker Compose](https://docs.docker.com/compose/install/)
 - A text editor
@@ -22,33 +23,9 @@ To be able to setup and run the server you will need the following:
 
 ## Getting started
 
-1. [Creating a Gamma client](#creating-a-gamma-client)
-2. [Initial setup](#initial-setup)
-3. [Starting the server](#starting-the-server)
-4. [Setup the database](#setup-the-database)
-
-### Creating a Gamma client
-
-The backend requires a Gamma client to authenticate users and provide access to
-profile and group information.
-
-1. Go to the Gamma _Your clients_ page at
-   <https://auth.chalmers.it/my-clients> and press
-   _Create client_, or go to <https://auth.chalmers.it/my-clients/create>.
-
-    ![Gamma "Your clients" menu](./docs/images/gamma-0.png)
-
-2. Fill in your client details. Make sure that _Generate api key_ is
-   selected. _Redirect url_ is where your users will be redirected after
-   logging in with Gamma so make sure to set this to the callback URL for your
-   frontend.
-
-    ![Creating a new client](./docs/images/gamma-1.png)
-
-3. Fill in the rest of the `.env` file with your newly generated credentials
-   according to the labels in the image below:
-
-    ![Client created](./docs/images/gamma-2.png)
+1. [Initial setup](#initial-setup)
+2. [Starting the server](#starting-the-server)
+3. [Setup the database](#setup-the-database)
 
 ### Initial setup
 
@@ -58,13 +35,23 @@ profile and group information.
     git clone https://github.com/olillin/strecklista-backend
     ```
 
-2. Copy the `.env.example` in the root of the project file to `.env` and fill
-   in details about your newly created Gamma client.
+2. The backend requires a Gamma client to authenticate users and provide access
+    to profile and group information. Follow the instructions in the
+    [Gamma docs](https://gamma-docs.olillin.com/website/#creating-a-user-client).
+    Make sure that _Generate api key_ is selected and _Redirect url_ is set to
+    the callback URL for your frontend. If you are using the
+    [frontend by Göken](https://github.com/erikpersson0884/strecklista) the
+    redirect url should be `http://localhost:3000/callback`.
+
+    Then copy the `.env.example` file to `.env` and fill in the details from
+    your newly created Gamma client according to the labels in the image below:
+
+    ![Client created](./docs/images/gamma-client-env.png)
 
 3. Generate the Prisma client:
 
     ```shell
-    npx prisma generate
+    pnpm prisma:generate
     ```
 
 ### Starting the server
@@ -73,7 +60,7 @@ Now you are ready to start the server. Run the following command in the
 terminal:
 
 ```shell
-npm run dev
+pnpm dev
 ```
 
 This will (re)build the Docker image and start both the server and the
@@ -84,14 +71,14 @@ database.
 To create the tables in the database you must run this command:
 
 ```console
-npx prisma db push
+pnpm prisma:push
 ```
 
 The development database is not saved between restarts, you may want to add
 development data with the seed:
 
 ```console
-npx prisma db seed
+pnpm prisma:seed
 ```
 
 ## Configuration

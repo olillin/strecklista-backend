@@ -5,7 +5,8 @@ import {
     PrismaClientKnownRequestError,
 } from '@prisma/client/runtime/client'
 import { UserSelect } from '../generated/prisma/models'
-import { PrismaClient } from '@prisma/client/extension'
+import { Prisma } from '../generated/prisma/client'
+export type PrismaTransactionalClient = Prisma.TransactionClient
 
 export interface OfflineGroup {
     id: number
@@ -57,7 +58,7 @@ export async function softAddGroupUser(
     const createGroupUser = async (
         gammaGroupId: GroupId,
         gammaUserId: UserId,
-        tx: PrismaClient
+        tx: PrismaTransactionalClient
     ): Promise<OfflineGroupUser> => {
         const groupUser = await tx.groupUser.create({
             data: {
@@ -149,31 +150,46 @@ export async function softAddGroupUser(
 async function _getUserInGroup(
     userId: number,
     groupId: number,
-    tx: PrismaClient
+    tx: PrismaTransactionalClient
 ): Promise<OfflineGroupUser | null> {
-    const groupUser = await tx.groupUser.findFirst({
-        where: {
-            userId: userId,
-            groupId: groupId,
-        },
-        include: {
-            user: {
-                select: selectUserData(groupId),
-            },
-            group: true,
-        },
-    })
+    const groupUser: { user: GroupUserData; group: OfflineGroup } | null =
+        await tx.groupUser
+            .findFirst({
+                where: {
+                    userId: userId,
+                    groupId: groupId,
+                },
+                include: {
+                    user: {
+                        select: selectUserData(groupId),
+                    },
+                    group: true,
+                },
+            })
+            .then(groupUser => {
+                if (groupUser == null) return null
+
+                return {
+                    user: {
+                        id: groupUser.user.id,
+                        gammaId: groupUser.user.gammaId as UserId,
+                        receivedDeposits: groupUser.user.receivedDeposits,
+                        receivedPurchases: groupUser.user.receivedPurchases,
+                    },
+                    group: {
+                        id: groupUser.group.id,
+                        gammaId: groupUser.group.gammaId as GroupId,
+                    },
+                } satisfies { user: GroupUserData; group: OfflineGroup }
+            })
     if (groupUser === null) return null
-    const balance = calculateBalance(groupUser)
+    const balance = calculateBalance(groupUser.user)
     return {
         user: {
             id: groupUser.user.id,
             gammaId: groupUser.user.gammaId as UserId,
         },
-        group: {
-            id: groupUser.groupId,
-            gammaId: groupUser.group.gammaId as GroupId,
-        },
+        group: groupUser.group,
         balance: balance,
     }
 }
@@ -292,14 +308,25 @@ function calculateBalance(userData: GroupUserData): Decimal {
 async function _getGroupUserData(
     userId: number,
     groupId: number,
-    tx: PrismaClient
+    tx: PrismaTransactionalClient
 ): Promise<GroupUserData | null> {
-    const data: GroupUserData | null = await tx.user.findFirst({
-        where: {
-            id: userId,
-        },
-        select: selectUserData(groupId),
-    })
+    const data: GroupUserData | null = await tx.user
+        .findFirst({
+            where: {
+                id: userId,
+            },
+            select: selectUserData(groupId),
+        })
+        .then(user => {
+            if (user == null) return null
+
+            return {
+                id: user.id,
+                gammaId: user.gammaId as GroupId,
+                receivedDeposits: user.receivedDeposits,
+                receivedPurchases: user.receivedPurchases,
+            } satisfies GroupUserData
+        })
     return data
 }
 

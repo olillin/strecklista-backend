@@ -58,7 +58,7 @@ export type TransactionsResponse = PaginatedResponse &
         transactions: Transaction<TransactionType>[]
     }>
 
-export interface ClientResponse {
+export interface GroupClientResponse {
     id: string
     scope: string
     group: Group
@@ -67,7 +67,7 @@ export interface ClientResponse {
     description?: string
 }
 
-export interface NewClientResponse extends ClientResponse {
+export interface NewGroupClientResponse extends GroupClientResponse {
     secret: string
 }
 

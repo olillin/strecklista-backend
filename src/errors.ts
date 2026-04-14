@@ -17,6 +17,8 @@ export enum ApiError {
     InvalidTransactionId,
     TransactionNotExist,
     InvalidUrl,
+    InvalidClientId,
+    ClientNotExist,
 
     // Authorization
     Unauthorized,
@@ -62,7 +64,7 @@ export enum ApiError {
     // List items
     UnknownSortMode,
 
-    // Create API client
+    // Create client
     NoScope,
 }
 
@@ -78,6 +80,8 @@ const errorDefinitions: { [key in ApiError]: ErrorDefinition } = {
     [ApiError.InvalidTransactionId]: err(400, 'Invalid transaction ID'),
     [ApiError.TransactionNotExist]: err(404, 'Transaction does not exist'),
     [ApiError.InvalidUrl]: err(400, 'URL is invalid'),
+    [ApiError.InvalidClientId]: err(400, 'Invalid client ID'),
+    [ApiError.ClientNotExist]: err(404, 'Client does not exist'),
 
     // Authorization
     [ApiError.Unauthorized]: err(401, 'Unauthorized'),
@@ -150,7 +154,7 @@ const errorDefinitions: { [key in ApiError]: ErrorDefinition } = {
     // List items
     [ApiError.UnknownSortMode]: err(400, 'Unknown sort order'),
 
-    // Create API client
+    // Create client
     [ApiError.NoScope]: err(400, 'Client must have at least one scope'),
 }
 

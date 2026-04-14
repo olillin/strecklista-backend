@@ -8,7 +8,12 @@ import {
     itemNameExistsInGroup,
 } from '../services/itemService'
 import { transactionExistsInGroup } from '../services/transactionService'
-import { clientNameExistsInGroup, isScope } from '../services/clientService'
+import {
+    CLIENT_ID_LENGTH,
+    clientExistsInGroup,
+    isGroupClientNameTaken,
+    isScope,
+} from '../services/clientService'
 
 //#region Util
 function getGroupId(meta: Meta): number {
@@ -91,6 +96,17 @@ export async function checkItemDisplayNameUniqueInGroup(
     }
 }
 
+export async function checkClientExistsInGroup(
+    value: string,
+    meta: Meta
+): Promise<void> {
+    const groupId = getGroupId(meta)
+    const exists = await clientExistsInGroup(value, groupId)
+    if (!exists) {
+        throw ApiError.ClientNotExist
+    }
+}
+
 export async function checkValidScope(value: string): Promise<void> {
     const scopes = value.split(' ')
     const unsupportedScopes = scopes.filter(scope => !isScope(scope))
@@ -105,7 +121,7 @@ export async function checkClientDisplayNameUniqueInGroup(
     meta: Meta
 ): Promise<void> {
     const groupId = getGroupId(meta)
-    const nameExists = await clientNameExistsInGroup(value, groupId)
+    const nameExists = await isGroupClientNameTaken(value, groupId)
     if (nameExists) {
         throw ApiError.DisplayNameNotUnique
     }
@@ -333,7 +349,16 @@ export const deleteItem = () => [
         .custom(checkItemExistsInGroup),
 ]
 
-export const postClient = () => [
+export const getGroupClient = () => [
+    param('id')
+        .exists()
+        .isString()
+        .isLength({ min: CLIENT_ID_LENGTH, max: CLIENT_ID_LENGTH })
+        .withMessage(ApiError.InvalidClientId)
+        .custom(checkClientExistsInGroup),
+]
+
+export const postGroupClient = () => [
     body('scope')
         .exists()
         .isString()

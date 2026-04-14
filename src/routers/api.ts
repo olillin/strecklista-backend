@@ -46,8 +46,8 @@ async function createApiRouter(): Promise<Router> {
             ['post', '/group/item', 'postItem'],
             ['patch', '/group/item/:id', 'patchItem'],
             ['delete', '/group/item/:id', 'deleteItem'],
-            // ['get', '/group/client/:id', 'getClient'],
-            ['post', '/group/client', 'postClient'],
+            ['get', '/group/client/:id', 'getGroupClient'],
+            ['post', '/group/client', 'postGroupClient'],
             // ['post', '/group/client/:id', 'updateClient'],
             // ['delete', '/group/client/:id', 'deleteClient'],
         ]

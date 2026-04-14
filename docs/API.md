@@ -40,6 +40,7 @@
    4.11 [GET /group/item-id](#get-groupitemid)  
    4.12 [PATCH /group/item-id](#patch-groupitemid)  
    4.13 [DELETE /group/item-id](#delete-groupitemid)
+   4.14 [GET /group/client/client-id](#get-group-clientid)
    4.14 [POST /group/client](#post-group-client)
 
 ## General
@@ -893,9 +894,36 @@ Delete an item
 | ---- | ------------------- |
 | 404  | Item does not exist |
 
+### GET /group/client/\<id\>
+
+Get a group client.
+
+#### Errors
+
+| Code | Error                 |
+| ---- | --------------------- |
+| 404  | Client does not exist |
+
+#### Response
+
+The client without the secret.
+
+```javascript
+{
+  "data": {
+    "id": string,
+    "scope": string,
+    "group": Group,
+    "owner": User,
+    "displayName": string,
+    "description": string?
+  }
+}
+```
+
 ### POST /group/client
 
-Create a new API client
+Create a new group client.
 
 #### Body
 
@@ -912,7 +940,13 @@ Responds with the created client and credentials.
 ```javascript
 {
   "data": {
-    "secret": Item
+    "secret": string,
+    "id": string,
+    "scope": string,
+    "group": Group,
+    "owner": User,
+    "displayName": string,
+    "description": string?,
   }
 }
 ```

@@ -3,7 +3,7 @@ import { CreatedTransactionResponse, ResponseBody } from '../../responses'
 import { getGroupId, getUserId } from '../../middleware/validateToken'
 import { sendError, unexpectedError } from '../../errors'
 import { createPurchase } from '../../services/transactionService'
-import { getUser } from '../../services/userService'
+import { getOfflineGroupUser } from '../../services/userService'
 import { convertDecimalToNumber } from '../../util/decimalToNumber'
 
 export interface JsonPrice {
@@ -36,8 +36,8 @@ export default async function postPurchase(req: Request, res: Response) {
         comment ?? null,
         items
     )
-    const user = await getUser(createdFor, groupId)
-    if (!user) {
+    const groupUser = await getOfflineGroupUser(createdFor, groupId)
+    if (!groupUser) {
         sendError(
             res,
             unexpectedError(
@@ -46,11 +46,10 @@ export default async function postPurchase(req: Request, res: Response) {
         )
         return
     }
-    const balance = user.balance
     const body: ResponseBody<CreatedTransactionResponse> = {
         data: {
             transaction: convertDecimalToNumber(purchase),
-            balance: balance.toNumber(),
+            balance: groupUser.balance.toNumber(),
         },
     }
 

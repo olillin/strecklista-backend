@@ -5,8 +5,9 @@ import { authorizationCode, clientApi } from '../config/gamma'
 import env from '../config/env'
 import { ApiError, sendError, tokenSignError, unexpectedError } from '../errors'
 import { getAuthorizedGroup } from '../util/helpers'
-import { softAddGroupUser } from '../services/userService'
+import { OfflineGroupUser, softAddGroupUser } from '../services/userService'
 import { toLoginResponse } from '../responses'
+import { completeGroupUser, GroupUser } from '../services/gammaService'
 
 export interface JWT {
     access_token: string
@@ -127,7 +128,15 @@ export function login(): RequestHandler {
         }
         const gammaGroupId: GroupId = group.id
 
-        const groupUser = await softAddGroupUser(gammaGroupId, gammaUserId)
+        const offlineGroupUser: OfflineGroupUser = await softAddGroupUser(
+            gammaGroupId,
+            gammaUserId
+        )
+        const groupUser: GroupUser = completeGroupUser(
+            offlineGroupUser,
+            userInfo,
+            group
+        )
 
         signJwt({
             userId: groupUser.user.id,
@@ -136,7 +145,7 @@ export function login(): RequestHandler {
             gammaGroupId: groupUser.group.gammaId,
         })
             .then(token => {
-                const body = toLoginResponse(groupUser, userInfo, group, token)
+                const body = toLoginResponse(groupUser, token)
                 res.json(body)
             })
             .catch(error => {

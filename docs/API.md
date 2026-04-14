@@ -104,12 +104,10 @@ UUID of a group in gamma.
 {
   "id": int, // Numeric auto-incrementing user id
   "gammaId": UserId, // Gamma user id
-  "firstName": string
-  "lastName": string
-  "nick": string
-  "avatarUrl": string
-
-  "balance": decimal
+  "firstName": string,
+  "lastName": string,
+  "nick": string,
+  "avatarUrl": string,
 }
 ```
 
@@ -120,7 +118,31 @@ UUID of a group in gamma.
   "id": int, // Numeric auto-incrementing group id
   "gammaId": GroupId, // Gamma group id
   "prettyName": string,
-  "avatarUrl": string
+  "avatarUrl": string,
+}
+```
+
+### GroupUser
+
+```javascript
+{
+  "user": User,
+  "group": Group,
+  "balance": decimal,
+}
+```
+
+### GroupMember
+
+```javascript
+{
+  "id": int, // Numeric auto-incrementing user id
+  "gammaId": UserId, // Gamma user id
+  "firstName": string,
+  "lastName": string,
+  "nick": string,
+  "avatarUrl": string,
+  "balance": decimal,
 }
 ```
 
@@ -274,7 +296,8 @@ The generated JWT token and data about the authenticated user and their group.
   "token_type": "Bearer",
   "expires_in": number, // How many seconds the token is valid for
   "user": User,
-  "group": Group
+  "group": Group,
+  "balance": decimal
 }
 ```
 
@@ -294,7 +317,7 @@ Get info about the currently authenticated user.
 
 #### Response
 
-Data about the user and their group.
+Data about the user and their group as [GroupUser](#groupuser).
 
 ##### Example
 
@@ -302,7 +325,6 @@ Data about the user and their group.
 {
   "data": {
     "user": {
-      "balance": 0,
       "id": 1,
       "gammaId": "2f63a363-af22-480d-be49-531c1831933c",
       "nick": "Dough",
@@ -315,7 +337,8 @@ Data about the user and their group.
       "gammaId": "3cf94646-2412-4896-bba9-5d2410ac0c62",
       "avatarUrl": "https://auth.chalmers.it/images/3cf94646-2412-4896-bba9-5d2410ac0c62",
       "prettyName": "P.R.I.T. 25"
-    }
+    },
+    "balance": 0,
   }
 }
 ```
@@ -332,7 +355,7 @@ The group and it's members:
 {
   "data": {
     "group": Group,
-    "members": User[]
+    "members": GroupMember[]
   }
 }
 ```

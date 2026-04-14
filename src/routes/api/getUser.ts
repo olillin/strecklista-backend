@@ -6,10 +6,15 @@ import {
     getUserId,
 } from '../../middleware/validateToken'
 import { ApiError, sendError } from '../../errors'
-import { ResponseBody, toUserResponse, UserResponse } from '../../responses'
+import {
+    ResponseBody,
+    GroupUserResponse,
+    toGroupUserResponse,
+} from '../../responses'
 import { UserId } from 'gammait'
 import { getAuthorizedGroup } from '../../util/helpers'
 import * as userService from '../../services/userService'
+import { completeGroupUser } from '../../services/gammaService'
 
 export default async function getUser(req: Request, res: Response) {
     const userId: number = getUserId(res)
@@ -18,7 +23,10 @@ export default async function getUser(req: Request, res: Response) {
     console.log(`Getting user info for: ${userId}`)
 
     // Get requests
-    const offlineGroupUserPromise = userService.getUserInGroup(userId, groupId)
+    const offlineGroupUserPromise = userService.getOfflineGroupUser(
+        userId,
+        groupId
+    )
     const gammaUserPromise = clientApi.getUser(gammaUserId).catch(reason => {
         if (!res.headersSent) {
             console.log(reason)
@@ -55,8 +63,10 @@ export default async function getUser(req: Request, res: Response) {
         return
     }
 
-    const body: ResponseBody<UserResponse> = {
-        data: toUserResponse(offlineGroupUser, gammaUser, group),
+    const groupUser = completeGroupUser(offlineGroupUser, gammaUser, group)
+
+    const body: ResponseBody<GroupUserResponse> = {
+        data: toGroupUserResponse(groupUser),
     }
     res.json(body)
 }

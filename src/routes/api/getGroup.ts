@@ -9,8 +9,15 @@ import {
 import { ApiError, sendError } from '../../errors'
 import { GroupResponse, ResponseBody } from '../../responses'
 import { getAuthorizedGroup } from '../../util/helpers'
-import { getUsersInGroup, OfflineGroup } from '../../services/userService'
-import { User, completeUser, completeGroup } from '../../services/gammaService'
+import {
+    getOfflineUsersInGroup,
+    OfflineGroup,
+} from '../../services/userService'
+import {
+    completeUser,
+    completeGroup,
+    GroupMember,
+} from '../../services/gammaService'
 import { DecimalToNumber } from '../../util/decimalToNumber'
 
 export default async function getGroup(
@@ -41,24 +48,24 @@ export default async function getGroup(
         }
 
         // Get members
-        const offlineUsers = await getUsersInGroup(groupId)
-        let members: DecimalToNumber<User[]>
+        const offlineGroupUsers = await getOfflineUsersInGroup(groupId)
+        let members: DecimalToNumber<GroupMember[]>
         try {
             members = await Promise.all(
-                offlineUsers.map(async offlineUser => {
+                offlineGroupUsers.map(async offlineGroupUser => {
                     const gammaUser = await clientApi
-                        .getUser(offlineUser.gammaId)
+                        .getUser(offlineGroupUser.user.gammaId)
                         .catch(() => null)
                     if (gammaUser === null) {
                         console.warn(
-                            `Failed to get user ${offlineUser.gammaId} in group ${gammaGroup.id} from Gamma`
+                            `Failed to get user ${offlineGroupUser.user.gammaId} in group ${gammaGroup.id} from Gamma`
                         )
                     }
-                    const user = completeUser(offlineUser, gammaUser)
+                    const user = completeUser(offlineGroupUser.user, gammaUser)
                     return {
                         ...user,
-                        balance: user.balance.toNumber(),
-                    }
+                        balance: offlineGroupUser.balance.toNumber(),
+                    } satisfies DecimalToNumber<GroupMember>
                 })
             )
         } catch (e) {

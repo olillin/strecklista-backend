@@ -2,23 +2,18 @@ import { prisma } from '../lib/prisma'
 import { Prisma } from '../generated/prisma/client'
 import crypto from 'crypto'
 import { toBase32hex } from '@exodus/bytes/base32.js'
-import {
-    getCompleteAuthorizedGroup,
-    getCompleteUser,
-    Group,
-    UserProfile,
-} from './gammaService'
+import { getGroupUser, getUser, Group, User } from './gammaService'
 
-export interface OfflineClient {
+export interface ApiClient {
     id: string
     scope: Scope[]
     group: Group
-    owner: UserProfile
+    owner: User
     displayName: string
     description?: string
 }
 
-export interface OfflineClientWithSecret extends OfflineClient {
+export interface ApiClientWithSecret extends ApiClient {
     secret: string
 }
 
@@ -96,7 +91,7 @@ export async function createClient(
     scope: Scope[],
     displayName: string,
     description?: string | null
-): Promise<OfflineClientWithSecret> {
+): Promise<ApiClientWithSecret> {
     const secret = randomSecret(32)
     const salt = crypto.randomBytes(16)
 
@@ -118,16 +113,11 @@ export async function createClient(
             },
         })
         .then(async client => {
-            const user = await getCompleteUser(client.ownerId, client.groupId)
-            if (user == null) {
-                throw Error('Unable to get user during API client creation')
-            }
-            const group = await getCompleteAuthorizedGroup(
-                client.groupId,
-                user.gammaId
-            )
-            if (group == null) {
-                throw Error('Unable to get group during API client creation')
+            const groupUser = await getGroupUser(client.ownerId, client.groupId)
+            if (groupUser == null) {
+                throw Error(
+                    'Unable to get user and group during API client creation'
+                )
             }
 
             return {
@@ -135,20 +125,13 @@ export async function createClient(
                 secret: secret,
                 id: client.id,
                 scope: parseScope(client.scope),
-                group: group,
-                owner: {
-                    id: user.id,
-                    gammaId: user.gammaId,
-                    firstName: user.firstName,
-                    lastName: user.lastName,
-                    nick: user.nick,
-                    avatarUrl: user.avatarUrl,
-                },
+                group: groupUser.group,
+                owner: groupUser.user,
                 displayName: client.displayName,
                 ...(client.description == null
                     ? {}
                     : { description: client.description }),
-            } satisfies OfflineClientWithSecret
+            } satisfies ApiClientWithSecret
         })
 }
 
@@ -164,4 +147,31 @@ export async function clientNameExistsInGroup(
             },
         })
         .then(client => client !== null)
+}
+
+export async function getClient(id: string): Promise<ApiClient | null> {
+    const client = await prisma.apiClient.findFirst({
+        where: {
+            id: id,
+        },
+    })
+    if (client == null) {
+        return null
+    }
+
+    const groupUser = await getGroupUser(client.ownerId, client.groupId)
+    if (groupUser == null) {
+        throw Error('Unable to get user and group of API client')
+    }
+
+    return {
+        id: client.id,
+        scope: parseScope(client.scope),
+        group: groupUser.group,
+        owner: groupUser.user,
+        displayName: client.displayName,
+        ...(client.description == null
+            ? {}
+            : { description: client.description }),
+    }
 }

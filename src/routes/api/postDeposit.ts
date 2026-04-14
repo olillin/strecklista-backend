@@ -3,8 +3,8 @@ import { CreatedTransactionResponse, ResponseBody } from '../../responses'
 import { getGroupId, getUserId } from '../../middleware/validateToken'
 import { sendError, unexpectedError } from '../../errors'
 import { createDeposit } from '../../services/transactionService'
-import { getUser } from '../../services/userService'
 import { convertDecimalToNumber } from '../../util/decimalToNumber'
+import { getOfflineGroupUser } from '../../services/userService'
 
 export interface PostDepositBody {
     userId: number
@@ -25,8 +25,8 @@ export default async function postDeposit(req: Request, res: Response) {
         comment ?? null,
         total
     )
-    const user = await getUser(createdFor, groupId)
-    if (!user) {
+    const groupUser = await getOfflineGroupUser(createdFor, groupId)
+    if (!groupUser) {
         sendError(
             res,
             unexpectedError(
@@ -35,11 +35,10 @@ export default async function postDeposit(req: Request, res: Response) {
         )
         return
     }
-    const balance = user.balance
     const body: ResponseBody<CreatedTransactionResponse> = {
         data: {
             transaction: convertDecimalToNumber(deposit),
-            balance: balance.toNumber(),
+            balance: groupUser.balance.toNumber(),
         },
     }
 

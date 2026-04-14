@@ -2,14 +2,14 @@ import * as gamma from 'gammait'
 import { GroupId, UserId } from 'gammait'
 import { groupAvatarUrl, userAvatarUrl } from 'gammait/urls'
 import {
-    getGroup,
-    getUserInGroup,
+    getOfflineUser,
+    getOfflineGroupUser,
     OfflineGroup,
+    OfflineGroupUser,
     OfflineUser,
 } from './userService'
 import { Decimal } from '@prisma/client/runtime/client'
 import { clientApi } from '../config/gamma'
-import { getAuthorizedGroup } from '../util/helpers'
 
 export interface Group {
     id: number
@@ -19,7 +19,7 @@ export interface Group {
     avatarUrl: string
 }
 
-export interface UserProfile {
+export interface User {
     id: number
     gammaId: UserId
 
@@ -29,7 +29,13 @@ export interface UserProfile {
     avatarUrl: string
 }
 
-export interface User extends UserProfile {
+export interface GroupUser {
+    user: User
+    group: Group
+    balance: Decimal
+}
+
+export interface GroupMember extends User {
     balance: Decimal
 }
 
@@ -79,37 +85,79 @@ export function completeUser(
         id: offlineUser.id,
         gammaId: offlineUser.gammaId ?? NOT_AVAILABLE,
         avatarUrl: userAvatarUrl(offlineUser.gammaId),
-        balance: offlineUser.balance,
         ...names,
     }
 }
 
-export async function getCompleteUser(
+export function completeGroupUser(
+    offlineGroupUser: OfflineGroupUser,
+    gammaUser: GammaUser | null,
+    gammaGroup: gamma.Group | null
+): GroupUser {
+    const names =
+        gammaUser === null
+            ? {
+                  nick: NOT_AVAILABLE,
+                  firstName: NOT_AVAILABLE,
+                  lastName: NOT_AVAILABLE,
+              }
+            : isUserInfo(gammaUser)
+              ? {
+                    nick: gammaUser.nickname,
+                    firstName: gammaUser.given_name,
+                    lastName: gammaUser.family_name,
+                }
+              : {
+                    nick: gammaUser.nick,
+                    firstName: gammaUser.firstName,
+                    lastName: gammaUser.lastName,
+                }
+
+    return {
+        user: {
+            id: offlineGroupUser.user.id,
+            gammaId: offlineGroupUser.user.gammaId,
+            avatarUrl: userAvatarUrl(offlineGroupUser.user.gammaId),
+            ...names,
+        },
+        group: {
+            id: offlineGroupUser.group.id,
+            gammaId: offlineGroupUser.group.gammaId,
+            avatarUrl: groupAvatarUrl(offlineGroupUser.group.gammaId),
+            prettyName: gammaGroup?.prettyName ?? NOT_AVAILABLE,
+        },
+        balance: offlineGroupUser.balance,
+    }
+}
+
+export async function getGroupUser(
     userId: number,
     groupId: number
-): Promise<User | null> {
-    const offlineGroupUser = await getUserInGroup(userId, groupId)
+): Promise<GroupUser | null> {
+    const offlineGroupUser = await getOfflineGroupUser(userId, groupId)
     if (offlineGroupUser == null) return null
 
     const gammaUser = await clientApi
         .getUser(offlineGroupUser.user.gammaId)
         .catch(() => null)
     if (gammaUser == null) return null
-    return completeUser(offlineGroupUser.user, gammaUser)
-}
-
-export async function getCompleteAuthorizedGroup(
-    groupId: number,
-    gammaUserId: UserId
-): Promise<Group | null> {
-    const offlineGroup = await getGroup(groupId)
-    if (offlineGroup == null) return null
 
     const gammaGroup = await clientApi
-        .getGroupsFor(gammaUserId)
-        .then(groups => getAuthorizedGroup(groups))
+        .getGroupsFor(offlineGroupUser.user.gammaId)
+        .then(groups =>
+            groups.find(group => group.id === offlineGroupUser.group.gammaId)
+        )
         .catch(() => null)
     if (gammaGroup == null) return null
 
-    return completeGroup(offlineGroup, gammaGroup)
+    return completeGroupUser(offlineGroupUser, gammaUser, gammaGroup)
+}
+
+export async function getUser(userId: number): Promise<User | null> {
+    const offlineUser = await getOfflineUser(userId)
+    if (offlineUser == null) return null
+    const gammaUser = await clientApi
+        .getUser(offlineUser.gammaId)
+        .catch(() => null)
+    return completeUser(offlineUser, gammaUser)
 }

@@ -1,20 +1,11 @@
 import { JWT } from './routes/login'
-import {
-    User,
-    Group,
-    completeUser,
-    completeGroup,
-    GammaUser,
-    UserProfile,
-} from './services/gammaService'
+import { User, Group, GroupUser, GroupMember } from './services/gammaService'
 import { Item } from './services/itemService'
 import {
     AnyTransaction,
     Transaction,
     TransactionType,
 } from './services/transactionService'
-import { OfflineGroupUser } from './services/userService'
-import * as gamma from 'gammait'
 import { DecimalToNumber } from './util/decimalToNumber'
 
 export type ResponseBody<T> = [T] extends [never]
@@ -26,17 +17,18 @@ export interface ResponseError {
     message: string
 }
 
-export type UserResponse = DecimalToNumber<{
+export type GroupUserResponse = DecimalToNumber<{
     user: User
     group: Group
+    balance: number
 }>
 
 export type GroupResponse = DecimalToNumber<{
     group: Group
-    members: User[]
+    members: GroupMember[]
 }>
 
-export interface LoginResponse extends UserResponse, JWT {
+export interface LoginResponse extends GroupUserResponse, JWT {
     token_type: string
 }
 
@@ -70,7 +62,7 @@ export interface ClientResponse {
     id: string
     scope: string
     group: Group
-    owner: UserProfile
+    owner: User
     displayName: string
     description?: string
 }
@@ -79,31 +71,22 @@ export interface NewClientResponse extends ClientResponse {
     secret: string
 }
 
-export function toUserResponse(
-    groupUser: OfflineGroupUser,
-    gammaUser: GammaUser,
-    gammaGroup: gamma.Group
-): UserResponse {
-    const user = completeUser(groupUser.user, gammaUser)
+export function toGroupUserResponse(groupUser: GroupUser): GroupUserResponse {
     return {
-        user: {
-            ...user,
-            balance: user.balance.toNumber(),
-        },
-        group: completeGroup(groupUser.group, gammaGroup),
+        user: groupUser.user,
+        group: groupUser.group,
+        balance: groupUser.balance.toNumber(),
     }
 }
 
 export function toLoginResponse(
-    groupUser: OfflineGroupUser,
-    gammaUser: GammaUser,
-    gammaGroup: gamma.Group,
+    groupUser: GroupUser,
     token: JWT
 ): LoginResponse {
     return {
         access_token: token.access_token,
         token_type: 'Bearer',
         expires_in: token.expires_in,
-        ...toUserResponse(groupUser, gammaUser, gammaGroup),
+        ...toGroupUserResponse(groupUser),
     }
 }

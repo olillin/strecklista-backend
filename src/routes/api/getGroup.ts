@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response } from 'express'
 import { clientApi } from '../../config/gamma'
-import { GroupId, UserId } from 'gammait'
 import {
     getGammaGroupId,
     getGammaUserId,
@@ -21,14 +20,18 @@ import {
 import { DecimalToNumber } from '../../util/decimalToNumber'
 
 export default async function getGroup(
-    req: Request,
+    _req: Request,
     res: Response,
     next: NextFunction
 ) {
     try {
-        const gammaUserId: UserId = getGammaUserId(res)
-        const gammaGroupId: GroupId = getGammaGroupId(res)
+        const gammaUserId = getGammaUserId(res)
+        const gammaGroupId = getGammaGroupId(res)
         const groupId = getGroupId(res)
+        if (gammaUserId == null || gammaGroupId == null || groupId == null) {
+            sendError(res, ApiError.Unauthorized)
+            return
+        }
 
         // Get group
         const gammaGroups = await clientApi

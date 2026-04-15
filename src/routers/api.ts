@@ -1,11 +1,13 @@
-import { Router, Request, Response } from 'express'
-import validateToken from '../middleware/validateToken'
+import { Router, Request, Response, NextFunction } from 'express'
+import validateToken, { hasScope } from '../middleware/validateToken'
 import validationErrorHandler from '../middleware/validationErrorHandler'
 import * as validators from '../middleware/validators'
 import * as apiRoutes from '../routes/api/index'
 import setHeader from '../middleware/setHeader'
 import { ApiError, sendError } from '../errors'
 import { ErrorResolvable } from '../errors'
+import { Scope } from '../services/clientService'
+import { isUserJwt } from '../routes/oauth2/token'
 
 async function createApiRouter(): Promise<Router> {
     const api = Router()
@@ -24,35 +26,40 @@ async function createApiRouter(): Promise<Router> {
     type HandlerName = keyof typeof validators & keyof typeof apiRoutes
 
     /*
-     * Routes are defined as: method, path, handler/error
+     * Routes are defined as: method, path, handler/error, required client scopes
      */
-    const routes: [Method, string, HandlerName | ErrorResolvable, boolean?][] =
+    const routes: [Method, string, HandlerName | ErrorResolvable, Scope?][] = [
+        ['get', '/user', 'getUser'],
+        ['get', '/group', 'getGroup', 'group.read'],
+        ['get', '/group/transaction', 'getTransactions', 'transactions.read'],
         [
-            ['get', '/user', 'getUser'],
-            ['get', '/group', 'getGroup'],
-            ['get', '/group/transaction', 'getTransactions'],
-            ['get', '/group/transaction/:id', 'getTransaction'],
-            ['patch', '/group/transaction/:id', 'patchTransaction'],
-            [
-                'delete',
-                '/group/transaction/:id',
-                ApiError.CannotDeleteTransaction,
-            ],
-            ['post', '/group/purchase', 'postPurchase'],
-            ['post', '/group/deposit', 'postDeposit'],
-            ['post', '/group/stock', 'postStockUpdate'],
-            ['get', '/group/item', 'getItems'],
-            ['get', '/group/item/:id', 'getItem'],
-            ['post', '/group/item', 'postItem'],
-            ['patch', '/group/item/:id', 'patchItem'],
-            ['delete', '/group/item/:id', 'deleteItem'],
-            ['get', '/group/client/:id', 'getGroupClient'],
-            ['post', '/group/client', 'postGroupClient'],
-            // ['post', '/group/client/:id', 'updateClient'],
-            // ['delete', '/group/client/:id', 'deleteClient'],
-        ]
+            'get',
+            '/group/transaction/:id',
+            'getTransaction',
+            'transactions.read',
+        ],
+        [
+            'patch',
+            '/group/transaction/:id',
+            'patchTransaction',
+            'transactions.update',
+        ],
+        ['delete', '/group/transaction/:id', ApiError.CannotDeleteTransaction],
+        ['post', '/group/purchase', 'postPurchase', 'transactions.create'],
+        ['post', '/group/deposit', 'postDeposit', 'transactions.create'],
+        ['post', '/group/stock', 'postStockUpdate', 'transactions.create'],
+        ['get', '/group/item', 'getItems', 'items.read'],
+        ['get', '/group/item/:id', 'getItem', 'items.read'],
+        ['post', '/group/item', 'postItem', 'items.create'],
+        ['patch', '/group/item/:id', 'patchItem', 'items.update'],
+        ['delete', '/group/item/:id', 'deleteItem', 'items.delete'],
+        ['get', '/group/client/:id', 'getGroupClient'],
+        ['post', '/group/client', 'postGroupClient'],
+        // ['post', '/group/client/:id', 'updateClient'],
+        // ['delete', '/group/client/:id', 'deleteClient'],
+    ]
 
-    for (const [method, path, name] of routes) {
+    for (const [method, path, name, scope] of routes) {
         // Get allowed methods on this path
         const methods: Set<string> = new Set(
             routes
@@ -66,13 +73,14 @@ async function createApiRouter(): Promise<Router> {
             typeof name === 'string'
                 ? // Normal routes
                   [
+                      validateScope(scope),
                       ...validators[name](),
                       validationErrorHandler,
                       apiRoutes[name],
                   ]
                 : // Error routes
                   [
-                      (req: Request, res: Response) => {
+                      (_req: Request, res: Response) => {
                           sendError(res, name as ErrorResolvable)
                       },
                   ]
@@ -83,3 +91,29 @@ async function createApiRouter(): Promise<Router> {
     return api
 }
 export default createApiRouter
+
+function validateScope(scope: Scope | undefined) {
+    return (_req: Request, res: Response, next: NextFunction) => {
+        const jwt: unknown = res.locals.jwt
+
+        // Do not check scopes for users
+        if (isUserJwt(jwt)) {
+            next()
+            return
+        }
+
+        // Do not allow clients to access routes without scopes
+        if (scope == undefined) {
+            sendError(res, ApiError.Forbidden)
+            return
+        }
+
+        // Check if client has the permitted scope
+        if (hasScope(res, scope)) {
+            next()
+            return
+        }
+
+        sendError(res, ApiError.InsufficientScope)
+    }
+}

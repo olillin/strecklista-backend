@@ -8,9 +8,15 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Group clients
+- `POST /oauth2/token` which supports `authorization_code` and `client_credentials` grant types.
+
 ### Changed
 
 - **BREAKING:** API Changes:
     - `GET /user`: `balance` has been moved out of `user` in the response.
-    - `POST /login`: `balance` has been moved out of `user` in the response.
+    - `POST /login` has been replaced with `POST /oauth2/token` with grant type `authorization_code`.
+    - `POST /authorize` has been moved to `POST /oauth2/authorize`.
 - Improved separation of users and group users with new interfaces.

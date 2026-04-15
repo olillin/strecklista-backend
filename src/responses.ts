@@ -1,4 +1,4 @@
-import { JWT } from './routes/login'
+import { JwtWithToken } from './routes/oauth2/token'
 import { User, Group, GroupUser, GroupMember } from './services/gammaService'
 import { Item } from './services/itemService'
 import {
@@ -28,7 +28,7 @@ export type GroupResponse = DecimalToNumber<{
     members: GroupMember[]
 }>
 
-export type LoginResponse = JWT & GroupUserResponse
+export type LoginResponse = JwtWithToken & GroupUserResponse
 
 export type ItemsResponse = DecimalToNumber<{
     items: Item[]
@@ -79,7 +79,7 @@ export function toGroupUserResponse(groupUser: GroupUser): GroupUserResponse {
 
 export function toLoginResponse(
     groupUser: GroupUser,
-    token: JWT
+    token: JwtWithToken
 ): LoginResponse {
     return {
         ...token,

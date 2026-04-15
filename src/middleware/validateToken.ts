@@ -3,19 +3,8 @@ import { ApiError, sendError } from '../errors'
 import jwt, { JwtPayload } from 'jsonwebtoken'
 import env from '../config/env'
 import { GroupId, UserId } from 'gammait'
-import { isLoggedInUser, LoggedInUser } from '../routes/login'
-
-export type LocalJwt = JwtPayload & LoggedInUser
-
-export function isLocalJwt(value: unknown): value is LocalJwt {
-    if (!isLoggedInUser(value)) {
-        return false
-    }
-
-    const obj = value as object as Record<string, unknown>
-
-    return typeof obj.iss === 'string' && typeof obj.exp === 'number'
-}
+import { isGroupClientJwt, isUserJwt } from '../routes/oauth2/token'
+import { Scope } from '../services/clientService'
 
 function validateToken(req: Request, res: Response, next: NextFunction) {
     console.log(`${req.method} to API: ${req.path}`)
@@ -25,7 +14,13 @@ function validateToken(req: Request, res: Response, next: NextFunction) {
         sendError(res, ApiError.Unauthorized)
         return
     }
-    const token = auth.split(' ')[1]
+
+    const [tokenType, token] = auth.split(' ')
+    if (tokenType !== 'Bearer') {
+        sendError(res, ApiError.Unauthorized)
+        return
+    }
+
     try {
         const verifiedToken = verifyToken(token)
 
@@ -44,13 +39,12 @@ function validateToken(req: Request, res: Response, next: NextFunction) {
             }
         }
 
-        if (!verifiedToken.userId || !verifiedToken.groupId) {
+        if (isUserJwt(verifiedToken)) {
+        } else if (isGroupClientJwt(verifiedToken)) {
+        } else {
             sendError(res, ApiError.InvalidToken)
             return
         }
-
-        console.log('Verified token:')
-        console.log(verifiedToken)
 
         // Store token
         res.locals.jwt = verifiedToken
@@ -61,45 +55,44 @@ function validateToken(req: Request, res: Response, next: NextFunction) {
 }
 export default validateToken
 
-export function verifyToken(token: string): LocalJwt {
+export function verifyToken(token: string): JwtPayload {
     const verifiedToken = jwt.verify(token, env.JWT_SECRET, {
         algorithms: ['HS256'],
         issuer: env.JWT_ISSUER,
+        complete: true,
     })
-    if (!isLocalJwt(verifiedToken)) {
-        throw new Error('Verified token has invalid shape')
-    }
     return verifiedToken
 }
 
-export function getUserId(res: Response): number {
+export function getUserId(res: Response): number | null {
     const jwt = res.locals.jwt
-    if (!isLocalJwt(jwt)) {
-        throw new Error('Token has invalid shape')
-    }
-    return jwt.userId
+    if (isUserJwt(jwt)) return jwt.user.id
+    return null
 }
 
-export function getGammaUserId(res: Response): UserId {
+export function getGammaUserId(res: Response): UserId | null {
     const jwt = res.locals.jwt
-    if (!isLocalJwt(jwt)) {
-        throw new Error('Token has invalid shape')
-    }
-    return jwt.gammaUserId
+    if (isUserJwt(jwt)) return jwt.user.gammaId
+    return null
 }
 
-export function getGroupId(res: Response): number {
+export function getGroupId(res: Response): number | null {
     const jwt = res.locals.jwt
-    if (!isLocalJwt(jwt)) {
-        throw new Error('Token has invalid shape')
-    }
-    return jwt.groupId
+    if (isUserJwt(jwt)) return jwt.group.id
+    if (isGroupClientJwt(jwt)) return jwt.group.id
+    return null
 }
 
-export function getGammaGroupId(res: Response): GroupId {
+export function getGammaGroupId(res: Response): GroupId | null {
     const jwt = res.locals.jwt
-    if (!isLocalJwt(jwt)) {
-        throw new Error('Token has invalid shape')
-    }
-    return jwt.gammaGroupId
+    if (isUserJwt(jwt)) return jwt.group.gammaId
+    if (isGroupClientJwt(jwt)) return jwt.group.gammaId
+    return null
+}
+
+export function hasScope(res: Response, scope: Scope): boolean {
+    const jwt = res.locals.jwt
+    if (isUserJwt(jwt)) return true
+    if (isGroupClientJwt(jwt)) return jwt.scope.split(' ').includes(scope)
+    return false
 }

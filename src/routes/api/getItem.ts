@@ -10,7 +10,11 @@ export default async function getItem(req: Request, res: Response) {
         throw new Error('Invalid id, expected string but got array')
     }
     const itemId = parseInt(req.params.id)
-    const userId: number = getUserId(res)
+    const userId = getUserId(res)
+    if (userId == null) {
+        sendError(res, ApiError.Unauthorized)
+        return
+    }
 
     const item = await itemService.getItem(itemId, userId)
 

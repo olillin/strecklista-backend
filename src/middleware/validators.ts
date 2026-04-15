@@ -15,7 +15,7 @@ import {
     isScope,
 } from '../services/clientService'
 import {
-    acceptedGrantType,
+    acceptedGrantTypes,
     acceptedTokenAudience,
 } from '../routes/oauth2/token'
 
@@ -132,7 +132,7 @@ export async function checkClientDisplayNameUniqueInGroup(
 }
 
 export async function checkSupportedGrantType(value: string): Promise<void> {
-    if (value !== acceptedGrantType) {
+    if (!(acceptedGrantTypes as readonly string[]).includes(value)) {
         throw ApiError.UnsupportedGrantType
     }
 }

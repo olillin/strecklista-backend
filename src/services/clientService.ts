@@ -3,6 +3,7 @@ import { Prisma } from '../generated/prisma/client'
 import crypto from 'crypto'
 import { fromBase32hex, toBase32hex } from '@exodus/bytes/base32.js'
 import { getGroupUser, Group, User } from './gammaService'
+import { GroupId } from 'gammait'
 
 /**
  * Clients uses ULID identifiers which are 26 characters long.
@@ -23,7 +24,10 @@ export interface GroupClientDetailsWithSecretHash {
     salt: string
     id: string
     scope: string
-    groupId: number
+    group: {
+        id: number
+        gammaId: GroupId
+    }
     ownerId: number
     displayName: string
     description?: string
@@ -35,9 +39,12 @@ export interface GroupClientWithSecret extends GroupClient {
 
 export const supportedScopes = [
     'transactions.read',
-    'transactions.write',
+    'transactions.create',
+    'transactions.update',
     'items.read',
-    'items.write',
+    'items.create',
+    'items.update',
+    'items.delete',
     'group.read',
 ] as const
 export type Scope = (typeof supportedScopes)[number]
@@ -228,6 +235,13 @@ export async function getGroupClientDetailsWithSecretHash(
         where: {
             id: id,
         },
+        include: {
+            group: {
+                select: {
+                    gammaId: true,
+                },
+            },
+        },
     })
 
     if (client == null) {
@@ -239,7 +253,10 @@ export async function getGroupClientDetailsWithSecretHash(
         salt: client.salt,
         id: client.id,
         scope: client.scope,
-        groupId: client.groupId,
+        group: {
+            id: client.groupId,
+            gammaId: client.group.gammaId as GroupId,
+        },
         ownerId: client.ownerId,
         displayName: client.displayName,
         ...(client.description == null

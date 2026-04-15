@@ -4,7 +4,6 @@ import { authorizationCode } from './config/gamma'
 import env from './config/env'
 import { sendError, unexpectedError } from './errors'
 import createApiRouter from './routers/api'
-import { login as loginRoute } from './routes/login'
 import * as validate from './middleware/validators'
 import validationErrorHandler from './middleware/validationErrorHandler'
 import appendHeader from './middleware/setHeader'
@@ -48,12 +47,6 @@ async function main() {
             'application/x-www-form-urlencoded',
         ])
     )
-
-    app.get('/authorize', (req, res) => {
-        res.redirect(authorizationCode.authorizeUrl())
-    })
-
-    app.post('/login', validate.login(), validationErrorHandler, loginRoute())
 
     const oauth2Router = createOAuth2Router()
     app.use('/oauth2', oauth2Router)

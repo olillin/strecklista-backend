@@ -23,8 +23,8 @@
 
 3. [Authorization](#authorization)  
    3.1 [Authorization Flow](#authorization-flow)  
-   3.2 [GET /authorize](#get-authorize)  
-   3.3 [POST /login](#post-login)
+   3.2 [GET /oauth2/authorize](#get-oauth2-authorize)  
+   3.3 [POST /oauth2/token](#post-oauth2-token)
 
 4. [API Endpoints](#api-endpoints)  
    4.1 [GET /user](#get-user)  
@@ -254,7 +254,7 @@ extends [Transaction](#transaction)
 
 ### Authorization flow
 
-1. User goes to [https://strecklista.chalmers.it/api/authorize](https://strecklista.chalmers.it/api/authorize).
+1. User goes to <https://strecklista.chalmers.it/api/oauth2/authorize>.
 
 2. User is redirected to the Gamma login screen.
 
@@ -262,7 +262,7 @@ extends [Transaction](#transaction)
    `https://strecklista.chalmers.it/callback?code=<gamma code>`
 
 4. The client page sends the `code` from Gamma in a `POST` request to:  
-   `https://strecklista.chalmers.it/api/login`
+   `https://strecklista.chalmers.it/api/oauth2/token`
 
 5. The server validates the code and user and then responds with a JWT token.
 
@@ -271,23 +271,43 @@ extends [Transaction](#transaction)
 7. In future requests the token is sent in the `Authorization` header as a bearer token:  
    `Authorization: Bearer <JWT token>`
 
-### GET /authorize
+### GET /oauth2/authorize
 
 Redirect to Gamma login page. After logging in the user will be redirected to:
 
 `https://strecklista.chalmers.it/callback`
 
-### POST /login
+### POST /oauth2/token
 
-Login using an authorization code from Gamma.
+Get a token using an authorization code from Gamma or client credentials.
 
 #### Request
 
-Provide the **code** in the query like this:
+##### Authorization code flow
 
-`/login?code=<AUTHORIZATION CODE FROM GAMMA REDIRECT>`
+Provide the authorization code in the request body like this:
+
+```json
+{
+    "grant_type": "authorization_code",
+    "code": "<authorization code>"
+}
+```
+
+##### Client Credentials Flow
+
+```json
+{
+    "grant_type": "client_credentials",
+    "audience": "<strecklista issuer identifier>",
+    "client_id": "<your client id>",
+    "client_secret": "<your client secret>"
+}
+```
 
 #### Response
+
+##### Authorization Code Flow
 
 The generated JWT token and data about the authenticated user and their group.
 
@@ -295,20 +315,61 @@ The generated JWT token and data about the authenticated user and their group.
 {
   "access_token": <JWT token string>,
   "token_type": "Bearer",
-  "expires_in": number, // How many seconds the token is valid for
+  "sub": string, // User id in the strecklista
+  "iss": string, // Issuer of the token (identifier of the Strecklista backend)
+  "iat": number, // Unix timestamp in seconds when token was issued
+  "nbf": number, // Unix timestamp in seconds when token starts being valid
+  "exp": number, // Unix timestamp in seconds when token will expire
+  "jti": string, // Unique identifier of the token
   "user": User,
   "group": Group,
   "balance": decimal
 }
 ```
 
+##### Client Credentials Flow
+
+```javascript
+{
+  "access_token": <JWT token string>,
+  "token_type": "Bearer",
+  "aud": string, // Intended audience (your client id)
+  "iss": string, // Issuer of the token (identifier of the Strecklista backend)
+  "iat": number, // Unix timestamp in seconds when token was issued
+  "nbf": number, // Unix timestamp in seconds when token starts being valid
+  "exp": number, // Unix timestamp in seconds when token will expire
+  "jti": string, // Unique identifier of the token
+  "scope": string, // Authorized client scopes
+  "client": {
+    "clientId": string,
+    "displayName": string
+  },
+  "group": {
+      "id": number,
+      "gammaId": string
+  }
+}
+```
+
 #### Errors
 
-| Code | Message                                                                |
-| ---- | ---------------------------------------------------------------------- |
-| 404  | Unable to find user in gamma                                           |
-| 500  | Failed to sign JWT: \<details\>                                        |
-| 502  | Failed to get token from Gamma, your authorization code may be invalid |
+##### Authorization Code Flow
+
+| Code | Message                                                                        |
+| ---- | ------------------------------------------------------------------------------ |
+| 403  | Unsupported grant type, expected one of authorization_code, client_credentials |
+| 404  | Unable to find user in gamma                                                   |
+| 500  | Failed to sign JWT: \<details\>                                                |
+| 502  | Failed to get token from Gamma, your authorization code may be invalid         |
+
+##### Client Credentials Flow
+
+| Code | Message                                                                        |
+| ---- | ------------------------------------------------------------------------------ |
+| 401  | Invalid credentials                                                            |
+| 403  | Incorrect audience, expected '\<audience\>'                                    |
+| 403  | Unsupported grant type, expected one of authorization_code, client_credentials |
+| 500  | Failed to sign JWT: \<details\>                                                |
 
 ## API Endpoints
 

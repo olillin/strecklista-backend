@@ -11,16 +11,18 @@ import {
     GroupUserResponse,
     toGroupUserResponse,
 } from '../../responses'
-import { UserId } from 'gammait'
 import { getAuthorizedGroup } from '../../util/helpers'
 import * as userService from '../../services/userService'
 import { completeGroupUser } from '../../services/gammaService'
 
 export default async function getUser(req: Request, res: Response) {
-    const userId: number = getUserId(res)
-    const groupId: number = getGroupId(res)
-    const gammaUserId: UserId = getGammaUserId(res)
-    console.log(`Getting user info for: ${userId}`)
+    const userId = getUserId(res)
+    const groupId = getGroupId(res)
+    const gammaUserId = getGammaUserId(res)
+    if (userId == null || groupId == null || gammaUserId == null) {
+        sendError(res, ApiError.Unauthorized)
+        return
+    }
 
     // Get requests
     const offlineGroupUserPromise = userService.getOfflineGroupUser(

@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express'
 import * as itemService from '../../services/itemService'
 import { getGroupId } from '../../middleware/validateToken'
+import { ApiError, sendError } from '../../errors'
 
 export default async function deleteItem(
     req: Request,
@@ -13,6 +14,10 @@ export default async function deleteItem(
         }
         const itemId = parseInt(req.params.id)
         const groupId = getGroupId(res)
+        if (groupId == null) {
+            sendError(res, ApiError.Unauthorized)
+            return
+        }
 
         await itemService.deleteItem(itemId, groupId)
         res.status(204).end()

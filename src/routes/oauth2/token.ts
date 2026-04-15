@@ -1,35 +1,128 @@
 import { Request, RequestHandler, Response } from 'express'
-import jwt, { SignOptions } from 'jsonwebtoken'
+import jwt, { JwtPayload, SignOptions } from 'jsonwebtoken'
 import env from '../../config/env'
-import { ApiError, sendError, tokenSignError } from '../../errors'
+import {
+    ApiError,
+    missingRequiredPropertyError,
+    sendError,
+    tokenSignError,
+    unexpectedError,
+} from '../../errors'
 import {
     checkClientSecret,
     getGroupClientDetailsWithSecretHash,
 } from '../../services/clientService'
-import { JWT } from '../login'
 import { ulid } from 'ulid'
+import { GroupId, GroupWithPost, UserId, UserInfo } from 'gammait'
+import { authorizationCode, clientApi } from '../../config/gamma'
+import { getAuthorizedGroup } from '../../util/helpers'
+import { OfflineGroupUser, softAddGroupUser } from '../../services/userService'
+import { completeGroupUser, GroupUser } from '../../services/gammaService'
+import { toLoginResponse } from '../../responses'
 
-export const acceptedGrantType = 'client_credentials'
+export const acceptedGrantTypes = [
+    'authorization_code',
+    'client_credentials',
+] as const
+export type GrantType = (typeof acceptedGrantTypes)[number]
+
 export const acceptedTokenAudience = env.JWT_ISSUER
 
-export interface LoggedInGroupClient {
-    clientId: string
-    scope: string
-    groupId: number
-    displayName: string
+export interface JwtWithToken extends JwtPayload {
+    access_token: string
+    token_type: 'Bearer'
 }
 
-export function isLoggedInUser(value: unknown): value is LoggedInGroupClient {
+export interface UserJwt {
+    user: {
+        id: number
+        gammaId: UserId
+    }
+    group: {
+        id: number
+        gammaId: GroupId
+    }
+}
+
+export function isUserJwt(value: unknown): value is UserJwt {
     if (typeof value !== 'object' || value === null) {
         return false
     }
 
     const obj = value as Record<string, unknown>
 
-    return typeof obj.clientId === 'string' && typeof obj.groupId === 'number'
+    return (
+        typeof obj.user === 'object' &&
+        typeof (obj.user as Record<string, string>).id === 'number' &&
+        typeof (obj.user as Record<string, string>).gammaId === 'string' &&
+        typeof obj.group === 'object' &&
+        typeof (obj.group as Record<string, string>).id === 'number' &&
+        typeof (obj.group as Record<string, string>).gammaId === 'string'
+    )
 }
 
-function signGroupClientJwt(client: LoggedInGroupClient): Promise<JWT> {
+export interface GroupClientJwt {
+    clientId: string
+    scope: string
+    displayName: string
+    group: {
+        id: number
+        gammaId: GroupId
+    }
+}
+
+export function isGroupClientJwt(value: unknown): value is GroupClientJwt {
+    if (typeof value !== 'object' || value === null) {
+        return false
+    }
+
+    const obj = value as Record<string, unknown>
+
+    return (
+        typeof obj.clientId === 'string' &&
+        typeof obj.scope === 'string' &&
+        typeof obj.groupId === 'number' &&
+        typeof obj.displayName === 'string'
+    )
+}
+
+function signUserJwt(content: UserJwt): Promise<JwtWithToken> {
+    return new Promise((resolve, reject) => {
+        const expireSeconds = parseInt(env.JWT_EXPIRES_IN)
+
+        try {
+            jwt.sign(
+                content,
+                env.JWT_SECRET,
+                {
+                    issuer: env.JWT_ISSUER,
+                    subject: String(content.user.id),
+                    algorithm: 'HS256',
+                    expiresIn: expireSeconds,
+                    notBefore: 0,
+                    jwtid: ulid(),
+                } satisfies SignOptions,
+                (error, token) => {
+                    if (error) reject(error)
+                    else if (token) {
+                        const token_content = jwt.decode(token, {
+                            json: true,
+                        })!
+                        resolve({
+                            access_token: token,
+                            token_type: 'Bearer',
+                            ...token_content,
+                        })
+                    }
+                }
+            )
+        } catch (error) {
+            reject(error)
+        }
+    })
+}
+
+function signGroupClientJwt(content: GroupClientJwt): Promise<JwtWithToken> {
     return new Promise((resolve, reject) => {
         const expireSeconds = parseInt(env.JWT_EXPIRES_IN)
 
@@ -37,16 +130,16 @@ function signGroupClientJwt(client: LoggedInGroupClient): Promise<JWT> {
             jwt.sign(
                 {
                     client: {
-                        clientId: client.clientId,
-                        groupId: client.groupId,
-                        displayName: client.displayName,
+                        clientId: content.clientId,
+                        displayName: content.displayName,
+                        group: content.group,
                     },
-                    scope: client.scope,
+                    scope: content.scope,
                 },
                 env.JWT_SECRET,
                 {
                     issuer: env.JWT_ISSUER,
-                    audience: client.clientId,
+                    audience: content.clientId,
                     algorithm: 'HS256',
                     expiresIn: expireSeconds,
                     notBefore: 0,
@@ -76,41 +169,154 @@ export function tokenRoute(): RequestHandler {
     return async (req: Request, res: Response) => {
         res.setHeader('Allow', 'POST')
 
-        // Validate request
-        const clientId = req.body['client_id'] as string
-        const clientSecret = req.body['client_secret'] as string
-        // Not used since already validated
-        // const grantType = req.body['grant_type'] as string
-        // const audience = req.body['audience'] as string
-
-        const clientDetails =
-            await getGroupClientDetailsWithSecretHash(clientId)
-        if (!clientDetails) {
-            sendError(res, ApiError.InvalidCredentials)
-            return
+        const grantType = req.body['grant_type'] as GrantType
+        if (grantType === 'authorization_code') {
+            authorizationCodeFlow(req, res)
+        } else if (grantType === 'client_credentials') {
+            clientCredentialsFlow(req, res)
         }
-
-        const isCorrectSecret = await checkClientSecret(
-            clientSecret,
-            clientDetails.secretHash,
-            clientDetails.salt
-        )
-        if (!isCorrectSecret) {
-            sendError(res, ApiError.InvalidCredentials)
-            return
-        }
-
-        signGroupClientJwt({
-            clientId: clientDetails.id,
-            scope: clientDetails.scope,
-            groupId: clientDetails.groupId,
-            displayName: clientDetails.displayName,
-        })
-            .then(token => {
-                res.json(token)
-            })
-            .catch(error => {
-                sendError(res, tokenSignError(String(error)))
-            })
     }
+}
+
+async function authorizationCodeFlow(req: Request, res: Response) {
+    // Validate request
+    const code: unknown = req.body.code
+    if (typeof code !== 'string') {
+        sendError(res, missingRequiredPropertyError('code', 'body'))
+        return
+    }
+
+    // Get token from Gamma
+    try {
+        await authorizationCode.generateToken(code)
+    } catch (error) {
+        const unreachable =
+            (error as NodeJS.ErrnoException)?.code === 'ENOTFOUND' ||
+            (error as NodeJS.ErrnoException)?.code === 'ECONNREFUSED'
+        if (unreachable) {
+            console.warn(
+                `Unable to reach Gamma when logging in user: ${(error as Error).message}`
+            )
+            sendError(res, ApiError.UnreachableGamma)
+        } else {
+            console.error(`Failed to get token from Gamma: ${error}`)
+            if (
+                error instanceof Error &&
+                (error as Error).message.includes('400')
+            ) {
+                sendError(res, ApiError.AuthorizationCodeUsed)
+            } else {
+                sendError(res, ApiError.GammaToken)
+            }
+        }
+        return
+    }
+
+    let userInfo: UserInfo
+    let gammaUserId: UserId
+    let groups: GroupWithPost[]
+    try {
+        userInfo = await authorizationCode.userInfo()
+        gammaUserId = userInfo.sub
+        groups = await clientApi.getGroupsFor(gammaUserId)
+    } catch (error) {
+        if (
+            (error as NodeJS.ErrnoException).code === 'ENOTFOUND' ||
+            (error as NodeJS.ErrnoException).code === 'ECONNREFUSED'
+        ) {
+            sendError(res, ApiError.UnreachableGamma)
+        } else {
+            const message = `Failed to fetch Gamma info for login: ${error}`
+            console.error(message)
+            sendError(res, unexpectedError(message))
+        }
+        return
+    }
+
+    const group = getAuthorizedGroup(groups)
+    if (!group) {
+        // User is not in the super group
+        sendError(res, ApiError.NoPermission)
+        return
+    }
+    const gammaGroupId: GroupId = group.id
+
+    const offlineGroupUser: OfflineGroupUser = await softAddGroupUser(
+        gammaGroupId,
+        gammaUserId
+    )
+    const groupUser: GroupUser = completeGroupUser(
+        offlineGroupUser,
+        userInfo,
+        group
+    )
+
+    signUserJwt({
+        user: {
+            id: groupUser.user.id,
+            gammaId: groupUser.user.gammaId,
+        },
+        group: {
+            id: groupUser.group.id,
+            gammaId: groupUser.group.gammaId,
+        },
+    })
+        .then(token => {
+            const body = toLoginResponse(groupUser, token)
+            res.json(body)
+        })
+        .catch(error => {
+            sendError(res, tokenSignError(String(error)))
+        })
+}
+
+async function clientCredentialsFlow(req: Request, res: Response) {
+    // Validate request
+    const clientId: unknown = req.body['client_id']
+    if (typeof clientId !== 'string') {
+        sendError(res, missingRequiredPropertyError('clientId', 'body'))
+        return
+    }
+    const clientSecret: unknown = req.body['client_secret'] as string
+    if (typeof clientSecret !== 'string') {
+        sendError(res, missingRequiredPropertyError('clientSecret', 'body'))
+        return
+    }
+    const audience: unknown = req.body['audience'] as string
+    if (typeof audience !== 'string') {
+        sendError(res, missingRequiredPropertyError('audience', 'body'))
+        return
+    }
+
+    const clientDetails = await getGroupClientDetailsWithSecretHash(clientId)
+    if (!clientDetails) {
+        sendError(res, ApiError.InvalidCredentials)
+        return
+    }
+
+    const isCorrectSecret = await checkClientSecret(
+        clientSecret,
+        clientDetails.secretHash,
+        clientDetails.salt
+    )
+    if (!isCorrectSecret) {
+        sendError(res, ApiError.InvalidCredentials)
+        return
+    }
+
+    signGroupClientJwt({
+        clientId: clientDetails.id,
+        scope: clientDetails.scope,
+        displayName: clientDetails.displayName,
+        group: {
+            id: clientDetails.group.id,
+            gammaId: clientDetails.group.gammaId,
+        },
+    })
+        .then(token => {
+            res.json(token)
+        })
+        .catch(error => {
+            sendError(res, tokenSignError(String(error)))
+        })
 }

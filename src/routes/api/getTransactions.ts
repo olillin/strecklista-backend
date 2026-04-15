@@ -2,6 +2,7 @@ import { Request, Response } from 'express'
 import { getGroupId } from '../../middleware/validateToken'
 import { ResponseBody, TransactionsResponse } from '../../responses'
 import * as transactionService from '../../services/transactionService'
+import { ApiError, sendError } from '../../errors'
 
 export default async function getTransactions(req: Request, res: Response) {
     const limit = parseInt(req.query.limit as string)
@@ -13,7 +14,12 @@ export default async function getTransactions(req: Request, res: Response) {
         ? parseInt(req.query.createdBy as string)
         : undefined
 
-    const groupId: number = getGroupId(res)
+    const groupId = getGroupId(res)
+    if (groupId == null) {
+        sendError(res, ApiError.Unauthorized)
+        return
+    }
+
     const options: transactionService.GetTransactionsOptions = {
         createdFor,
         createdBy,

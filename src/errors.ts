@@ -1,7 +1,10 @@
 import { Location } from 'express-validator'
 import { ResponseBody } from './responses'
 import { Response } from 'express'
-import { acceptedGrantType, acceptedTokenAudience } from './routes/oauth2/token'
+import {
+    acceptedGrantTypes,
+    acceptedTokenAudience,
+} from './routes/oauth2/token'
 
 export interface ErrorDefinition {
     code: number
@@ -23,13 +26,13 @@ export enum ApiError {
 
     // Authorization
     Unauthorized,
+    Forbidden,
+    InsufficientScope,
+    UnsupportedGrantType,
     ExpiredToken,
     InvalidToken,
     BeforeNbf,
     NoPermission,
-
-    // Token
-    UnsupportedGrantType,
     IncorrectAudience,
     InvalidCredentials,
 
@@ -91,16 +94,16 @@ const errorDefinitions: { [key in ApiError]: ErrorDefinition } = {
 
     // Authorization
     [ApiError.Unauthorized]: err(401, 'Unauthorized'),
+    [ApiError.Forbidden]: err(403, 'Forbidden'),
+    [ApiError.InsufficientScope]: err(401, 'Insufficient scope'),
+    [ApiError.UnsupportedGrantType]: err(
+        403,
+        `Unsupported grant_type, expected ${acceptedGrantTypes.join(', ')}`
+    ),
     [ApiError.ExpiredToken]: err(401, 'Token is expired'),
     [ApiError.InvalidToken]: err(401, 'Token is invalid, generate a new one'),
     [ApiError.BeforeNbf]: err(401, 'Token cannot be used yet'),
     [ApiError.NoPermission]: err(403, 'No permission to access this service'),
-
-    // Token
-    [ApiError.UnsupportedGrantType]: err(
-        403,
-        `Unsupported grant_type, expected '${acceptedGrantType}'`
-    ),
     [ApiError.IncorrectAudience]: err(
         403,
         `Incorrect audience, expected '${acceptedTokenAudience}'`

@@ -4,6 +4,7 @@ import { getGroupId, getUserId } from '../../middleware/validateToken'
 import { getItemsInGroup, getTopPrice, Item } from '../../services/itemService'
 import { ItemSortMode } from '../../middleware/validators'
 import { convertDecimalToNumber } from '../../util/decimalToNumber'
+import { ApiError, sendError } from '../../errors'
 
 type ItemCompareFunction = (a: Item, b: Item) => number
 const COMPARE = {
@@ -25,8 +26,12 @@ export default async function getItems(req: Request, res: Response) {
     const visibleOnly: boolean =
         req.query.visibleOnly === '1' || req.query.visibleOnly === 'true'
 
-    const userId: number = getUserId(res)
-    const groupId: number = getGroupId(res)
+    const userId = getUserId(res)
+    const groupId = getGroupId(res)
+    if (userId == null || groupId == null) {
+        sendError(res, ApiError.Unauthorized)
+        return
+    }
 
     const items: Item[] = await getItemsInGroup(groupId, userId, visibleOnly)
 

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import { GroupClientResponse, ResponseBody } from '../../responses'
 import * as clientService from '../../services/clientService'
-import { ApiError } from '../../errors'
+import { ApiError, sendError } from '../../errors'
 
 export interface GetClientParams {
     id: string
@@ -11,7 +11,8 @@ export default async function getGroupClient(req: Request, res: Response) {
     const id = req.params.id as string
     const groupClient = await clientService.getGroupClient(id)
     if (groupClient == null) {
-        throw ApiError.ClientNotExist
+        sendError(res, ApiError.ClientNotExist)
+        return
     }
 
     const body: ResponseBody<GroupClientResponse> = {

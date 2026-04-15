@@ -9,6 +9,7 @@ import * as validate from './middleware/validators'
 import validationErrorHandler from './middleware/validationErrorHandler'
 import appendHeader from './middleware/setHeader'
 import cors, { CorsOptions } from 'cors'
+import createOAuth2Router from './routers/oauth2'
 
 const exposeCors =
     env.EXPOSE_CORS.toLowerCase() === 'true' || env.EXPOSE_CORS === '1'
@@ -53,6 +54,9 @@ async function main() {
     })
 
     app.post('/login', validate.login(), validationErrorHandler, loginRoute())
+
+    const oauth2Router = createOAuth2Router()
+    app.use('/oauth2', oauth2Router)
 
     const api = await createApiRouter()
     app.use('/', api)

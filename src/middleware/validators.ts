@@ -14,6 +14,10 @@ import {
     isGroupClientNameTaken,
     isScope,
 } from '../services/clientService'
+import {
+    acceptedGrantType,
+    acceptedTokenAudience,
+} from '../routes/oauth2/token'
 
 //#region Util
 function getGroupId(meta: Meta): number {
@@ -127,6 +131,18 @@ export async function checkClientDisplayNameUniqueInGroup(
     }
 }
 
+export async function checkSupportedGrantType(value: string): Promise<void> {
+    if (value !== acceptedGrantType) {
+        throw ApiError.UnsupportedGrantType
+    }
+}
+
+export async function checkAudience(value: string): Promise<void> {
+    if (value !== acceptedTokenAudience) {
+        throw ApiError.IncorrectAudience
+    }
+}
+
 //#endregion Custom validators
 
 // Validation chains
@@ -135,6 +151,17 @@ export const login = () => [
         query('code').exists().withMessage(ApiError.NoAuthorizationCode),
         body('code').exists().withMessage(ApiError.NoAuthorizationCode),
     ]),
+]
+
+export const token = () => [
+    body('grant_type').exists().isString().custom(checkSupportedGrantType),
+    body('client_id')
+        .exists()
+        .isString()
+        .isLength({ min: CLIENT_ID_LENGTH, max: CLIENT_ID_LENGTH })
+        .withMessage(ApiError.InvalidClientId),
+    body('client_secret').exists().isString(),
+    body('audience').exists().custom(checkAudience),
 ]
 
 export const getUser = () => []
@@ -355,6 +382,7 @@ export const getGroupClient = () => [
         .isString()
         .isLength({ min: CLIENT_ID_LENGTH, max: CLIENT_ID_LENGTH })
         .withMessage(ApiError.InvalidClientId)
+        .bail()
         .custom(checkClientExistsInGroup),
 ]
 

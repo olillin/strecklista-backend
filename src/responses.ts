@@ -28,9 +28,7 @@ export type GroupResponse = DecimalToNumber<{
     members: GroupMember[]
 }>
 
-export interface LoginResponse extends GroupUserResponse, JWT {
-    token_type: string
-}
+export type LoginResponse = JWT & GroupUserResponse
 
 export type ItemsResponse = DecimalToNumber<{
     items: Item[]
@@ -84,9 +82,7 @@ export function toLoginResponse(
     token: JWT
 ): LoginResponse {
     return {
-        access_token: token.access_token,
-        token_type: 'Bearer',
-        expires_in: token.expires_in,
+        ...token,
         ...toGroupUserResponse(groupUser),
     }
 }

@@ -1,6 +1,6 @@
 import { Request, RequestHandler, Response } from 'express'
 import { GroupId, GroupWithPost, UserId, UserInfo } from 'gammait'
-import jwt from 'jsonwebtoken'
+import jwt, { JwtPayload, SignOptions } from 'jsonwebtoken'
 import { authorizationCode, clientApi } from '../config/gamma'
 import env from '../config/env'
 import { ApiError, sendError, tokenSignError, unexpectedError } from '../errors'
@@ -8,10 +8,11 @@ import { getAuthorizedGroup } from '../util/helpers'
 import { OfflineGroupUser, softAddGroupUser } from '../services/userService'
 import { toLoginResponse } from '../responses'
 import { completeGroupUser, GroupUser } from '../services/gammaService'
+import { ulid } from 'ulid'
 
-export interface JWT {
+export interface JWT extends JwtPayload {
     access_token: string
-    expires_in: number
+    token_type: 'Bearer'
 }
 
 export interface LoggedInUser {
@@ -36,11 +37,9 @@ export function isLoggedInUser(value: unknown): value is LoggedInUser {
     )
 }
 
-function signJwt(user: LoggedInUser): Promise<JWT> {
+function signUserJwt(user: LoggedInUser): Promise<JWT> {
     return new Promise((resolve, reject) => {
-        const expireSeconds = parseFloat(env.JWT_EXPIRES_IN)
-
-        console.log(`Signing token for ${user.gammaUserId}`)
+        const expireSeconds = parseInt(env.JWT_EXPIRES_IN)
 
         try {
             jwt.sign(
@@ -48,16 +47,24 @@ function signJwt(user: LoggedInUser): Promise<JWT> {
                 env.JWT_SECRET,
                 {
                     issuer: env.JWT_ISSUER,
+                    subject: String(user.userId),
                     algorithm: 'HS256',
                     expiresIn: expireSeconds,
-                },
+                    notBefore: 0,
+                    jwtid: ulid(),
+                } satisfies SignOptions,
                 (error, token) => {
                     if (error) reject(error)
-                    else if (token)
+                    else if (token) {
+                        const token_content = jwt.decode(token, {
+                            json: true,
+                        })!
                         resolve({
                             access_token: token,
-                            expires_in: expireSeconds,
+                            token_type: 'Bearer',
+                            ...token_content,
                         })
+                    }
                 }
             )
         } catch (error) {
@@ -138,7 +145,7 @@ export function login(): RequestHandler {
             group
         )
 
-        signJwt({
+        signUserJwt({
             userId: groupUser.user.id,
             groupId: groupUser.group.id,
             gammaUserId: groupUser.user.gammaId,

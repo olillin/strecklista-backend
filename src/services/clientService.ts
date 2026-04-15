@@ -1,7 +1,7 @@
 import { prisma } from '../lib/prisma'
 import { Prisma } from '../generated/prisma/client'
 import crypto from 'crypto'
-import { toBase32hex } from '@exodus/bytes/base32.js'
+import { fromBase32hex, toBase32hex } from '@exodus/bytes/base32.js'
 import { getGroupUser, Group, User } from './gammaService'
 
 /**
@@ -14,6 +14,17 @@ export interface GroupClient {
     scope: Scope[]
     group: Group
     owner: User
+    displayName: string
+    description?: string
+}
+
+export interface GroupClientDetailsWithSecretHash {
+    secretHash: string
+    salt: string
+    id: string
+    scope: string
+    groupId: number
+    ownerId: number
     displayName: string
     description?: string
 }
@@ -88,6 +99,21 @@ async function hashSecret(
             }
         )
     })
+}
+
+/**
+ *
+ */
+export async function checkClientSecret(
+    secret: string,
+    secretHash: string,
+    salt: string | Buffer<ArrayBufferLike>
+): Promise<boolean> {
+    if (typeof salt === 'string') {
+        salt = Buffer.from(fromBase32hex(salt))
+    }
+    const submittedHash = await hashSecret(secret, salt)
+    return submittedHash === secretHash
 }
 
 export async function createGroupClient(
@@ -188,6 +214,33 @@ export async function getGroupClient(id: string): Promise<GroupClient | null> {
         scope: parseScope(client.scope),
         group: groupUser.group,
         owner: groupUser.user,
+        displayName: client.displayName,
+        ...(client.description == null
+            ? {}
+            : { description: client.description }),
+    }
+}
+
+export async function getGroupClientDetailsWithSecretHash(
+    id: string
+): Promise<GroupClientDetailsWithSecretHash | null> {
+    const client = await prisma.apiClient.findFirst({
+        where: {
+            id: id,
+        },
+    })
+
+    if (client == null) {
+        return null
+    }
+
+    return {
+        secretHash: client.secret,
+        salt: client.salt,
+        id: client.id,
+        scope: client.scope,
+        groupId: client.groupId,
+        ownerId: client.ownerId,
         displayName: client.displayName,
         ...(client.description == null
             ? {}

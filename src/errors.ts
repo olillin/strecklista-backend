@@ -1,6 +1,7 @@
 import { Location } from 'express-validator'
 import { ResponseBody } from './responses'
 import { Response } from 'express'
+import { acceptedGrantType, acceptedTokenAudience } from './routes/oauth2/token'
 
 export interface ErrorDefinition {
     code: number
@@ -26,6 +27,11 @@ export enum ApiError {
     InvalidToken,
     BeforeNbf,
     NoPermission,
+
+    // Token
+    UnsupportedGrantType,
+    IncorrectAudience,
+    InvalidCredentials,
 
     // Gamma
     GammaToken,
@@ -89,6 +95,17 @@ const errorDefinitions: { [key in ApiError]: ErrorDefinition } = {
     [ApiError.InvalidToken]: err(401, 'Token is invalid, generate a new one'),
     [ApiError.BeforeNbf]: err(401, 'Token cannot be used yet'),
     [ApiError.NoPermission]: err(403, 'No permission to access this service'),
+
+    // Token
+    [ApiError.UnsupportedGrantType]: err(
+        403,
+        `Unsupported grant_type, expected '${acceptedGrantType}'`
+    ),
+    [ApiError.IncorrectAudience]: err(
+        403,
+        `Incorrect audience, expected '${acceptedTokenAudience}'`
+    ),
+    [ApiError.InvalidCredentials]: err(401, `Invalid credentials`),
 
     // Gamma
     [ApiError.GammaToken]: err(

@@ -40,7 +40,8 @@ export enum ApiError {
     GammaToken,
     InvalidGammaResponse,
     UnreachableGamma,
-    FailedGetGroups,
+    FailedGetUser,
+    FailedGetGroup,
 
     // Login
     NoAuthorizationCode,
@@ -120,7 +121,8 @@ const errorDefinitions: { [key in ApiError]: ErrorDefinition } = {
         'Received an invalid response from Gamma'
     ),
     [ApiError.UnreachableGamma]: err(504, 'Unable to reach Gamma'),
-    [ApiError.FailedGetGroups]: err(502, 'Failed to get groups for user'),
+    [ApiError.FailedGetUser]: err(502, 'Failed to get user from Gamma'),
+    [ApiError.FailedGetGroup]: err(502, 'Failed to get group from Gamma'),
 
     // Login
     [ApiError.NoAuthorizationCode]: err(401, 'No authorization code provided'),

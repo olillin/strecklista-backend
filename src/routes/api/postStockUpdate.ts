@@ -1,6 +1,9 @@
 import { Request, Response } from 'express'
 import { ResponseBody, TransactionResponse } from '../../responses'
-import { getGroupId, getUserId } from '../../middleware/validateToken'
+import {
+    getGroupId,
+    getTransactionCreator,
+} from '../../middleware/validateToken'
 import { createStockUpdate } from '../../services/transactionService'
 import { ApiError, sendError } from '../../errors'
 
@@ -19,8 +22,8 @@ export default async function postStockUpdate(req: Request, res: Response) {
     const { items, comment } = req.body as PostStockUpdateBody
 
     const groupId = getGroupId(res)
-    const createdBy = getUserId(res)
-    if (groupId == null) {
+    const createdBy = getTransactionCreator(res)
+    if (groupId == null || createdBy == null) {
         sendError(res, ApiError.Unauthorized)
         return
     }

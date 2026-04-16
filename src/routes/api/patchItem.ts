@@ -5,6 +5,7 @@ import { updateItem, Price, ItemPatch } from '../../services/itemService'
 import { JsonPrice } from './postPurchase'
 import { Decimal } from '@prisma/client/runtime/client'
 import { convertDecimalToNumber } from '../../util/decimalToNumber'
+import { ApiError, sendError } from '../../errors'
 
 export interface PatchItemBody {
     icon?: string
@@ -18,7 +19,12 @@ export default async function patchItem(req: Request, res: Response) {
     if (typeof req.params.id !== 'string') {
         throw new Error('Invalid id, expected string but got array')
     }
-    const userId: number = getUserId(res)
+    const userId = getUserId(res)
+    if (userId == null) {
+        sendError(res, ApiError.Unauthorized)
+        return
+    }
+
     const itemId = parseInt(req.params.id)
 
     const patch = createItemPatch(req.body as PatchItemBody)

@@ -28,7 +28,7 @@ model User {
 
   groups GroupUser[]
 
-  createdTransactions Transaction[] @relation("CreatedByTransactions")
+  createdTransactions Transaction[] @relation("CreatedByUserTransactions")
   receivedPurchases   Purchase[]    @relation("ReceivedPurchases")
   receivedDeposits    Deposit[]     @relation("ReceivedDeposits")
 
@@ -88,8 +88,10 @@ model Transaction {
 
   type TransactionType
 
-  createdById Int
-  createdBy   User @relation("CreatedByTransactions", fields: [createdById], references: [id])
+  createdByUserId   Int?
+  createdByUser     User? @relation("CreatedByUserTransactions", fields: [createdByUserId], references: [id])
+  createdByClientId String? @db.VarChar(26)
+  createdByClient   ApiClient? @relation("CreatedByClientTransactions", fields: [createdByClientId], references: [id])
   createdTime DateTime @default(now()) @db.Timestamptz
 
   removed     Boolean  @default(false) @db.Boolean
@@ -184,4 +186,6 @@ model ApiClient {
 
   displayName String @db.VarChar(50)
   description String? @db.VarChar(255)
+
+  createdTransactions Transaction[] @relation("CreatedByClientTransactions")
 }

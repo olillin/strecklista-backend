@@ -1,13 +1,8 @@
 import { NextFunction, Request, Response } from 'express'
 import { clientApi } from '../../config/gamma'
-import {
-    getGammaGroupId,
-    getGammaUserId,
-    getGroupId,
-} from '../../middleware/validateToken'
+import { getGammaGroupId, getGroupId } from '../../middleware/validateToken'
 import { ApiError, sendError } from '../../errors'
 import { GroupResponse, ResponseBody } from '../../responses'
-import { getAuthorizedGroup } from '../../util/helpers'
 import {
     getOfflineUsersInGroup,
     OfflineGroup,
@@ -16,6 +11,7 @@ import {
     completeUser,
     completeGroup,
     GroupMember,
+    getGammaGroup,
 } from '../../services/gammaService'
 import { DecimalToNumber } from '../../util/decimalToNumber'
 
@@ -25,28 +21,17 @@ export default async function getGroup(
     next: NextFunction
 ) {
     try {
-        const gammaUserId = getGammaUserId(res)
-        const gammaGroupId = getGammaGroupId(res)
         const groupId = getGroupId(res)
-        if (gammaUserId == null || gammaGroupId == null || groupId == null) {
+        const gammaGroupId = getGammaGroupId(res)
+        if (groupId == null || gammaGroupId == null) {
             sendError(res, ApiError.Unauthorized)
             return
         }
 
         // Get group
-        const gammaGroups = await clientApi
-            .getGroupsFor(gammaUserId)
-            .catch(reason => {
-                console.log(reason)
-                return null
-            })
-        if (!gammaGroups) {
-            sendError(res, ApiError.FailedGetGroups)
-            return
-        }
-        const gammaGroup = getAuthorizedGroup(gammaGroups)
+        const gammaGroup = await getGammaGroup(gammaGroupId)
         if (!gammaGroup) {
-            sendError(res, ApiError.NoPermission)
+            sendError(res, ApiError.FailedGetGroup)
             return
         }
 

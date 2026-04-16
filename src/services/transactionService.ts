@@ -22,7 +22,7 @@ export interface Transaction<T extends TransactionType> {
     type: T
     id: number
 
-    createdBy: number
+    createdBy: TransactionCreator
     createdTime: Date
 
     removed: boolean
@@ -66,10 +66,37 @@ export interface TransactionPatch {
 }
 
 // Transactions
+export type TransactionCreator =
+    | {
+          userId: number
+          clientId?: never
+      }
+    | {
+          userId?: never
+          clientId: string
+      }
+
+export function createTransactionCreator(
+    userId: number | null,
+    clientId: string | null
+): TransactionCreator | null {
+    if (userId != null)
+        return {
+            userId: userId,
+        }
+    if (clientId != null)
+        return {
+            clientId: clientId,
+        }
+
+    return null
+}
+
 interface TransactionData {
     id: number
     type: PrismaTransactionType
-    createdById: number
+    createdByUserId: number | null
+    createdByClientId: string | null
     createdTime: Date
     removed: boolean
     comment: string | null
@@ -93,7 +120,8 @@ const selectTransactionData = {
     id: true,
     type: true,
     groupId: true,
-    createdById: true,
+    createdByUserId: true,
+    createdByClientId: true,
     createdTime: true,
     removed: true,
     comment: true,
@@ -112,10 +140,17 @@ const selectTransactionData = {
 } satisfies TransactionSelect
 
 function parseTransaction(transaction: TransactionData): AnyTransaction {
+    const creator = createTransactionCreator(
+        transaction.createdByUserId,
+        transaction.createdByClientId
+    )
+    if (creator == null)
+        throw new Error('Invalid transaction data, has no creator')
+
     const basicTransaction: Transaction<'purchase'> = {
         type: 'purchase',
         id: transaction.id,
-        createdBy: transaction.createdById,
+        createdBy: creator,
         createdTime: transaction.createdTime,
         removed: transaction.removed,
         comment: transaction.comment ?? undefined,
@@ -201,7 +236,7 @@ export async function countTransactionsInGroup(
 }
 
 export interface GetTransactionsOptions {
-    createdBy?: number
+    createdBy?: TransactionCreator
     createdFor?: number
 }
 
@@ -214,7 +249,8 @@ export async function getTransactionsInGroup(
     const transactions = await prisma.transaction.findMany({
         where: {
             groupId: groupId,
-            createdById: options.createdBy ?? Prisma.skip,
+            createdByUserId: options.createdBy?.userId ?? Prisma.skip,
+            createdByClientId: options.createdBy?.clientId ?? Prisma.skip,
             ...(options.createdFor == undefined
                 ? {}
                 : {
@@ -267,7 +303,7 @@ export async function updateTransaction(
 // Deposit
 export async function createDeposit(
     groupId: number,
-    createdBy: number,
+    createdBy: TransactionCreator,
     createdFor: number,
     comment: string | null,
     total: number
@@ -280,7 +316,8 @@ export async function createDeposit(
         data: {
             type: 'DEPOSIT',
             groupId: groupId,
-            createdById: createdBy,
+            createdByUserId: createdBy.userId ?? Prisma.skip,
+            createdByClientId: createdBy.clientId ?? Prisma.skip,
             comment: comment,
             deposit: {
                 create: {
@@ -298,7 +335,7 @@ export async function createDeposit(
 // Purchases
 export async function createPurchase(
     groupId: number,
-    createdBy: number,
+    createdBy: TransactionCreator,
     createdFor: number,
     comment: string | null,
     items: PurchaseItem[]
@@ -330,7 +367,8 @@ export async function createPurchase(
         data: {
             type: 'PURCHASE',
             groupId: groupId,
-            createdById: createdBy,
+            createdByUserId: createdBy.userId ?? Prisma.skip,
+            createdByClientId: createdBy.clientId ?? Prisma.skip,
             comment: comment,
             purchase: {
                 create: {
@@ -352,7 +390,7 @@ export async function createPurchase(
 // Stock updates
 export async function createStockUpdate(
     groupId: number,
-    createdBy: number,
+    createdBy: TransactionCreator,
     comment: string | null | null,
     items: PostItemStockUpdate[]
 ): Promise<StockUpdate> {
@@ -386,7 +424,8 @@ export async function createStockUpdate(
         data: {
             type: 'STOCK_UPDATE',
             groupId: groupId,
-            createdById: createdBy,
+            createdByUserId: createdBy.userId ?? Prisma.skip,
+            createdByClientId: createdBy.clientId ?? Prisma.skip,
             comment: comment,
             stockUpdate: {
                 create: {

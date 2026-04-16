@@ -1,7 +1,10 @@
 import { Request, Response } from 'express'
 import { CreatedTransactionResponse, ResponseBody } from '../../responses'
-import { getGroupId, getUserId } from '../../middleware/validateToken'
-import { sendError, unexpectedError } from '../../errors'
+import {
+    getGroupId,
+    getTransactionCreator,
+} from '../../middleware/validateToken'
+import { ApiError, sendError, unexpectedError } from '../../errors'
 import { createDeposit } from '../../services/transactionService'
 import { convertDecimalToNumber } from '../../util/decimalToNumber'
 import { getOfflineGroupUser } from '../../services/userService'
@@ -15,8 +18,12 @@ export interface PostDepositBody {
 export default async function postDeposit(req: Request, res: Response) {
     const { userId: createdFor, total, comment } = req.body as PostDepositBody
 
-    const groupId: number = getGroupId(res)
-    const createdBy: number = getUserId(res)
+    const groupId = getGroupId(res)
+    const createdBy = getTransactionCreator(res)
+    if (groupId == null || createdBy == null) {
+        sendError(res, ApiError.Unauthorized)
+        return
+    }
 
     const deposit = await createDeposit(
         groupId,

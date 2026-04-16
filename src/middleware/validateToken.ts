@@ -5,6 +5,10 @@ import env from '../config/env'
 import { GroupId, UserId } from 'gammait'
 import { isGroupClientJwt, isUserJwt } from '../routes/oauth2/token'
 import { Scope } from '../services/clientService'
+import {
+    createTransactionCreator,
+    TransactionCreator,
+} from '../services/transactionService'
 
 function validateToken(req: Request, res: Response, next: NextFunction) {
     console.log(`${req.method} to API: ${req.path}`)
@@ -90,9 +94,23 @@ export function getGammaGroupId(res: Response): GroupId | null {
     return null
 }
 
+export function getClientId(res: Response): string | null {
+    const jwt = res.locals.jwt
+    if (isGroupClientJwt(jwt)) return jwt.clientId
+    return null
+}
+
 export function hasScope(res: Response, scope: Scope): boolean {
     const jwt = res.locals.jwt
     if (isUserJwt(jwt)) return true
     if (isGroupClientJwt(jwt)) return jwt.scope.split(' ').includes(scope)
     return false
+}
+
+export function getTransactionCreator(
+    res: Response
+): TransactionCreator | null {
+    const userId = getUserId(res)
+    const clientId = getClientId(res)
+    return createTransactionCreator(userId, clientId)
 }

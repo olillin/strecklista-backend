@@ -2,6 +2,7 @@ import { Request, Response } from 'express'
 import { NewGroupClientResponse, ResponseBody } from '../../responses'
 import { getGroupId, getUserId } from '../../middleware/validateToken'
 import { createGroupClient, parseScope } from '../../services/clientService'
+import { ApiError, sendError } from '../../errors'
 
 export interface PostClientBody {
     scope: string
@@ -11,8 +12,12 @@ export interface PostClientBody {
 
 export default async function postClient(req: Request, res: Response) {
     const { scope, displayName, description } = req.body as PostClientBody
-    const userId: number = getUserId(res)
-    const groupId: number = getGroupId(res)
+    const userId = getUserId(res)
+    const groupId = getGroupId(res)
+    if (userId == null || groupId == null) {
+        sendError(res, ApiError.Unauthorized)
+        return
+    }
 
     const parsedScope = parseScope(scope)
     const client = await createGroupClient(

@@ -10,6 +10,10 @@ import { GroupId } from 'gammait'
  */
 export const CLIENT_ID_LENGTH = 26
 
+export function isClientId(s: string): boolean {
+    return s.length === CLIENT_ID_LENGTH
+}
+
 export interface GroupClient {
     id: string
     scope: Scope[]

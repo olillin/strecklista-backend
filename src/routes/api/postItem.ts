@@ -5,6 +5,7 @@ import { createItem, Item, Price } from '../../services/itemService'
 import { JsonPrice } from './postPurchase'
 import { Decimal } from '@prisma/client/runtime/client'
 import { convertDecimalToNumber } from '../../util/decimalToNumber'
+import { ApiError, sendError } from '../../errors'
 
 export interface PostItemBody {
     displayName: string
@@ -14,7 +15,11 @@ export interface PostItemBody {
 
 export default async function postItem(req: Request, res: Response) {
     const { displayName, prices: jsonPrices, icon } = req.body as PostItemBody
-    const groupId: number = getGroupId(res)
+    const groupId = getGroupId(res)
+    if (groupId == null) {
+        sendError(res, ApiError.Unauthorized)
+        return
+    }
 
     const prices = jsonPrices.map(
         price =>

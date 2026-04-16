@@ -10,6 +10,7 @@ import {
 } from './userService'
 import { Decimal } from '@prisma/client/runtime/client'
 import { clientApi } from '../config/gamma'
+import { prisma } from '../lib/prisma'
 
 export interface Group {
     id: number
@@ -55,6 +56,42 @@ export function completeGroup(
         gammaId: offlineGroup.gammaId,
         prettyName: gammaGroup?.prettyName ?? NOT_AVAILABLE,
         avatarUrl: groupAvatarUrl(offlineGroup.gammaId),
+    }
+}
+
+export async function getGammaGroup(id: GroupId): Promise<gamma.Group | null> {
+    const groupUser = await prisma.groupUser.findFirst({
+        where: {
+            group: {
+                gammaId: id,
+            },
+        },
+        select: {
+            group: {
+                select: {
+                    gammaId: true,
+                },
+            },
+            user: {
+                select: {
+                    gammaId: true,
+                },
+            },
+        },
+    })
+    if (groupUser == null) return null
+
+    const groups = await clientApi.getGroupsFor(
+        groupUser.user.gammaId as UserId
+    )
+    const group = groups.find(group => group.id === groupUser.group.gammaId)
+    if (group == null) return null
+
+    return {
+        id: group.id,
+        name: group.name,
+        prettyName: group.prettyName,
+        superGroup: group.superGroup,
     }
 }
 

@@ -1,11 +1,11 @@
-import { Request, Response } from 'express'
-import { ResponseBody, TransactionResponse } from '../../responses'
+import type { Request, Response } from 'express'
+import type { ResponseBody, TransactionResponse } from '@/responses.js'
 import {
     getGroupId,
     getTransactionCreator,
-} from '../../middleware/validateToken'
-import { createStockUpdate } from '../../services/transactionService'
-import { ApiError, sendError } from '../../errors'
+} from '@/middleware/validateToken.js'
+import { createStockUpdate } from '@/services/transactionService.js'
+import { ApiError, sendError } from '@/errors.js'
 
 export interface PostStockUpdateBody {
     items: PostItemStockUpdate[]

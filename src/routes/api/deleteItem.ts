@@ -1,7 +1,7 @@
-import { NextFunction, Request, Response } from 'express'
-import * as itemService from '../../services/itemService'
-import { getGroupId } from '../../middleware/validateToken'
-import { ApiError, sendError } from '../../errors'
+import type { Request, Response, NextFunction } from 'express'
+import * as itemService from '@/services/itemService.js'
+import { getGroupId } from '@/middleware/validateToken.js'
+import { ApiError, sendError } from '@/errors.js'
 
 export default async function deleteItem(
     req: Request,

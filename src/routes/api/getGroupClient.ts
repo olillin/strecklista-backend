@@ -1,7 +1,7 @@
-import { Request, Response } from 'express'
-import { GroupClientResponse, ResponseBody } from '../../responses'
-import * as clientService from '../../services/clientService'
-import { ApiError, sendError } from '../../errors'
+import type { Request, Response } from 'express'
+import type { GroupClientResponse, ResponseBody } from '@/responses.js'
+import * as clientService from '@/services/clientService.js'
+import { ApiError, sendError } from '@/errors.js'
 
 export interface GetClientParams {
     id: string

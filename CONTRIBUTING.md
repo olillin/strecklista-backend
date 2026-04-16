@@ -51,7 +51,7 @@ To be able to setup and run the server you will need the following:
 3. Generate the Prisma client:
 
     ```shell
-    pnpm prisma:generate
+    pnpm prisma generate
     ```
 
 ### Starting the server
@@ -71,7 +71,7 @@ database.
 To create the tables in the database you must run this command:
 
 ```console
-pnpm prisma:push
+pnpm prisma db push
 ```
 
 The development database is not saved between restarts, you may want to add

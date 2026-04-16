@@ -1,20 +1,19 @@
 import * as gamma from 'gammait'
-import { GroupId, UserId } from 'gammait'
 import { groupAvatarUrl, userAvatarUrl } from 'gammait/urls'
 import {
     getOfflineUser,
     getOfflineGroupUser,
-    OfflineGroup,
-    OfflineGroupUser,
-    OfflineUser,
-} from './userService'
+    type OfflineGroup,
+    type OfflineGroupUser,
+    type OfflineUser,
+} from '@/services/userService.js'
 import { Decimal } from '@prisma/client/runtime/client'
-import { clientApi } from '../config/gamma'
-import { prisma } from '../lib/prisma'
+import { clientApi } from '@/config/gamma.js'
+import { prisma } from '@/lib/prisma.js'
 
 export interface Group {
     id: number
-    gammaId: GroupId
+    gammaId: gamma.GroupId
 
     prettyName: string
     avatarUrl: string
@@ -22,7 +21,7 @@ export interface Group {
 
 export interface User {
     id: number
-    gammaId: UserId
+    gammaId: gamma.UserId
 
     firstName: string
     lastName: string
@@ -59,7 +58,9 @@ export function completeGroup(
     }
 }
 
-export async function getGammaGroup(id: GroupId): Promise<gamma.Group | null> {
+export async function getGammaGroup(
+    id: gamma.GroupId
+): Promise<gamma.Group | null> {
     const groupUser = await prisma.groupUser.findFirst({
         where: {
             group: {
@@ -82,7 +83,7 @@ export async function getGammaGroup(id: GroupId): Promise<gamma.Group | null> {
     if (groupUser == null) return null
 
     const groups = await clientApi.getGroupsFor(
-        groupUser.user.gammaId as UserId
+        groupUser.user.gammaId as gamma.UserId
     )
     const group = groups.find(group => group.id === groupUser.group.gammaId)
     if (group == null) return null

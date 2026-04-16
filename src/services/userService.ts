@@ -1,21 +1,21 @@
-import { GroupId, UserId } from 'gammait'
-import { prisma } from '../lib/prisma'
+import * as gamma from 'gammait'
+import { prisma } from '@/lib/prisma.js'
 import {
     Decimal,
     PrismaClientKnownRequestError,
 } from '@prisma/client/runtime/client'
-import { UserSelect } from '../generated/prisma/models'
-import { Prisma } from '../generated/prisma/client'
+import type { UserSelect } from '@/generated/prisma/models/User.js'
+import { Prisma } from '@/generated/prisma/client.js'
 export type PrismaTransactionalClient = Prisma.TransactionClient
 
 export interface OfflineGroup {
     id: number
-    gammaId: GroupId
+    gammaId: gamma.GroupId
 }
 
 export interface OfflineUser {
     id: number
-    gammaId: UserId
+    gammaId: gamma.UserId
 }
 
 export interface OfflineGroupUser {
@@ -26,7 +26,7 @@ export interface OfflineGroupUser {
 
 // Groups
 export async function createGroup(
-    gammaGroupId: GroupId
+    gammaGroupId: gamma.GroupId
 ): Promise<OfflineGroup> {
     return prisma.group
         .create({
@@ -38,7 +38,7 @@ export async function createGroup(
             group =>
                 ({
                     id: group.id,
-                    gammaId: group.gammaId as GroupId,
+                    gammaId: group.gammaId as gamma.GroupId,
                 }) satisfies OfflineGroup
         )
 }
@@ -51,13 +51,13 @@ export async function createGroup(
  * @return the full information of the user with `gammaUserId` in the group with `gammaGroupId`
  */
 export async function softAddGroupUser(
-    gammaGroupId: GroupId,
-    gammaUserId: UserId,
+    gammaGroupId: gamma.GroupId,
+    gammaUserId: gamma.UserId,
     maxRetries: number = 5
 ): Promise<OfflineGroupUser> {
     const createGroupUser = async (
-        gammaGroupId: GroupId,
-        gammaUserId: UserId,
+        gammaGroupId: gamma.GroupId,
+        gammaUserId: gamma.UserId,
         tx: PrismaTransactionalClient
     ): Promise<OfflineGroupUser> => {
         const groupUser = await tx.groupUser.create({
@@ -105,7 +105,7 @@ export async function softAddGroupUser(
             },
             group: {
                 id: groupUser.groupId,
-                gammaId: groupUser.group.gammaId as GroupId,
+                gammaId: groupUser.group.gammaId as gamma.GroupId,
             },
             balance: balance,
         }
@@ -172,13 +172,13 @@ async function _getUserInGroup(
                 return {
                     user: {
                         id: groupUser.user.id,
-                        gammaId: groupUser.user.gammaId as UserId,
+                        gammaId: groupUser.user.gammaId as gamma.UserId,
                         receivedDeposits: groupUser.user.receivedDeposits,
                         receivedPurchases: groupUser.user.receivedPurchases,
                     },
                     group: {
                         id: groupUser.group.id,
-                        gammaId: groupUser.group.gammaId as GroupId,
+                        gammaId: groupUser.group.gammaId as gamma.GroupId,
                     },
                 } satisfies { user: GroupUserData; group: OfflineGroup }
             })
@@ -187,7 +187,7 @@ async function _getUserInGroup(
     return {
         user: {
             id: groupUser.user.id,
-            gammaId: groupUser.user.gammaId as UserId,
+            gammaId: groupUser.user.gammaId as gamma.UserId,
         },
         group: groupUser.group,
         balance: balance,
@@ -215,7 +215,7 @@ export async function getOfflineGroup(
 
             return {
                 id: group.id,
-                gammaId: group.gammaId as GroupId,
+                gammaId: group.gammaId as gamma.GroupId,
             } satisfies OfflineGroup
         })
 }
@@ -225,7 +225,7 @@ export async function groupExists(groupId: number): Promise<boolean> {
 }
 
 export async function isGammaGroupRegistered(
-    gammaGroupId: GroupId
+    gammaGroupId: gamma.GroupId
 ): Promise<boolean> {
     return prisma.group
         .findFirst({
@@ -239,7 +239,7 @@ export async function isGammaGroupRegistered(
 // Users
 interface GroupUserData {
     id: number
-    gammaId: UserId
+    gammaId: gamma.UserId
     receivedDeposits: {
         total: Decimal
     }[]
@@ -322,7 +322,7 @@ async function _getGroupUserData(
 
             return {
                 id: user.id,
-                gammaId: user.gammaId as GroupId,
+                gammaId: user.gammaId as gamma.GroupId,
                 receivedDeposits: user.receivedDeposits,
                 receivedPurchases: user.receivedPurchases,
             } satisfies GroupUserData
@@ -344,7 +344,7 @@ export async function getOfflineUser(
 
             return {
                 id: user.id,
-                gammaId: user.gammaId as UserId,
+                gammaId: user.gammaId as gamma.UserId,
             }
         })
 }
@@ -366,7 +366,7 @@ export async function getOfflineUserGroups(
                 groupUser =>
                     ({
                         id: groupUser.group.id,
-                        gammaId: groupUser.group.gammaId as GroupId,
+                        gammaId: groupUser.group.gammaId as gamma.GroupId,
                     }) satisfies OfflineGroup
             )
         )
@@ -390,7 +390,7 @@ export async function getOfflineUsersInGroup(
     return groupUsers.map(groupUser => {
         const groupUserData: GroupUserData = {
             id: groupUser.user.id,
-            gammaId: groupUser.user.gammaId as UserId,
+            gammaId: groupUser.user.gammaId as gamma.UserId,
             receivedDeposits: groupUser.user.receivedDeposits,
             receivedPurchases: groupUser.user.receivedPurchases,
         }
@@ -398,11 +398,11 @@ export async function getOfflineUsersInGroup(
         return {
             user: {
                 id: groupUser.user.id,
-                gammaId: groupUser.user.gammaId as UserId,
+                gammaId: groupUser.user.gammaId as gamma.UserId,
             },
             group: {
                 id: groupUser.group.id,
-                gammaId: groupUser.group.gammaId as GroupId,
+                gammaId: groupUser.group.gammaId as gamma.GroupId,
             },
             balance,
         } satisfies OfflineGroupUser

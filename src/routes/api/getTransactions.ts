@@ -1,9 +1,9 @@
-import { Request, Response } from 'express'
-import { getGroupId } from '../../middleware/validateToken'
-import { ResponseBody, TransactionsResponse } from '../../responses'
-import * as transactionService from '../../services/transactionService'
-import { ApiError, sendError } from '../../errors'
-import { isClientId } from '../../services/clientService'
+import type { Request, Response } from 'express'
+import { getGroupId } from '@/middleware/validateToken.js'
+import type { ResponseBody, TransactionsResponse } from '@/responses.js'
+import * as transactionService from '@/services/transactionService.js'
+import { ApiError, sendError } from '@/errors.js'
+import { isClientId } from '@/services/clientService.js'
 
 export default async function getTransactions(req: Request, res: Response) {
     const limit = parseInt(req.query.limit as string)

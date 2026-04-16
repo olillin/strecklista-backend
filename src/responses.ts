@@ -1,12 +1,17 @@
-import { JwtWithToken } from './routes/oauth2/token'
-import { User, Group, GroupUser, GroupMember } from './services/gammaService'
-import { Item } from './services/itemService'
-import {
+import type { JwtWithToken } from '@/routes/oauth2/token.js'
+import type {
+    User,
+    Group,
+    GroupUser,
+    GroupMember,
+} from '@/services/gammaService.js'
+import type { Item } from '@/services/itemService.js'
+import type {
     AnyTransaction,
     Transaction,
     TransactionType,
-} from './services/transactionService'
-import { DecimalToNumber } from './util/decimalToNumber'
+} from '@/services/transactionService.js'
+import type { DecimalToNumber } from '@/util/decimalToNumber.js'
 
 export type ResponseBody<T> = [T] extends [never]
     ? { error: ResponseError }

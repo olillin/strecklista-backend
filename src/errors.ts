@@ -1,10 +1,10 @@
-import { Location } from 'express-validator'
-import { ResponseBody } from './responses'
-import { Response } from 'express'
+import type { Location } from 'express-validator'
+import type { ResponseBody } from '@/responses.js'
+import type { Response } from 'express'
 import {
     acceptedGrantTypes,
     acceptedTokenAudience,
-} from './routes/oauth2/token'
+} from '@/routes/oauth2/token.js'
 
 export interface ErrorDefinition {
     code: number

@@ -1,9 +1,9 @@
-import { prisma } from '../lib/prisma'
-import { Prisma } from '../generated/prisma/client'
-import crypto from 'crypto'
+import { prisma } from '@/lib/prisma.js'
+import { Prisma } from '@/generated/prisma/client.js'
+import crypto from 'node:crypto'
 import { fromBase32hex, toBase32hex } from '@exodus/bytes/base32.js'
-import { getGroupUser, Group, User } from './gammaService'
-import { GroupId } from 'gammait'
+import { getGroupUser, type Group, type User } from '@/services/gammaService.js'
+import * as gamma from 'gammait'
 
 /**
  * Clients uses ULID identifiers which are 26 characters long.
@@ -30,7 +30,7 @@ export interface GroupClientDetailsWithSecretHash {
     scope: string
     group: {
         id: number
-        gammaId: GroupId
+        gammaId: gamma.GroupId
     }
     ownerId: number
     displayName: string
@@ -259,7 +259,7 @@ export async function getGroupClientDetailsWithSecretHash(
         scope: client.scope,
         group: {
             id: client.groupId,
-            gammaId: client.group.gammaId as GroupId,
+            gammaId: client.group.gammaId as gamma.GroupId,
         },
         ownerId: client.ownerId,
         displayName: client.displayName,

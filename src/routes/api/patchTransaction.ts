@@ -1,10 +1,10 @@
-import { Request, Response } from 'express'
-import { TransactionResponse, ResponseBody } from '../../responses'
+import type { Request, Response } from 'express'
+import type { TransactionResponse, ResponseBody } from '@/responses.js'
 import {
-    TransactionPatch,
+    type TransactionPatch,
     updateTransaction,
-} from '../../services/transactionService'
-import { convertDecimalToNumber } from '../../util/decimalToNumber'
+} from '@/services/transactionService.js'
+import { convertDecimalToNumber } from '@/util/decimalToNumber.js'
 
 export interface PatchTransactionBody {
     removed?: boolean

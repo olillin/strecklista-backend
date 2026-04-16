@@ -1,6 +1,9 @@
-import { prisma } from '../lib/prisma'
-import { type Item as PrismaItem, Prisma } from '../generated/prisma/client'
-import { ItemSelect, ItemUpdateInput } from '../generated/prisma/models'
+import { prisma } from '@/lib/prisma.js'
+import { type Item as PrismaItem, Prisma } from '@/generated/prisma/client.js'
+import type {
+    ItemSelect,
+    ItemUpdateInput,
+} from '@/generated/prisma/models/Item.js'
 import { Decimal } from '@prisma/client/runtime/client'
 
 export interface Item {

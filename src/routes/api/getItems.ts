@@ -1,10 +1,14 @@
-import { Request, Response } from 'express'
-import { ItemsResponse, ResponseBody } from '../../responses'
-import { getGroupId, getUserId } from '../../middleware/validateToken'
-import { getItemsInGroup, getTopPrice, Item } from '../../services/itemService'
-import { ItemSortMode } from '../../middleware/validators'
-import { convertDecimalToNumber } from '../../util/decimalToNumber'
-import { ApiError, sendError } from '../../errors'
+import type { Request, Response } from 'express'
+import type { ItemsResponse, ResponseBody } from '@/responses.js'
+import { getGroupId, getUserId } from '@/middleware/validateToken.js'
+import {
+    getItemsInGroup,
+    getTopPrice,
+    type Item,
+} from '@/services/itemService.js'
+import type { ItemSortMode } from '@/middleware/validators.js'
+import { convertDecimalToNumber } from '@/util/decimalToNumber.js'
+import { ApiError, sendError } from '@/errors.js'
 
 type ItemCompareFunction = (a: Item, b: Item) => number
 const COMPARE = {

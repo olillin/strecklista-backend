@@ -1,12 +1,12 @@
-import { NextFunction, Request, Response } from 'express'
-import { FieldValidationError, validationResult } from 'express-validator'
+import type { Request, Response, NextFunction } from 'express'
+import { type FieldValidationError, validationResult } from 'express-validator'
 import {
     ApiError,
     invalidPropertyError,
     missingRequiredPropertyError,
     sendError,
     unexpectedError,
-} from '../errors'
+} from '@/errors.js'
 
 async function validationErrorHandler(
     req: Request,

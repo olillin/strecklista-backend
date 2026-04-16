@@ -1,21 +1,21 @@
-import { isValidComment } from '../util/helpers'
-import { prisma } from '../lib/prisma'
-import { getBareItem, getItem, type Price } from './itemService'
+import { isValidComment } from '@/util/helpers.js'
+import { prisma } from '@/lib/prisma.js'
+import { getBareItem, getItem, type Price } from '@/services/itemService.js'
 import { Decimal } from '@prisma/client/runtime/client'
-import type { TransactionType as PrismaTransactionType } from '../generated/prisma/enums'
+import type { TransactionType as PrismaTransactionType } from '@/generated/prisma/enums.js'
 import {
     type PurchasedItem as PrismaPurchasedItem,
     type ItemStockUpdate as PrismaItemStockUpdate,
     Prisma,
-} from '../generated/prisma/client'
-import { PurchaseItem } from '../routes/api/postPurchase'
-import {
-    ItemStockUpdateCreateManyStockUpdateInput,
-    PurchasedItemUncheckedCreateWithoutPurchaseInput,
+} from '@/generated/prisma/client.js'
+import type { PurchaseItem } from '@/routes/api/postPurchase.js'
+import type { PostItemStockUpdate } from '@/routes/api/postStockUpdate.js'
+import type {
     TransactionSelect,
     TransactionUpdateInput,
-} from '../generated/prisma/models'
-import { PostItemStockUpdate } from '../routes/api/postStockUpdate'
+} from '@/generated/prisma/models/Transaction.js'
+import type { PurchasedItemUncheckedCreateWithoutPurchaseInput } from '@/generated/prisma/models/PurchasedItem.js'
+import type { ItemStockUpdateCreateManyStockUpdateInput } from '@/generated/prisma/models/ItemStockUpdate.js'
 
 export type TransactionType = 'purchase' | 'deposit' | 'stockUpdate'
 export interface Transaction<T extends TransactionType> {

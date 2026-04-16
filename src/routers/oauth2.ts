@@ -1,9 +1,9 @@
 import { Router } from 'express'
-import validationErrorHandler from '../middleware/validationErrorHandler'
-import * as validators from '../middleware/validators'
-import setHeader from '../middleware/setHeader'
-import { tokenRoute } from '../routes/oauth2/token'
-import { authorizationCode } from '../config/gamma'
+import validationErrorHandler from '@/middleware/validationErrorHandler.js'
+import * as validators from '@/middleware/validators.js'
+import setHeader from '@/middleware/setHeader.js'
+import { tokenRoute } from '@/routes/oauth2/token.js'
+import { authorizationCode } from '@/config/gamma.js'
 
 function createOAuth2Router(): Router {
     const router = Router()

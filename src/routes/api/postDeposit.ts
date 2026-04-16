@@ -1,13 +1,13 @@
-import { Request, Response } from 'express'
-import { CreatedTransactionResponse, ResponseBody } from '../../responses'
+import type { Request, Response } from 'express'
+import type { CreatedTransactionResponse, ResponseBody } from '@/responses.js'
 import {
     getGroupId,
     getTransactionCreator,
-} from '../../middleware/validateToken'
-import { ApiError, sendError, unexpectedError } from '../../errors'
-import { createDeposit } from '../../services/transactionService'
-import { convertDecimalToNumber } from '../../util/decimalToNumber'
-import { getOfflineGroupUser } from '../../services/userService'
+} from '@/middleware/validateToken.js'
+import { ApiError, sendError, unexpectedError } from '@/errors.js'
+import { createDeposit } from '@/services/transactionService.js'
+import { convertDecimalToNumber } from '@/util/decimalToNumber.js'
+import { getOfflineGroupUser } from '@/services/userService.js'
 
 export interface PostDepositBody {
     userId: number

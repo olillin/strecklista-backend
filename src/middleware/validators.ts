@@ -1,23 +1,23 @@
-import { body, Meta, oneOf, param, query } from 'express-validator'
-import { verifyToken } from './validateToken'
-import { ApiError, unsupportedScopeError } from '../errors'
-import { isUserInGroup } from '../services/userService'
+import { body, type Meta, oneOf, param, query } from 'express-validator'
+import { verifyToken } from '@/middleware/validateToken.js'
+import { ApiError, unsupportedScopeError } from '@/errors.js'
+import { isUserInGroup } from '@/services/userService.js'
 import {
     isItemVisible,
     itemExistsInGroup,
     itemNameExistsInGroup,
-} from '../services/itemService'
-import { transactionExistsInGroup } from '../services/transactionService'
+} from '@/services/itemService.js'
+import { transactionExistsInGroup } from '@/services/transactionService.js'
 import {
     CLIENT_ID_LENGTH,
     clientExistsInGroup,
     isGroupClientNameTaken,
     isScope,
-} from '../services/clientService'
+} from '@/services/clientService.js'
 import {
     acceptedGrantTypes,
     acceptedTokenAudience,
-} from '../routes/oauth2/token'
+} from '@/routes/oauth2/token.js'
 
 //#region Util
 function getGroupId(meta: Meta): number {

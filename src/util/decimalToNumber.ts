@@ -3,7 +3,7 @@ import { Decimal } from '@prisma/client/runtime/client'
 /** Mapped type that replaces all instances of Decimal with number. */
 export type DecimalToNumber<Type> = Type extends Decimal
     ? number
-    : Type extends Object
+    : Type extends object
       ? {
             [Property in keyof Type]: DecimalToNumber<Type[Property]>
         }
@@ -11,21 +11,21 @@ export type DecimalToNumber<Type> = Type extends Decimal
 
 export function convertDecimalToNumber<T>(value: T): DecimalToNumber<T> {
     if (value instanceof Decimal) {
-        /* @ts-ignore */
+        /* @ts-expect-error */
         return value.toNumber()
     } else if (typeof value === 'object') {
         if (Array.isArray(value)) {
-            /* @ts-ignore */
+            /* @ts-expect-error */
             return value.map(x => convertDecimalToNumber(x))
         } else {
-            /* @ts-ignore */
+            /* @ts-expect-error */
             const entries = Object.entries(value).map(([key, value]) => {
                 return [key, convertDecimalToNumber(value)]
             })
             return Object.fromEntries(entries)
         }
     } else {
-        /* @ts-ignore */
+        /* @ts-expect-error */
         return value
     }
 }

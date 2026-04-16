@@ -1,19 +1,19 @@
-import { Request, Response } from 'express'
-import { clientApi } from '../../config/gamma'
+import type { Request, Response } from 'express'
+import { clientApi } from '@/config/gamma.js'
 import {
     getGammaGroupId,
     getGammaUserId,
     getGroupId,
     getUserId,
-} from '../../middleware/validateToken'
-import { ApiError, sendError } from '../../errors'
+} from '@/middleware/validateToken.js'
+import { ApiError, sendError } from '@/errors.js'
 import {
-    ResponseBody,
-    GroupUserResponse,
+    type ResponseBody,
+    type GroupUserResponse,
     toGroupUserResponse,
-} from '../../responses'
-import * as userService from '../../services/userService'
-import { completeGroupUser, getGammaGroup } from '../../services/gammaService'
+} from '@/responses.js'
+import * as userService from '@/services/userService.js'
+import { completeGroupUser, getGammaGroup } from '@/services/gammaService.js'
 
 export default async function getUser(_req: Request, res: Response) {
     const userId = getUserId(res)

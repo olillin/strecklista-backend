@@ -1,14 +1,14 @@
-import { Request, Response, NextFunction } from 'express'
-import { ApiError, sendError } from '../errors'
-import jwt, { JwtPayload } from 'jsonwebtoken'
-import env from '../config/env'
-import { GroupId, UserId } from 'gammait'
-import { isGroupClientJwt, isUserJwt } from '../routes/oauth2/token'
-import { Scope } from '../services/clientService'
+import type { Request, Response, NextFunction } from 'express'
+import { ApiError, sendError } from '@/errors.js'
+import jwt, { type JwtPayload } from 'jsonwebtoken'
+import env from '@/config/env.js'
+import * as gamma from 'gammait'
+import { isGroupClientJwt, isUserJwt } from '@/routes/oauth2/token.js'
+import type { Scope } from '@/services/clientService.js'
 import {
     createTransactionCreator,
-    TransactionCreator,
-} from '../services/transactionService'
+    type TransactionCreator,
+} from '@/services/transactionService.js'
 
 function validateToken(req: Request, res: Response, next: NextFunction) {
     console.log(`${req.method} to API: ${req.path}`)
@@ -76,7 +76,7 @@ export function getUserId(res: Response): number | null {
     return null
 }
 
-export function getGammaUserId(res: Response): UserId | null {
+export function getGammaUserId(res: Response): gamma.UserId | null {
     const jwt = res.locals.jwt
     if (isUserJwt(jwt)) return jwt.user.gammaId
     return null
@@ -89,7 +89,7 @@ export function getGroupId(res: Response): number | null {
     return null
 }
 
-export function getGammaGroupId(res: Response): GroupId | null {
+export function getGammaGroupId(res: Response): gamma.GroupId | null {
     const jwt = res.locals.jwt
     if (isUserJwt(jwt)) return jwt.group.gammaId
     if (isGroupClientJwt(jwt)) return jwt.group.gammaId

@@ -1,11 +1,11 @@
-import { Request, Response } from 'express'
-import { ItemResponse, ResponseBody } from '../../responses'
-import { getGroupId } from '../../middleware/validateToken'
-import { createItem, Item, Price } from '../../services/itemService'
-import { JsonPrice } from './postPurchase'
+import type { Request, Response } from 'express'
+import type { ItemResponse, ResponseBody } from '@/responses.js'
+import { getGroupId } from '@/middleware/validateToken.js'
+import { createItem, type Item, type Price } from '@/services/itemService.js'
+import type { JsonPrice } from '@/routes/api/postPurchase.js'
 import { Decimal } from '@prisma/client/runtime/client'
-import { convertDecimalToNumber } from '../../util/decimalToNumber'
-import { ApiError, sendError } from '../../errors'
+import { convertDecimalToNumber } from '@/util/decimalToNumber.js'
+import { ApiError, sendError } from '@/errors.js'
 
 export interface PostItemBody {
     displayName: string

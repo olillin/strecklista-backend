@@ -1,9 +1,9 @@
-import { Request, Response } from 'express'
-import { getUserId } from '../../middleware/validateToken'
-import { ApiError, sendError } from '../../errors'
-import { ItemResponse, ResponseBody } from '../../responses'
-import * as itemService from '../../services/itemService'
-import { convertDecimalToNumber } from '../../util/decimalToNumber'
+import type { Request, Response } from 'express'
+import { getUserId } from '@/middleware/validateToken.js'
+import { ApiError, sendError } from '@/errors.js'
+import type { ItemResponse, ResponseBody } from '@/responses.js'
+import * as itemService from '@/services/itemService.js'
+import { convertDecimalToNumber } from '@/util/decimalToNumber.js'
 
 export default async function getItem(req: Request, res: Response) {
     if (typeof req.params.id !== 'string') {

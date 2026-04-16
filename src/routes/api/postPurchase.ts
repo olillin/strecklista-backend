@@ -1,13 +1,13 @@
-import { Request, Response } from 'express'
-import { CreatedTransactionResponse, ResponseBody } from '../../responses'
+import type { Request, Response } from 'express'
+import type { CreatedTransactionResponse, ResponseBody } from '@/responses.js'
 import {
     getGroupId,
     getTransactionCreator,
-} from '../../middleware/validateToken'
-import { ApiError, sendError, unexpectedError } from '../../errors'
-import { createPurchase } from '../../services/transactionService'
-import { getOfflineGroupUser } from '../../services/userService'
-import { convertDecimalToNumber } from '../../util/decimalToNumber'
+} from '@/middleware/validateToken.js'
+import { ApiError, sendError, unexpectedError } from '@/errors.js'
+import { createPurchase } from '@/services/transactionService.js'
+import { getOfflineGroupUser } from '@/services/userService.js'
+import { convertDecimalToNumber } from '@/util/decimalToNumber.js'
 
 export interface JsonPrice {
     price: number

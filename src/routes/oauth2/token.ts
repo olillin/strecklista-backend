@@ -1,24 +1,27 @@
-import { Request, RequestHandler, Response } from 'express'
-import jwt, { JwtPayload, SignOptions } from 'jsonwebtoken'
-import env from '../../config/env'
+import type { Request, RequestHandler, Response } from 'express'
+import jwt, { type JwtPayload, type SignOptions } from 'jsonwebtoken'
+import env from '@/config/env.js'
 import {
     ApiError,
     missingRequiredPropertyError,
     sendError,
     tokenSignError,
     unexpectedError,
-} from '../../errors'
+} from '@/errors.js'
 import {
     checkClientSecret,
     getGroupClientDetailsWithSecretHash,
-} from '../../services/clientService'
+} from '@/services/clientService.js'
 import { ulid } from 'ulid'
-import { GroupId, GroupWithPost, UserId, UserInfo } from 'gammait'
-import { authorizationCode, clientApi } from '../../config/gamma'
-import { getAuthorizedGroup } from '../../util/helpers'
-import { OfflineGroupUser, softAddGroupUser } from '../../services/userService'
-import { completeGroupUser, GroupUser } from '../../services/gammaService'
-import { toLoginResponse } from '../../responses'
+import * as gamma from 'gammait'
+import { authorizationCode, clientApi } from '@/config/gamma.js'
+import { getAuthorizedGroup } from '@/util/helpers.js'
+import {
+    type OfflineGroupUser,
+    softAddGroupUser,
+} from '@/services/userService.js'
+import { completeGroupUser, type GroupUser } from '@/services/gammaService.js'
+import { toLoginResponse } from '@/responses.js'
 
 export const acceptedGrantTypes = [
     'authorization_code',
@@ -36,11 +39,11 @@ export interface JwtWithToken extends JwtPayload {
 export interface UserJwt {
     user: {
         id: number
-        gammaId: UserId
+        gammaId: gamma.UserId
     }
     group: {
         id: number
-        gammaId: GroupId
+        gammaId: gamma.GroupId
     }
 }
 
@@ -67,7 +70,7 @@ export interface GroupClientJwt {
     displayName: string
     group: {
         id: number
-        gammaId: GroupId
+        gammaId: gamma.GroupId
     }
 }
 
@@ -212,9 +215,9 @@ async function authorizationCodeFlow(req: Request, res: Response) {
         return
     }
 
-    let userInfo: UserInfo
-    let gammaUserId: UserId
-    let groups: GroupWithPost[]
+    let userInfo: gamma.UserInfo
+    let gammaUserId: gamma.UserId
+    let groups: gamma.GroupWithPost[]
     try {
         userInfo = await authorizationCode.userInfo()
         gammaUserId = userInfo.sub
@@ -239,7 +242,7 @@ async function authorizationCodeFlow(req: Request, res: Response) {
         sendError(res, ApiError.NoPermission)
         return
     }
-    const gammaGroupId: GroupId = group.id
+    const gammaGroupId: gamma.GroupId = group.id
 
     const offlineGroupUser: OfflineGroupUser = await softAddGroupUser(
         gammaGroupId,

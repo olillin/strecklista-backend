@@ -1,8 +1,8 @@
-import { Request, Response } from 'express'
-import { NewGroupClientResponse, ResponseBody } from '../../responses'
-import { getGroupId, getUserId } from '../../middleware/validateToken'
-import { createGroupClient, parseScope } from '../../services/clientService'
-import { ApiError, sendError } from '../../errors'
+import type { Request, Response } from 'express'
+import type { NewGroupClientResponse, ResponseBody } from '@/responses.js'
+import { getGroupId, getUserId } from '@/middleware/validateToken.js'
+import { createGroupClient, parseScope } from '@/services/clientService.js'
+import { ApiError, sendError } from '@/errors.js'
 
 export interface PostClientBody {
     scope: string

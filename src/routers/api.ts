@@ -1,13 +1,13 @@
-import { Router, Request, Response, NextFunction } from 'express'
-import validateToken, { hasScope } from '../middleware/validateToken'
-import validationErrorHandler from '../middleware/validationErrorHandler'
-import * as validators from '../middleware/validators'
-import * as apiRoutes from '../routes/api/index'
-import setHeader from '../middleware/setHeader'
-import { ApiError, sendError } from '../errors'
-import { ErrorResolvable } from '../errors'
-import { Scope } from '../services/clientService'
-import { isUserJwt } from '../routes/oauth2/token'
+import { Router, type Request, type Response, type NextFunction } from 'express'
+import validateToken, { hasScope } from '@/middleware/validateToken.js'
+import validationErrorHandler from '@/middleware/validationErrorHandler.js'
+import * as validators from '@/middleware/validators.js'
+import * as apiRoutes from '@/routes/api/index.js'
+import setHeader from '@/middleware/setHeader.js'
+import { ApiError, sendError } from '@/errors.js'
+import type { ErrorResolvable } from '@/errors.js'
+import type { Scope } from '@/services/clientService.js'
+import { isUserJwt } from '@/routes/oauth2/token.js'
 
 async function createApiRouter(): Promise<Router> {
     const api = Router()
@@ -98,6 +98,7 @@ function validateScope(scope: Scope | undefined) {
 
         // Do not check scopes for users
         if (isUserJwt(jwt)) {
+            console.log('Is user')
             next()
             return
         }

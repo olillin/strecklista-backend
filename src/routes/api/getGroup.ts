@@ -1,19 +1,19 @@
-import { NextFunction, Request, Response } from 'express'
-import { clientApi } from '../../config/gamma'
-import { getGammaGroupId, getGroupId } from '../../middleware/validateToken'
-import { ApiError, sendError } from '../../errors'
-import { GroupResponse, ResponseBody } from '../../responses'
+import type { Request, Response, NextFunction } from 'express'
+import { clientApi } from '@/config/gamma.js'
+import { getGammaGroupId, getGroupId } from '@/middleware/validateToken.js'
+import { ApiError, sendError } from '@/errors.js'
+import type { GroupResponse, ResponseBody } from '@/responses.js'
 import {
     getOfflineUsersInGroup,
-    OfflineGroup,
-} from '../../services/userService'
+    type OfflineGroup,
+} from '@/services/userService.js'
 import {
     completeUser,
     completeGroup,
-    GroupMember,
     getGammaGroup,
-} from '../../services/gammaService'
-import { DecimalToNumber } from '../../util/decimalToNumber'
+    type GroupMember,
+} from '@/services/gammaService.js'
+import type { DecimalToNumber } from '@/util/decimalToNumber.js'
 
 export default async function getGroup(
     _req: Request,

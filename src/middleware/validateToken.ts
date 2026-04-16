@@ -63,8 +63,10 @@ export function verifyToken(token: string): JwtPayload {
     const verifiedToken = jwt.verify(token, env.JWT_SECRET, {
         algorithms: ['HS256'],
         issuer: env.JWT_ISSUER,
-        complete: true,
     })
+    if (typeof verifiedToken === 'string') {
+        throw new Error('Failed to verify token, got string payload')
+    }
     return verifiedToken
 }
 

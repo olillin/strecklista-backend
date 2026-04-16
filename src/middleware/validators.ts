@@ -146,22 +146,26 @@ export async function checkAudience(value: string): Promise<void> {
 //#endregion Custom validators
 
 // Validation chains
-export const login = () => [
-    oneOf([
-        query('code').exists().withMessage(ApiError.NoAuthorizationCode),
-        body('code').exists().withMessage(ApiError.NoAuthorizationCode),
-    ]),
-]
-
 export const token = () => [
     body('grant_type').exists().isString().custom(checkSupportedGrantType),
-    body('client_id')
-        .exists()
-        .isString()
-        .isLength({ min: CLIENT_ID_LENGTH, max: CLIENT_ID_LENGTH })
-        .withMessage(ApiError.InvalidClientId),
-    body('client_secret').exists().isString(),
-    body('audience').exists().custom(checkAudience),
+    oneOf([
+        // Authorization code
+        [
+            body('grant_type').equals('authorization_code'),
+            body('code').exists().withMessage(ApiError.NoAuthorizationCode),
+        ],
+        // Client credentials
+        [
+            body('grant_type').equals('client_credentials'),
+            body('client_id')
+                .exists()
+                .isString()
+                .isLength({ min: CLIENT_ID_LENGTH, max: CLIENT_ID_LENGTH })
+                .withMessage(ApiError.InvalidClientId),
+            body('client_secret').exists().isString(),
+            body('audience').exists().custom(checkAudience),
+        ],
+    ]),
 ]
 
 export const getUser = () => []

@@ -1,5 +1,15 @@
-import { body, type Meta, oneOf, param, query } from 'express-validator'
-import { verifyToken } from '@/middleware/validateToken.js'
+import {
+    body,
+    type Meta,
+    oneOf,
+    param,
+    query,
+    type ValidationChain,
+    type FieldMessageFactory,
+    type CustomValidationChain,
+    type ContextRunner,
+} from 'express-validator'
+import { getGroupId, verifyToken } from '@/middleware/validateToken.js'
 import { ApiError, unsupportedScopeError } from '@/errors.js'
 import { isUserInGroup } from '@/services/userService.js'
 import {
@@ -17,17 +27,21 @@ import {
 import {
     acceptedGrantTypes,
     acceptedTokenAudience,
+    type GrantType,
 } from '@/routes/oauth2/token.js'
+import type {
+    CustomValidator,
+    ErrorMessage,
+} from 'express-validator/lib/base.js'
 
-//#region Util
-function getGroupId(meta: Meta): number {
+function requireGroupId(meta: Meta): number {
     const auth = meta.req.headers?.authorization
     const token = auth.split(' ')[1]
     const jwt = verifyToken(token)
-    const { groupId } = jwt
+    const groupId: number | null = getGroupId(jwt)
+    if (groupId == null) throw ApiError.Unauthorized
     return groupId
 }
-//#endregion Util
 
 //#region Custom validators
 /** Checks that there exists a user with the id in `value` in the same group as the user making the request. */
@@ -44,7 +58,7 @@ export async function checkUserExistsInGroup(
     }
 
     // Check if user exists
-    const groupId = getGroupId(meta)
+    const groupId = requireGroupId(meta)
     const exists = await isUserInGroup(userId, groupId)
     if (!exists) {
         throw ApiError.UserNotExist
@@ -55,7 +69,7 @@ export async function checkItemExistsInGroup(
     value: string,
     meta: Meta
 ): Promise<void> {
-    const groupId = getGroupId(meta)
+    const groupId = requireGroupId(meta)
     const exists = await itemExistsInGroup(parseInt(value), groupId)
     if (!exists) {
         throw ApiError.ItemNotExist
@@ -66,7 +80,7 @@ export async function checkTransactionExistsInGroup(
     value: string,
     meta: Meta
 ): Promise<void> {
-    const groupId = getGroupId(meta)
+    const groupId = requireGroupId(meta)
     const exists = await transactionExistsInGroup(parseInt(value), groupId)
     if (!exists) {
         throw ApiError.TransactionNotExist
@@ -93,7 +107,7 @@ export async function checkItemDisplayNameUniqueInGroup(
     value: string,
     meta: Meta
 ): Promise<void> {
-    const groupId = getGroupId(meta)
+    const groupId = requireGroupId(meta)
     const nameExists = await itemNameExistsInGroup(value, groupId)
     if (nameExists) {
         throw ApiError.DisplayNameNotUnique
@@ -104,7 +118,7 @@ export async function checkClientExistsInGroup(
     value: string,
     meta: Meta
 ): Promise<void> {
-    const groupId = getGroupId(meta)
+    const groupId = requireGroupId(meta)
     const exists = await clientExistsInGroup(value, groupId)
     if (!exists) {
         throw ApiError.ClientNotExist
@@ -124,7 +138,7 @@ export async function checkClientDisplayNameUniqueInGroup(
     value: string,
     meta: Meta
 ): Promise<void> {
-    const groupId = getGroupId(meta)
+    const groupId = requireGroupId(meta)
     const nameExists = await isGroupClientNameTaken(value, groupId)
     if (nameExists) {
         throw ApiError.DisplayNameNotUnique
@@ -146,25 +160,41 @@ export async function checkAudience(value: string): Promise<void> {
 //#endregion Custom validators
 
 // Validation chains
+
+function when(
+    condition: CustomValidator | ContextRunner,
+    builder: (checks: {
+        body: (field: string) => ValidationChain
+        param: (field: string) => ValidationChain
+        query: (field: string) => ValidationChain
+    }) => ValidationChain[]
+): ValidationChain[] {
+    return builder({
+        body: field => body(field).if(condition),
+        param: field => param(field).if(condition),
+        query: field => query(field).if(condition),
+    })
+}
+
+function grantTypeEquals(type: GrantType) {
+    return body('grant_type').equals(type)
+}
+
 export const token = () => [
     body('grant_type').exists().isString().custom(checkSupportedGrantType),
-    oneOf([
-        // Authorization code
-        [
-            body('grant_type').equals('authorization_code'),
-            body('code').exists().withMessage(ApiError.NoAuthorizationCode),
-        ],
-        // Client credentials
-        [
-            body('grant_type').equals('client_credentials'),
-            body('client_id')
-                .exists()
-                .isString()
-                .isLength({ min: CLIENT_ID_LENGTH, max: CLIENT_ID_LENGTH })
-                .withMessage(ApiError.InvalidClientId),
-            body('client_secret').exists().isString(),
-            body('audience').exists().custom(checkAudience),
-        ],
+    // Authorization code
+    ...when(grantTypeEquals('authorization_code'), ({ body }) => [
+        body('code').exists().withMessage(ApiError.NoAuthorizationCode),
+    ]),
+    // Client credentials
+    ...when(grantTypeEquals('client_credentials'), ({ body }) => [
+        body('client_id')
+            .exists()
+            .isString()
+            .isLength({ min: CLIENT_ID_LENGTH, max: CLIENT_ID_LENGTH })
+            .withMessage(ApiError.InvalidClientId),
+        body('client_secret').exists().isString(),
+        body('audience').exists().custom(checkAudience),
     ]),
 ]
 

@@ -11,7 +11,7 @@ function createOAuth2Router(): Router {
     router.post(
         '/token',
         setHeader('Allow', 'post'),
-        validators.token(),
+        ...validators.token(),
         validationErrorHandler,
         tokenRoute()
     )

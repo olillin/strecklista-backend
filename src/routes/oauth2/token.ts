@@ -22,6 +22,7 @@ import {
 } from '@/services/userService.js'
 import { completeGroupUser, type GroupUser } from '@/services/gammaService.js'
 import { toLoginResponse } from '@/responses.js'
+import type { Group } from '@/generated/prisma/client.js'
 
 export const acceptedGrantTypes = [
     'authorization_code',
@@ -48,44 +49,57 @@ export interface UserJwt {
 }
 
 export function isUserJwt(value: unknown): value is UserJwt {
-    if (typeof value !== 'object' || value === null) {
-        return false
-    }
+    if (typeof value !== 'object' || value === null) return false
 
     const obj = value as Record<string, unknown>
 
+    const user = obj.user
+    if (typeof user !== 'object' || user === null) return false
+
+    const userObj = user as Record<string, unknown>
+    if (typeof userObj.id !== 'number') return false
+    if (typeof userObj.gammaId !== 'string') return false
+
+    const group = obj.group
+    if (typeof group !== 'object' || group === null) return false
+
+    const groupObj = group as Record<string, unknown>
     return (
-        typeof obj.user === 'object' &&
-        typeof (obj.user as Record<string, string>).id === 'number' &&
-        typeof (obj.user as Record<string, string>).gammaId === 'string' &&
-        typeof obj.group === 'object' &&
-        typeof (obj.group as Record<string, string>).id === 'number' &&
-        typeof (obj.group as Record<string, string>).gammaId === 'string'
+        typeof groupObj.id === 'number' && typeof groupObj.gammaId === 'string'
     )
 }
 
 export interface GroupClientJwt {
-    clientId: string
-    scope: string
-    displayName: string
+    client: {
+        id: string
+        displayName: string
+    }
     group: {
         id: number
         gammaId: gamma.GroupId
     }
+    scope: string
 }
 
 export function isGroupClientJwt(value: unknown): value is GroupClientJwt {
-    if (typeof value !== 'object' || value === null) {
-        return false
-    }
+    if (typeof value !== 'object' || value === null) return false
 
     const obj = value as Record<string, unknown>
+    if (typeof obj.scope !== 'string') return false
 
+    const client = obj.client
+    if (typeof client !== 'object' || client === null) return false
+
+    const clientObj = client as Record<string, unknown>
+    if (typeof clientObj.id !== 'string') return false
+    if (typeof clientObj.displayName !== 'string') return false
+
+    const group = obj.group
+    if (typeof group !== 'object' || group === null) return false
+
+    const groupObj = group as Record<string, unknown>
     return (
-        typeof obj.clientId === 'string' &&
-        typeof obj.scope === 'string' &&
-        typeof obj.groupId === 'number' &&
-        typeof obj.displayName === 'string'
+        typeof groupObj.id === 'number' && typeof groupObj.gammaId === 'string'
     )
 }
 
@@ -133,16 +147,16 @@ function signGroupClientJwt(content: GroupClientJwt): Promise<JwtWithToken> {
             jwt.sign(
                 {
                     client: {
-                        clientId: content.clientId,
-                        displayName: content.displayName,
-                        group: content.group,
+                        id: content.client.id,
+                        displayName: content.client.displayName,
                     },
+                    group: content.group,
                     scope: content.scope,
-                },
+                } satisfies GroupClientJwt,
                 env.JWT_SECRET,
                 {
                     issuer: env.JWT_ISSUER,
-                    audience: content.clientId,
+                    audience: content.client.id,
                     algorithm: 'HS256',
                     expiresIn: expireSeconds,
                     notBefore: 0,
@@ -277,12 +291,12 @@ async function clientCredentialsFlow(req: Request, res: Response) {
     // Validate request
     const clientId: unknown = req.body['client_id']
     if (typeof clientId !== 'string') {
-        sendError(res, missingRequiredPropertyError('clientId', 'body'))
+        sendError(res, missingRequiredPropertyError('client_id', 'body'))
         return
     }
     const clientSecret: unknown = req.body['client_secret'] as string
     if (typeof clientSecret !== 'string') {
-        sendError(res, missingRequiredPropertyError('clientSecret', 'body'))
+        sendError(res, missingRequiredPropertyError('client_secret', 'body'))
         return
     }
     const audience: unknown = req.body['audience'] as string
@@ -308,13 +322,15 @@ async function clientCredentialsFlow(req: Request, res: Response) {
     }
 
     signGroupClientJwt({
-        clientId: clientDetails.id,
-        scope: clientDetails.scope,
-        displayName: clientDetails.displayName,
+        client: {
+            id: clientDetails.id,
+            displayName: clientDetails.displayName,
+        },
         group: {
             id: clientDetails.group.id,
             gammaId: clientDetails.group.gammaId,
         },
+        scope: clientDetails.scope,
     })
         .then(token => {
             res.json(token)

@@ -43,9 +43,7 @@ function validateToken(req: Request, res: Response, next: NextFunction) {
             }
         }
 
-        if (isUserJwt(verifiedToken)) {
-        } else if (isGroupClientJwt(verifiedToken)) {
-        } else {
+        if (!isUserJwt(verifiedToken) && !isGroupClientJwt(verifiedToken)) {
             sendError(res, ApiError.InvalidToken)
             return
         }
@@ -70,40 +68,71 @@ export function verifyToken(token: string): JwtPayload {
     return verifiedToken
 }
 
-export function getUserId(res: Response): number | null {
-    const jwt = res.locals.jwt
+export function getUserId(res: Response): number | null
+export function getUserId(jwt: JwtPayload): number | null
+export function getUserId(resOrJwt: Response | JwtPayload): number | null {
+    const jwt: unknown = Object.hasOwn(resOrJwt, 'locals')
+        ? resOrJwt.locals.jwt
+        : resOrJwt
     if (isUserJwt(jwt)) return jwt.user.id
     return null
 }
 
-export function getGammaUserId(res: Response): gamma.UserId | null {
-    const jwt = res.locals.jwt
+export function getGammaUserId(res: Response): gamma.UserId | null
+export function getGammaUserId(jwt: JwtPayload): gamma.UserId | null
+export function getGammaUserId(
+    resOrJwt: Response | JwtPayload
+): gamma.UserId | null {
+    const jwt: unknown = Object.hasOwn(resOrJwt, 'locals')
+        ? resOrJwt.locals.jwt
+        : resOrJwt
     if (isUserJwt(jwt)) return jwt.user.gammaId
     return null
 }
 
-export function getGroupId(res: Response): number | null {
-    const jwt = res.locals.jwt
+export function getGroupId(res: Response): number | null
+export function getGroupId(jwt: JwtPayload): number | null
+export function getGroupId(resOrJwt: Response | JwtPayload): number | null {
+    const jwt: unknown = Object.hasOwn(resOrJwt, 'locals')
+        ? resOrJwt.locals.jwt
+        : resOrJwt
     if (isUserJwt(jwt)) return jwt.group.id
     if (isGroupClientJwt(jwt)) return jwt.group.id
     return null
 }
 
-export function getGammaGroupId(res: Response): gamma.GroupId | null {
-    const jwt = res.locals.jwt
+export function getGammaGroupId(res: Response): gamma.GroupId | null
+export function getGammaGroupId(jwt: JwtPayload): gamma.GroupId | null
+export function getGammaGroupId(
+    resOrJwt: Response | JwtPayload
+): gamma.GroupId | null {
+    const jwt: unknown = Object.hasOwn(resOrJwt, 'locals')
+        ? resOrJwt.locals.jwt
+        : resOrJwt
     if (isUserJwt(jwt)) return jwt.group.gammaId
     if (isGroupClientJwt(jwt)) return jwt.group.gammaId
     return null
 }
 
-export function getClientId(res: Response): string | null {
-    const jwt = res.locals.jwt
-    if (isGroupClientJwt(jwt)) return jwt.clientId
+export function getClientId(res: Response): string | null
+export function getClientId(jwt: JwtPayload): string | null
+export function getClientId(resOrJwt: Response | JwtPayload): string | null {
+    const jwt: unknown = Object.hasOwn(resOrJwt, 'locals')
+        ? resOrJwt.locals.jwt
+        : resOrJwt
+    if (isGroupClientJwt(jwt)) return jwt.client.id
     return null
 }
 
-export function hasScope(res: Response, scope: Scope): boolean {
-    const jwt = res.locals.jwt
+export function hasScope(res: Response, scope: Scope): boolean
+export function hasScope(jwt: JwtPayload, scope: Scope): boolean
+export function hasScope(
+    resOrJwt: Response | JwtPayload,
+    scope: Scope
+): boolean {
+    const jwt: unknown = Object.hasOwn(resOrJwt, 'locals')
+        ? resOrJwt.locals.jwt
+        : resOrJwt
     if (isUserJwt(jwt)) return true
     if (isGroupClientJwt(jwt)) return jwt.scope.split(' ').includes(scope)
     return false

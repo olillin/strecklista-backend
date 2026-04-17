@@ -7,7 +7,7 @@ import setHeader from '@/middleware/setHeader.js'
 import { ApiError, sendError } from '@/errors.js'
 import type { ErrorResolvable } from '@/errors.js'
 import type { Scope } from '@/services/clientService.js'
-import { isUserJwt } from '@/routes/oauth2/token.js'
+import { isGroupClientJwt, isUserJwt } from '@/routes/oauth2/token.js'
 
 async function createApiRouter(): Promise<Router> {
     const api = Router()
@@ -98,8 +98,12 @@ function validateScope(scope: Scope | undefined) {
 
         // Do not check scopes for users
         if (isUserJwt(jwt)) {
-            console.log('Is user')
             next()
+            return
+        }
+
+        if (!isGroupClientJwt(jwt)) {
+            sendError(res, ApiError.InvalidToken)
             return
         }
 

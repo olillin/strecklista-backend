@@ -1,12 +1,11 @@
 import {
     body,
+    header,
     type Meta,
     oneOf,
     param,
     query,
     type ValidationChain,
-    type FieldMessageFactory,
-    type CustomValidationChain,
     type ContextRunner,
 } from 'express-validator'
 import { getGroupId, verifyToken } from '@/middleware/validateToken.js'
@@ -24,15 +23,8 @@ import {
     isGroupClientNameTaken,
     isScope,
 } from '@/services/clientService.js'
-import {
-    acceptedGrantTypes,
-    acceptedTokenAudience,
-    type GrantType,
-} from '@/routes/oauth2/token.js'
-import type {
-    CustomValidator,
-    ErrorMessage,
-} from 'express-validator/lib/base.js'
+import { acceptedGrantTypes, type GrantType } from '@/routes/oauth2/token.js'
+import type { CustomValidator, Middleware } from 'express-validator/lib/base.js'
 
 function requireGroupId(meta: Meta): number {
     const auth = meta.req.headers?.authorization
@@ -150,13 +142,6 @@ export async function checkSupportedGrantType(value: string): Promise<void> {
         throw ApiError.UnsupportedGrantType
     }
 }
-
-export async function checkAudience(value: string): Promise<void> {
-    if (value !== acceptedTokenAudience) {
-        throw ApiError.IncorrectAudience
-    }
-}
-
 //#endregion Custom validators
 
 // Validation chains
@@ -167,8 +152,8 @@ function when(
         body: (field: string) => ValidationChain
         param: (field: string) => ValidationChain
         query: (field: string) => ValidationChain
-    }) => ValidationChain[]
-): ValidationChain[] {
+    }) => (ValidationChain | Middleware)[]
+): (ValidationChain | Middleware)[] {
     return builder({
         body: field => body(field).if(condition),
         param: field => param(field).if(condition),
@@ -188,13 +173,22 @@ export const token = () => [
     ]),
     // Client credentials
     ...when(grantTypeEquals('client_credentials'), ({ body }) => [
-        body('client_id')
-            .exists()
-            .isString()
-            .isLength({ min: CLIENT_ID_LENGTH, max: CLIENT_ID_LENGTH })
-            .withMessage(ApiError.InvalidClientId),
-        body('client_secret').exists().isString(),
-        body('audience').exists().custom(checkAudience),
+        oneOf([
+            [
+                header('Authorization')
+                    .if(grantTypeEquals('client_credentials'))
+                    .isString()
+                    .matches(/^Basic [A-Za-z0-9+/]+={0,3}$/),
+            ],
+            [
+                body('client_id')
+                    .exists()
+                    .isString()
+                    .isLength({ min: CLIENT_ID_LENGTH, max: CLIENT_ID_LENGTH })
+                    .withMessage(ApiError.InvalidClientId),
+                body('client_secret').exists().isString(),
+            ],
+        ]),
     ]),
 ]
 

@@ -299,11 +299,13 @@ Provide the authorization code in the request body like this:
 ```json
 {
     "grant_type": "client_credentials",
-    "audience": "<strecklista issuer identifier>",
     "client_id": "<your client id>",
     "client_secret": "<your client secret>"
 }
 ```
+
+Client ID and secret may also be sent as a
+[Basic Auth header](https://en.wikipedia.org/wiki/Basic_access_authentication).
 
 #### Response
 
@@ -367,7 +369,6 @@ The generated JWT token and data about the authenticated user and their group.
 | Code | Message                                                                        |
 | ---- | ------------------------------------------------------------------------------ |
 | 401  | Invalid credentials                                                            |
-| 403  | Incorrect audience, expected '\<audience\>'                                    |
 | 403  | Unsupported grant type, expected one of authorization_code, client_credentials |
 | 500  | Failed to sign JWT: \<details\>                                                |
 

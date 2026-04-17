@@ -7,6 +7,7 @@ import {
     sendError,
     tokenSignError,
     unexpectedError,
+    type ErrorResolvable,
 } from '@/errors.js'
 import {
     checkClientSecret,
@@ -22,15 +23,13 @@ import {
 } from '@/services/userService.js'
 import { completeGroupUser, type GroupUser } from '@/services/gammaService.js'
 import { toLoginResponse } from '@/responses.js'
-import type { Group } from '@/generated/prisma/client.js'
+import { fromBase64 } from '@exodus/bytes/base64.js'
 
 export const acceptedGrantTypes = [
     'authorization_code',
     'client_credentials',
 ] as const
 export type GrantType = (typeof acceptedGrantTypes)[number]
-
-export const acceptedTokenAudience = env.JWT_ISSUER
 
 export interface JwtWithToken extends JwtPayload {
     access_token: string
@@ -287,24 +286,48 @@ async function authorizationCodeFlow(req: Request, res: Response) {
         })
 }
 
+interface ClientCredentials {
+    clientId: string
+    clientSecret: string
+}
+
+function parseClientCredentials(req: Request): ClientCredentials {
+    const authorizationHeader = req.header('Authorization')
+    if (authorizationHeader) {
+        try {
+            const basic = authorizationHeader.split(' ')[1]
+            const decoder = new TextDecoder('utf8')
+            const decoded: string = decoder.decode(fromBase64(basic))
+            const [clientId, clientSecret] = decoded.split(':')
+            return { clientId, clientSecret }
+        } catch {
+            throw ApiError.InvalidAuthorizationHeader
+        }
+    } else {
+        const clientId: unknown = req.body['client_id']
+        if (typeof clientId !== 'string') {
+            throw missingRequiredPropertyError('client_id', 'body')
+        }
+        const clientSecret: unknown = req.body['client_secret'] as string
+        if (typeof clientSecret !== 'string') {
+            throw missingRequiredPropertyError('client_secret', 'body')
+        }
+        return { clientId, clientSecret }
+    }
+}
+
 async function clientCredentialsFlow(req: Request, res: Response) {
     // Validate request
-    const clientId: unknown = req.body['client_id']
-    if (typeof clientId !== 'string') {
-        sendError(res, missingRequiredPropertyError('client_id', 'body'))
+    let credentials: ClientCredentials
+    try {
+        credentials = parseClientCredentials(req)
+    } catch (err) {
+        sendError(res, err as ErrorResolvable)
         return
     }
-    const clientSecret: unknown = req.body['client_secret'] as string
-    if (typeof clientSecret !== 'string') {
-        sendError(res, missingRequiredPropertyError('client_secret', 'body'))
-        return
-    }
-    const audience: unknown = req.body['audience'] as string
-    if (typeof audience !== 'string') {
-        sendError(res, missingRequiredPropertyError('audience', 'body'))
-        return
-    }
+    const { clientId, clientSecret } = credentials
 
+    // Check secret
     const clientDetails = await getGroupClientDetailsWithSecretHash(clientId)
     if (!clientDetails) {
         sendError(res, ApiError.InvalidCredentials)
@@ -321,6 +344,7 @@ async function clientCredentialsFlow(req: Request, res: Response) {
         return
     }
 
+    // Sign token
     signGroupClientJwt({
         client: {
             id: clientDetails.id,

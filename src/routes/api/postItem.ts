@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express'
 import type { ItemResponse, ResponseBody } from '@/responses.js'
-import { getGroupId } from '@/middleware/validateToken.js'
+import { getGroupId, getUserId } from '@/middleware/validateToken.js'
 import { createItem, type Item, type Price } from '@/services/itemService.js'
 import type { JsonPrice } from '@/routes/api/postPurchase.js'
 import { Decimal } from '@prisma/client/runtime/client'
@@ -15,6 +15,7 @@ export interface PostItemBody {
 
 export default async function postItem(req: Request, res: Response) {
     const { displayName, prices: jsonPrices, icon } = req.body as PostItemBody
+    const userId = getUserId(res)
     const groupId = getGroupId(res)
     if (groupId == null) {
         sendError(res, ApiError.Unauthorized)
@@ -28,7 +29,13 @@ export default async function postItem(req: Request, res: Response) {
                 price: new Decimal(price.price),
             }) satisfies Price
     )
-    const item: Item = await createItem(groupId, displayName, prices, icon) //
+    const item: Item = await createItem(
+        groupId,
+        displayName,
+        prices,
+        icon,
+        userId
+    )
 
     const body: ResponseBody<ItemResponse> = {
         data: { item: convertDecimalToNumber(item) },

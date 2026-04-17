@@ -11,10 +11,6 @@ export default async function getItem(req: Request, res: Response) {
     }
     const itemId = parseInt(req.params.id)
     const userId = getUserId(res)
-    if (userId == null) {
-        sendError(res, ApiError.Unauthorized)
-        return
-    }
 
     const item = await itemService.getItem(itemId, userId)
 

@@ -15,6 +15,9 @@ export interface Item {
     stock: number
     timesPurchased: number
     visible: boolean
+}
+
+export interface ItemWithFavorite extends Item {
     favorite: boolean
 }
 
@@ -42,8 +45,9 @@ export async function createItem(
     groupId: number,
     displayName: string,
     prices: Price[],
-    iconUrl?: string
-): Promise<Item> {
+    iconUrl?: string,
+    userId?: number | null
+): Promise<Item | ItemWithFavorite> {
     return prisma.item
         .create({
             data: {
@@ -64,18 +68,24 @@ export async function createItem(
                 },
             },
         })
-        .then(item => {
-            return {
-                id: item.id,
-                createdTime: item.createdTime,
-                icon: item.iconUrl ?? undefined,
-                displayName: item.displayName,
-                prices: item.prices,
+        .then(data => {
+            const item: Item = {
+                id: data.id,
+                createdTime: data.createdTime,
+                icon: data.iconUrl ?? undefined,
+                displayName: data.displayName,
+                prices: data.prices,
                 stock: 0,
                 timesPurchased: 0,
                 visible: true,
-                favorite: false,
-            } satisfies Item
+            }
+            if (userId == null) {
+                return item
+            } else {
+                return Object.assign(item, {
+                    favorite: false,
+                }) satisfies ItemWithFavorite
+            }
         })
 }
 
@@ -88,7 +98,7 @@ interface ItemData {
     iconUrl: string | null
     prices: Price[]
 
-    favorites: {
+    favorites?: {
         itemId: number
     }[]
 
@@ -111,7 +121,7 @@ interface ItemData {
     }[]
 }
 
-function selectItemData(userId: number) {
+function selectItemData(userId: number | undefined | null) {
     return {
         id: true,
         displayName: true,
@@ -125,14 +135,17 @@ function selectItemData(userId: number) {
             },
         },
 
-        favorites: {
-            where: {
-                userId: userId,
-            },
-            select: {
-                itemId: true,
-            },
-        },
+        favorites:
+            userId == null
+                ? false
+                : {
+                      where: {
+                          userId: userId,
+                      },
+                      select: {
+                          itemId: true,
+                      },
+                  },
 
         purchasedItems: {
             select: {
@@ -173,13 +186,13 @@ function selectItemData(userId: number) {
     } satisfies ItemSelect
 }
 
-function parseItem(item: ItemData): Item {
+function parseItem(data: ItemData): Item | ItemWithFavorite {
     // Calculate stock
-    const latestStockUpdate = item.itemStockUpdates[0]
+    const latestStockUpdate = data.itemStockUpdates[0]
     const latestStock: number = latestStockUpdate?.after ?? 0
     const latestStockDate: Date | undefined =
         latestStockUpdate?.stockUpdate.transaction.createdTime
-    const purchasedAfterStock: number = item.purchasedItems
+    const purchasedAfterStock: number = data.purchasedItems
         .filter(
             p =>
                 latestStockUpdate === undefined ||
@@ -188,46 +201,52 @@ function parseItem(item: ItemData): Item {
         .reduce((sum, p) => sum + p.quantity, 0)
     const stock: number = latestStock - purchasedAfterStock
 
-    const totalPurchased: number = item.purchasedItems.reduce(
+    const totalPurchased: number = data.purchasedItems.reduce(
         (sum, p) => sum + p.quantity,
         0
     )
 
     // Other properties
-    const isFavorite = item.favorites.length !== 0
-
-    return {
-        id: item.id,
-        createdTime: item.createdTime,
-        icon: item.iconUrl ?? undefined,
-        displayName: item.displayName,
-        prices: item.prices,
+    const item: Item = {
+        id: data.id,
+        createdTime: data.createdTime,
+        icon: data.iconUrl ?? undefined,
+        displayName: data.displayName,
+        prices: data.prices,
         stock: stock,
         timesPurchased: totalPurchased,
-        visible: !item.invisible,
-        favorite: isFavorite,
+        visible: !data.invisible,
+    }
+
+    if (data.favorites == undefined) {
+        return item
+    } else {
+        const isFavorite = data.favorites.length !== 0
+        return Object.assign(item, {
+            favorite: isFavorite,
+        }) satisfies ItemWithFavorite
     }
 }
 
 export async function getItem(
     itemId: number,
-    userId: number
-): Promise<Item | null> {
-    const item: ItemData | null = await prisma.item.findFirst({
+    userId?: number | null
+): Promise<Item | ItemWithFavorite | null> {
+    const data: ItemData | null = await prisma.item.findFirst({
         where: {
             id: itemId,
         },
         select: selectItemData(userId),
     })
-    if (item === null) return null
-    return parseItem(item)
+    if (data === null) return null
+    return parseItem(data)
 }
 
 export async function getItemsInGroup(
     groupId: number,
-    userId: number,
+    userId?: number | null,
     visibleOnly: boolean = false
-): Promise<Item[]> {
+): Promise<Item[] | ItemWithFavorite[]> {
     const items: ItemData[] = await prisma.item.findMany({
         where: {
             groupId: groupId,
@@ -235,7 +254,7 @@ export async function getItemsInGroup(
         },
         select: selectItemData(userId),
     })
-    return items.map(item => parseItem(item))
+    return items.map(data => parseItem(data))
 }
 
 export type BareItemWithPrices = PrismaItem & { prices: Price[] }
@@ -267,9 +286,9 @@ export interface ItemPatch {
 
 export async function updateItem(
     itemId: number,
-    userId: number,
-    patch: ItemPatch
-): Promise<Item> {
+    patch: ItemPatch,
+    userId?: number | null
+): Promise<Item | ItemWithFavorite> {
     const updateData: ItemUpdateInput = {}
 
     const queuedChanges: (() => Promise<any>)[] = []
@@ -308,6 +327,8 @@ export async function updateItem(
                 updatePrices(value)
                 break
             case 'favorite':
+                if (userId == null) break
+
                 if (value) {
                     queuedChanges.push(() => addFavorite(userId, itemId))
                 } else {

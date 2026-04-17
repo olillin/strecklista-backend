@@ -9,7 +9,6 @@ import {
 import type { JsonPrice } from '@/routes/api/postPurchase.js'
 import { Decimal } from '@prisma/client/runtime/client'
 import { convertDecimalToNumber } from '@/util/decimalToNumber.js'
-import { ApiError, sendError } from '@/errors.js'
 
 export interface PatchItemBody {
     icon?: string
@@ -23,16 +22,12 @@ export default async function patchItem(req: Request, res: Response) {
     if (typeof req.params.id !== 'string') {
         throw new Error('Invalid id, expected string but got array')
     }
-    const userId = getUserId(res)
-    if (userId == null) {
-        sendError(res, ApiError.Unauthorized)
-        return
-    }
 
     const itemId = parseInt(req.params.id)
-
+    const userId = getUserId(res)
     const patch = createItemPatch(req.body as PatchItemBody)
-    const newItem = await updateItem(itemId, userId, patch)
+
+    const newItem = await updateItem(itemId, patch, userId)
 
     const body: ResponseBody<ItemResponse> = {
         data: { item: convertDecimalToNumber(newItem) },

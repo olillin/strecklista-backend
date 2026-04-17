@@ -32,7 +32,7 @@ export default async function getItems(req: Request, res: Response) {
 
     const userId = getUserId(res)
     const groupId = getGroupId(res)
-    if (userId == null || groupId == null) {
+    if (groupId == null) {
         sendError(res, ApiError.Unauthorized)
         return
     }

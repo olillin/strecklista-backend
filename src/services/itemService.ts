@@ -438,11 +438,18 @@ export async function addFavorite(
     itemId: number
 ): Promise<void> {
     return prisma.favoriteItem
-        .create({
-            data: {
+        .upsert({
+            where: {
+                userId_itemId: {
+                    userId: userId,
+                    itemId: itemId,
+                },
+            },
+            create: {
                 userId: userId,
                 itemId: itemId,
             },
+            update: {},
         })
         .then(() => undefined)
 }
@@ -452,12 +459,10 @@ export async function removeFavorite(
     itemId: number
 ): Promise<void> {
     return prisma.favoriteItem
-        .delete({
+        .deleteMany({
             where: {
-                userId_itemId: {
-                    userId: userId,
-                    itemId: itemId,
-                },
+                userId: userId,
+                itemId: itemId,
             },
         })
         .then(() => undefined)

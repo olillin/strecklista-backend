@@ -12,6 +12,10 @@ import type {
     TransactionType,
 } from '@/services/transactionService.js'
 import type { DecimalToNumber } from '@/util/decimalToNumber.js'
+import type {
+    GroupClient,
+    GroupClientWithSecret,
+} from './services/clientService.js'
 
 export type ResponseBody<T> = [T] extends [never]
     ? { error: ResponseError }
@@ -62,16 +66,15 @@ export type TransactionsResponse = PaginatedResponse &
     }>
 
 export interface GroupClientResponse {
-    id: string
-    scope: string
-    group: Group
-    owner: User
-    displayName: string
-    description?: string
+    client: GroupClient
 }
 
-export interface NewGroupClientResponse extends GroupClientResponse {
-    secret: string
+export interface GroupClientsResponse {
+    clients: GroupClient[]
+}
+
+export interface NewGroupClientResponse {
+    client: GroupClientWithSecret
 }
 
 export function toGroupUserResponse(groupUser: GroupUser): GroupUserResponse {

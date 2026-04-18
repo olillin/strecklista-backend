@@ -352,7 +352,7 @@ async function clientCredentialsFlow(req: Request, res: Response) {
         },
         group: {
             id: clientDetails.group.id,
-            gammaId: clientDetails.group.gammaId,
+            gammaId: clientDetails.group.gammaId as gamma.GroupId,
         },
         scope: clientDetails.scope,
     })

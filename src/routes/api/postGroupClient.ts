@@ -30,8 +30,7 @@ export default async function postClient(req: Request, res: Response) {
 
     const body: ResponseBody<NewGroupClientResponse> = {
         data: {
-            ...client,
-            scope: client.scope.join(' '),
+            client: client,
         },
     }
     const resourceUri = req.baseUrl + `/group/client/${client.id}`

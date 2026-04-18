@@ -414,6 +414,8 @@ export const getGroupClient = () => [
         .custom(checkClientExistsInGroup),
 ]
 
+export const getGroupClients = () => []
+
 export const postGroupClient = () => [
     body('scope')
         .exists()
@@ -436,4 +438,14 @@ export const postGroupClient = () => [
     body('description').optional().isString().trim().isLength({
         max: 255,
     }),
+]
+
+export const deleteGroupClient = () => [
+    param('id')
+        .exists()
+        .isString()
+        .isLength({ min: CLIENT_ID_LENGTH, max: CLIENT_ID_LENGTH })
+        .withMessage(ApiError.InvalidClientId)
+        .bail()
+        .custom(checkClientExistsInGroup),
 ]

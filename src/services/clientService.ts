@@ -2,8 +2,13 @@ import { prisma } from '@/lib/prisma.js'
 import { Prisma } from '@/generated/prisma/client.js'
 import crypto from 'node:crypto'
 import { fromBase32hex, toBase32hex } from '@exodus/bytes/base32.js'
-import { getGroupUser, type Group, type User } from '@/services/gammaService.js'
-import * as gamma from 'gammait'
+import {
+    getGroupUser,
+    type Group,
+    type GroupUser,
+    type User,
+} from '@/services/gammaService.js'
+import type { GroupId } from 'gammait'
 
 /**
  * Clients uses ULID identifiers which are 26 characters long.
@@ -16,29 +21,48 @@ export function isClientId(s: string): boolean {
 
 export interface GroupClient {
     id: string
-    scope: Scope[]
+    scope: string
     group: Group
     owner: User
     displayName: string
     description?: string
 }
 
-export interface GroupClientDetailsWithSecretHash {
-    secretHash: string
-    salt: string
+export interface GroupClientWithSecret extends GroupClient {
+    secret: string
+}
+
+export interface GroupClientDetails {
     id: string
     scope: string
     group: {
         id: number
-        gammaId: gamma.GroupId
+        gammaId: string
     }
     ownerId: number
     displayName: string
-    description?: string
+    description?: string | null
 }
 
-export interface GroupClientWithSecret extends GroupClient {
-    secret: string
+export interface GroupClientDetailsWithSecretHash extends GroupClientDetails {
+    secretHash: string
+    salt: string
+}
+
+function parseGroupClient(
+    client: GroupClientDetails,
+    owner: GroupUser
+): GroupClient {
+    return {
+        id: client.id,
+        scope: client.scope,
+        group: owner.group,
+        owner: owner.user,
+        displayName: client.displayName,
+        ...(client.description == null
+            ? {}
+            : { description: client.description }),
+    }
 }
 
 export const supportedScopes = [
@@ -153,9 +177,23 @@ export async function createGroupClient(
                 displayName,
                 description: description ?? Prisma.skip,
             },
+            include: {
+                group: true,
+            },
         })
-        .then(async client => {
-            const groupUser = await getGroupUser(client.ownerId, client.groupId)
+        .then(async data => {
+            const client: GroupClientDetails = {
+                ...data,
+                group: {
+                    id: data.group.id,
+                    gammaId: data.group.gammaId as GroupId,
+                },
+            }
+
+            const groupUser = await getGroupUser(
+                client.ownerId,
+                client.group.id
+            )
             if (groupUser == null) {
                 throw Error(
                     'Unable to get user and group during client creation'
@@ -165,14 +203,7 @@ export async function createGroupClient(
             return {
                 // Send the actual secret just this once
                 secret: secret,
-                id: client.id,
-                scope: parseScope(client.scope),
-                group: groupUser.group,
-                owner: groupUser.user,
-                displayName: client.displayName,
-                ...(client.description == null
-                    ? {}
-                    : { description: client.description }),
+                ...parseGroupClient(client, groupUser),
             } satisfies GroupClientWithSecret
         })
 }
@@ -205,66 +236,115 @@ export async function clientExistsInGroup(
         .then(client => client !== null)
 }
 
-export async function getGroupClient(id: string): Promise<GroupClient | null> {
-    const client = await prisma.apiClient.findFirst({
-        where: {
-            id: id,
-        },
-    })
+export async function getGroupClient(
+    id: string,
+    groupId: number
+): Promise<GroupClient | null> {
+    const client: GroupClientDetails | null = await prisma.apiClient
+        .findFirst({
+            where: {
+                id: id,
+                groupId: groupId,
+            },
+            select: {
+                id: true,
+                scope: true,
+                group: true,
+                ownerId: true,
+                displayName: true,
+                description: true,
+            },
+        })
+        .then(client => {
+            if (client == null) return null
+
+            return {
+                ...client,
+                group: {
+                    id: client.group.id,
+                    gammaId: client.group.gammaId as GroupId,
+                },
+            } satisfies GroupClientDetails
+        })
     if (client == null) {
         return null
     }
 
-    const groupUser = await getGroupUser(client.ownerId, client.groupId)
+    const groupUser = await getGroupUser(client.ownerId, groupId)
     if (groupUser == null) {
         throw Error('Unable to get user and group of client')
     }
 
-    return {
-        id: client.id,
-        scope: parseScope(client.scope),
-        group: groupUser.group,
-        owner: groupUser.user,
-        displayName: client.displayName,
-        ...(client.description == null
-            ? {}
-            : { description: client.description }),
-    }
+    return parseGroupClient(client, groupUser)
+}
+
+export async function getGroupClients(groupId: number): Promise<GroupClient[]> {
+    const clients: GroupClientDetails[] = await prisma.apiClient.findMany({
+        where: {
+            groupId: groupId,
+        },
+        select: {
+            id: true,
+            scope: true,
+            group: true,
+            ownerId: true,
+            displayName: true,
+            description: true,
+        },
+    })
+
+    return Promise.all(
+        clients.map(async client => {
+            const groupUser = await getGroupUser(client.ownerId, groupId)
+            if (groupUser == null) {
+                throw Error('Unable to get user and group of client')
+            }
+
+            return parseGroupClient(client, groupUser)
+        })
+    )
 }
 
 export async function getGroupClientDetailsWithSecretHash(
     id: string
 ): Promise<GroupClientDetailsWithSecretHash | null> {
-    const client = await prisma.apiClient.findFirst({
+    const data = await prisma.apiClient.findFirst({
         where: {
             id: id,
         },
-        include: {
-            group: {
-                select: {
-                    gammaId: true,
-                },
-            },
+        select: {
+            id: true,
+            secret: true,
+            salt: true,
+            scope: true,
+            group: true,
+            ownerId: true,
+            displayName: true,
+            description: true,
         },
     })
 
-    if (client == null) {
+    if (data == null) {
         return null
     }
 
     return {
-        secretHash: client.secret,
-        salt: client.salt,
-        id: client.id,
-        scope: client.scope,
-        group: {
-            id: client.groupId,
-            gammaId: client.group.gammaId as gamma.GroupId,
-        },
-        ownerId: client.ownerId,
-        displayName: client.displayName,
-        ...(client.description == null
-            ? {}
-            : { description: client.description }),
+        ...data,
+        salt: data.salt,
+        secretHash: data.secret,
     }
+}
+
+export async function deleteClient(
+    clientId: string,
+    groupId: number
+): Promise<void> {
+    return prisma.apiClient
+        .deleteMany({
+            where: {
+                id: clientId,
+                groupId: groupId,
+            },
+        })
+        .then()
 }

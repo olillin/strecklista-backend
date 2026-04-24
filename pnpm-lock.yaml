@@ -63,6 +63,9 @@ importers:
       '@types/pg':
         specifier: ^8.16.0
         version: 8.18.0
+      copy-env-cli:
+        specifier: ^1.0.0
+        version: 1.0.0
       globals:
         specifier: ^16.0.0
         version: 16.5.0
@@ -883,6 +886,10 @@ packages:
   cookie@0.7.2:
     resolution: {integrity: sha512-yki5XnKuf750l50uGTllt6kKILY4nQ1eNIQatoXEByZ5dWgnKqbnqmTrBE5B4N7lrMJKQ2ytWMiTO2o0v6Ew/w==}
     engines: {node: '>= 0.6'}
+
+  copy-env-cli@1.0.0:
+    resolution: {integrity: sha512-a3Y8GDArgLeeFz3gw7ibkZHaGBfRgEI16gpVoju/KTwJKAnxYoDh5iFrz0gCfzkmvU/l/bIKVlOM8X2sAQTjXg==}
+    hasBin: true
 
   cors@2.8.6:
     resolution: {integrity: sha512-tJtZBBHA6vjIAaF6EnIaq6laBBP9aq/Y3ouVJjEfoHbRBcHBAHYcMh/w8LDrk2PvIMMq8gmopa5D4V8RmbrxGw==}
@@ -2252,6 +2259,8 @@ snapshots:
   cookie-signature@1.0.7: {}
 
   cookie@0.7.2: {}
+
+  copy-env-cli@1.0.0: {}
 
   cors@2.8.6:
     dependencies:

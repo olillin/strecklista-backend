@@ -5,6 +5,7 @@
     "main": "bundle/server.js",
     "type": "module",
     "scripts": {
+        "postinstall": "copy-env-cli && prisma generate",
         "build": "rimraf bundle && rolldown -c",
         "start": "node .",
         "dev": "docker compose up --build --force-recreate -d && nodemon src/server.ts",
@@ -44,6 +45,7 @@
         "@types/jsonwebtoken": "^9.0.9",
         "@types/node": "^25.6.0",
         "@types/pg": "^8.16.0",
+        "copy-env-cli": "^1.0.0",
         "globals": "^16.0.0",
         "nodemon": "^3.1.14",
         "oxfmt": "^0.45.0",

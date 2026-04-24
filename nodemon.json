@@ -1,5 +1,5 @@
 {
     "execMap": {
-        "ts": "tsx --env-file=.env --env-file=.env.dev"
+        "ts": "tsx --env-file=.env"
     }
 }

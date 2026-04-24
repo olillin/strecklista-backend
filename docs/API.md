@@ -40,8 +40,10 @@
    4.11 [GET /group/item-id](#get-groupitemid)  
    4.12 [PATCH /group/item-id](#patch-groupitemid)  
    4.13 [DELETE /group/item-id](#delete-groupitemid)
-   4.14 [GET /group/client/client-id](#get-group-clientid)
-   4.14 [POST /group/client](#post-group-client)
+   4.14 [GET /group/client](#get-group-client)
+   4.15 [POST /group/client](#post-group-client)
+   4.16 [GET /group/client/client-id](#get-group-clientid)
+   4.17 [DELETE /group/client/client-id](#delete-group-clientid)
 
 ## General
 
@@ -247,6 +249,19 @@ extends [Transaction](#transaction)
   "id": int,       // The item id
   "quantity": int, // How much to change the stock by
   "absolute": bool // Set stock to 'quantity' instead of adding it. Defaults to false
+}
+```
+
+### GroupClient
+
+```javascript
+{
+  "id": string,
+  "scope": string,
+  "group": Group,
+  "owner": User,
+  "displayName": string,
+  "description": string?
 }
 ```
 
@@ -983,6 +998,51 @@ The client without the secret.
 }
 ```
 
+### GET /group/client
+
+List group clients in the group.
+
+#### Response
+
+```javascript
+{
+  "data": {
+    "clients": GroupClient[]
+  }
+}
+```
+
+##### Example
+
+```javascript
+{
+  "data": {
+    "clients": [
+      {
+        "id": "01KP4C3XYVZNCQRAQ8D9MX21QK",
+        "scope": "items.read transactions.write",
+        "group": {
+          "id": 1,
+          "gammaId": "3cf94646-2412-4896-bba9-5d2410ac0c62",
+          "prettyName": "P.R.I.T. 25",
+          "avatarUrl": "https://auth.chalmers.it/images/group/avatar/3cf94646-2412-4896-bba9-5d2410ac0c62"
+        },
+        "owner": {
+          "id": 1,
+          "gammaId": "2f63a363-af22-480d-be49-531c1831933c",
+          "firstName": "Jane",
+          "lastName": "Doe",
+          "nick": "Dough",
+          "avatarUrl": "https://auth.chalmers.it/images/user/avatar/2f63a363-af22-480d-be49-531c1831933c"
+        },
+        "displayName": "P.R.I.T. Scanner",
+        "description": "Beep beep!!"
+      }
+    ]
+  }
+}
+```
+
 ### POST /group/client
 
 Create a new group client.
@@ -1002,13 +1062,15 @@ Responds with the created client and credentials.
 ```javascript
 {
   "data": {
-    "secret": string,
-    "id": string,
-    "scope": string,
-    "group": Group,
-    "owner": User,
-    "displayName": string,
-    "description": string?,
+    "client": {
+      "secret": string,
+      "id": string,
+      "scope": string,
+      "group": Group,
+      "owner": User,
+      "displayName": string,
+      "description": string?
+    }
   }
 }
 ```
@@ -1018,32 +1080,92 @@ Responds with the created client and credentials.
 ```javascript
 {
   "data": {
-    "secret": "MIR5EUJQ7TOJI2M7BM987A9R9JGLBQML19A8S6S9CIOBRSG2ECCG",
-    "id": "01KP4C3XYVZNCQRAQ8D9MX21QK",
-    "scope": "items.read transactions.write",
-    "group": {
-      "id": 1,
-      "gammaId": "3cf94646-2412-4896-bba9-5d2410ac0c62",
-      "prettyName": "P.R.I.T. 25",
-      "avatarUrl": "https://auth.chalmers.it/images/group/avatar/3cf94646-2412-4896-bba9-5d2410ac0c62"
-    },
-    "owner": {
-      "id": 1,
-      "gammaId": "2f63a363-af22-480d-be49-531c1831933c",
-      "firstName": "Jane",
-      "lastName": "Doe",
-      "nick": "Dough",
-      "avatarUrl": "https://auth.chalmers.it/images/user/avatar/2f63a363-af22-480d-be49-531c1831933c"
-    },
-    "displayName": "P.R.I.T. Scanner",
-    "description": "Beep beep!!"
+    "client": {
+      "secret": "MIR5EUJQ7TOJI2M7BM987A9R9JGLBQML19A8S6S9CIOBRSG2ECCG",
+      "id": "01KP4C3XYVZNCQRAQ8D9MX21QK",
+      "scope": "items.read transactions.write",
+      "group": {
+        "id": 1,
+        "gammaId": "3cf94646-2412-4896-bba9-5d2410ac0c62",
+        "prettyName": "P.R.I.T. 25",
+        "avatarUrl": "https://auth.chalmers.it/images/group/avatar/3cf94646-2412-4896-bba9-5d2410ac0c62"
+      },
+      "owner": {
+        "id": 1,
+        "gammaId": "2f63a363-af22-480d-be49-531c1831933c",
+        "firstName": "Jane",
+        "lastName": "Doe",
+        "nick": "Dough",
+        "avatarUrl": "https://auth.chalmers.it/images/user/avatar/2f63a363-af22-480d-be49-531c1831933c"
+      },
+      "displayName": "P.R.I.T. Scanner",
+      "description": "Beep beep!!"
+    }
   }
 }
 ```
 
 #### Errors
 
-| Code | Error                                |
-| ---- | ------------------------------------ |
-| 400  | An item must have at least one price |
-| 403  | Display name is not unique           |
+| Code | Error                      |
+| ---- | -------------------------- |
+| 403  | Display name is not unique |
+
+### GET /group/client/\<id\>
+
+Get details about a group client.
+
+#### Response
+
+```javascript
+{
+  "data": {
+    "client": GroupClient
+  }
+}
+```
+
+##### Example
+
+```javascript
+{
+  "data": {
+    "client": {
+      "id": "01KP4C3XYVZNCQRAQ8D9MX21QK",
+      "scope": "items.read transactions.write",
+      "group": {
+        "id": 1,
+        "gammaId": "3cf94646-2412-4896-bba9-5d2410ac0c62",
+        "prettyName": "P.R.I.T. 25",
+        "avatarUrl": "https://auth.chalmers.it/images/group/avatar/3cf94646-2412-4896-bba9-5d2410ac0c62"
+      },
+      "owner": {
+        "id": 1,
+        "gammaId": "2f63a363-af22-480d-be49-531c1831933c",
+        "firstName": "Jane",
+        "lastName": "Doe",
+        "nick": "Dough",
+        "avatarUrl": "https://auth.chalmers.it/images/user/avatar/2f63a363-af22-480d-be49-531c1831933c"
+      },
+      "displayName": "P.R.I.T. Scanner",
+      "description": "Beep beep!!"
+    }
+  }
+}
+```
+
+#### Errors
+
+| Code | Error                 |
+| ---- | --------------------- |
+| 404  | Client does not exist |
+
+### DELETE /group/client/\<id\>
+
+Delete a group client.
+
+#### Errors
+
+| Code | Error                 |
+| ---- | --------------------- |
+| 404  | Client does not exist |

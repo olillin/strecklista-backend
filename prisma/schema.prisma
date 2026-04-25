@@ -40,9 +40,10 @@ model User {
 model GroupUser {
   groupId Int
   group   Group @relation(fields: [groupId], references: [id])
+  userId  Int
+  user    User @relation(fields: [userId], references: [id])
 
-  userId Int
-  user   User @relation(fields: [userId], references: [id])
+  externalId Int? @unique
 
   @@id([groupId, userId])
 }
@@ -71,6 +72,8 @@ model Price {
 
   displayName String  @db.VarChar(30)
   price       Decimal @db.Decimal(7, 2)
+
+  externalId Int? @unique
 
   @@id([itemId, displayName])
 }

@@ -10,8 +10,10 @@ import {
 } from 'express-validator'
 import { getGroupId, verifyToken } from '@/middleware/validateToken.js'
 import { ApiError, unsupportedScopeError } from '@/errors.js'
-import { isUserInGroup } from '@/services/userService.js'
+import { isExternalUserInGroup, isUserInGroup } from '@/services/userService.js'
 import {
+    externalItemExistsInGroup,
+    isExternalItemVisible,
     isItemVisible,
     itemExistsInGroup,
     itemNameExistsInGroup,
@@ -36,7 +38,10 @@ function requireGroupId(meta: Meta): number {
 }
 
 //#region Custom validators
-/** Checks that there exists a user with the id in `value` in the same group as the user making the request. */
+/**
+ * Checks that there exists a user with the id in `value` in the same group as
+ * the user making the request.
+ */
 export async function checkUserExistsInGroup(
     value: string,
     meta: Meta
@@ -57,16 +62,80 @@ export async function checkUserExistsInGroup(
     }
 }
 
+/**
+ * Checks that there exists a user with the external id in `value` in the same
+ * group as the user making the request.
+ */
+export async function checkExternalUserExistsInGroup(
+    value: string,
+    meta: Meta
+): Promise<void> {
+    // Get user ID
+    let externalId: number
+    try {
+        externalId = parseInt(value)
+    } catch {
+        throw ApiError.InvalidUserId
+    }
+
+    // Check if user exists
+    const groupId = requireGroupId(meta)
+    const exists = await isExternalUserInGroup(externalId, groupId)
+    if (!exists) {
+        throw ApiError.UserNotExist
+    }
+}
+
 export async function checkItemExistsInGroup(
     value: string,
     meta: Meta
 ): Promise<void> {
+    let itemId: number
+    try {
+        itemId = parseInt(value)
+    } catch {
+        throw ApiError.InvalidItemId
+    }
     const groupId = requireGroupId(meta)
-    const exists = await itemExistsInGroup(parseInt(value), groupId)
+    const exists = await itemExistsInGroup(itemId, groupId)
     if (!exists) {
         throw ApiError.ItemNotExist
     }
 }
+
+export async function checkExternalItemExistsInGroup(
+    value: string,
+    meta: Meta
+): Promise<void> {
+    let externalId: number
+    try {
+        externalId = parseInt(value)
+    } catch {
+        throw ApiError.InvalidItemId
+    }
+    const groupId = requireGroupId(meta)
+    const exists = await externalItemExistsInGroup(externalId, groupId)
+    if (!exists) {
+        throw ApiError.ItemNotExist
+    }
+}
+
+export async function checkExternalItemVisible(value: string): Promise<void> {
+    // Get id
+    let externalId: number
+    try {
+        externalId = parseInt(value)
+    } catch {
+        throw ApiError.InvalidItemId
+    }
+
+    // Check if visible
+    const visible = await isExternalItemVisible(externalId)
+    if (!visible) {
+        throw ApiError.PurchaseInvisible
+    }
+}
+
 
 export async function checkTransactionExistsInGroup(
     value: string,
@@ -239,38 +308,65 @@ export const patchTransaction = () => [
 ]
 
 export const postPurchase = () => [
-    body('userId')
-        .exists()
-        .isInt({ min: 1 })
-        .withMessage(ApiError.InvalidUserId)
-        .bail()
-        .custom(checkUserExistsInGroup),
     body('items')
         .exists()
         .isArray({ min: 1 })
         .withMessage(ApiError.PurchaseNothing),
-    body('items.*.id')
-        .exists()
-        .isInt({ min: 1 })
-        .withMessage(ApiError.InvalidItemId)
-        .bail()
-        .custom(checkItemExistsInGroup)
-        .bail()
-        .custom(checkItemVisible)
-        .withMessage(ApiError.PurchaseInvisible),
-    body('items.*.quantity')
-        .exists()
-        .isInt({ min: 1 })
-        .withMessage(ApiError.PurchaseItemCount),
-    body('items.*.purchasePrice').exists().isObject(),
-    body('items.*.purchasePrice.price').exists().isDecimal(),
-    body('items.*.purchasePrice.displayName').exists().isString().trim(),
     body('comment')
         .optional()
         .isString()
         .trim()
         .isLength({ max: 1000 })
         .withMessage(ApiError.InvalidComment),
+    oneOf([
+        body('userId')
+            .exists()
+            .isInt({ min: 1 })
+            .withMessage(ApiError.InvalidUserId)
+            .bail()
+            .custom(checkUserExistsInGroup),
+        body('externalId')
+            .exists()
+            .isInt()
+            .withMessage(ApiError.InvalidUserId)
+            .bail()
+            .custom(checkExternalUserExistsInGroup),
+    ]),
+    oneOf([
+        [
+            body('items.*.id')
+                .exists()
+                .isInt({ min: 1 })
+                .withMessage(ApiError.InvalidItemId)
+                .bail()
+                .custom(checkItemExistsInGroup)
+                .bail()
+                .custom(checkItemVisible)
+                .withMessage(ApiError.PurchaseInvisible),
+            body('items.*.quantity')
+                .exists()
+                .isInt({ min: 1 })
+                .withMessage(ApiError.PurchaseItemCount),
+            body('items.*.purchasePrice').exists().isObject(),
+            body('items.*.purchasePrice.price').exists().isDecimal(),
+            body('items.*.purchasePrice.displayName').exists().isString().trim(),
+        ],
+        [
+            body('items.*.externalId')
+                .exists()
+                .isInt()
+                .withMessage(ApiError.InvalidItemId)
+                .bail()
+                .custom(checkExternalItemExistsInGroup)
+                .bail()
+                .custom(checkExternalItemVisible)
+                .withMessage(ApiError.PurchaseInvisible),
+            body('items.*.quantity')
+                .exists()
+                .isInt({ min: 1 })
+                .withMessage(ApiError.PurchaseItemCount),
+        ]
+    ]),
 ]
 
 export const postDeposit = () => [

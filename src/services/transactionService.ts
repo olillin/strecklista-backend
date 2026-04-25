@@ -8,7 +8,7 @@ import {
     type ItemStockUpdate as PrismaItemStockUpdate,
     Prisma,
 } from '@/generated/prisma/client.js'
-import type { PurchaseItem } from '@/routes/api/postPurchase.js'
+import type { PurchaseExternalItem, PurchaseItem } from '@/routes/api/postPurchase.js'
 import type { PostItemStockUpdate } from '@/routes/api/postStockUpdate.js'
 import type {
     TransactionSelect,
@@ -338,7 +338,7 @@ export async function createPurchase(
     createdBy: TransactionCreator,
     createdFor: number,
     comment: string | null,
-    items: PurchaseItem[]
+    items: PurchaseItem[] | PurchaseExternalItem[]
 ): Promise<Purchase> {
     if (!isValidComment(comment)) {
         comment = null

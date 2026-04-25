@@ -405,6 +405,43 @@ export async function isItemVisible(itemId: number): Promise<boolean> {
     return !item.invisible
 }
 
+export async function externalItemExistsInGroup(
+    externalItemId: number,
+    groupId: number
+): Promise<boolean> {
+    return prisma.item
+        .findFirst({
+            where: {
+                prices: {
+                    some: {
+                        externalId: externalItemId,
+                    },
+                },
+                groupId: groupId,
+            },
+        })
+        .then(item => item !== null)
+}
+
+export async function isExternalItemVisible(externalItemId: number): Promise<boolean> {
+    const item = await prisma.item.findFirst({
+            where: {
+                prices: {
+                    some: {
+                        externalId: externalItemId,
+                    },
+                },
+            },
+            select: {
+                invisible: true,
+            },
+        })
+    if (item === null) {
+        throw new Error('Item does not exist')
+    }
+    return !item.invisible
+}
+
 export async function deleteItem(
     itemId: number,
     groupId: number

@@ -8,7 +8,7 @@
         "postinstall": "copy-env-cli && prisma generate",
         "build": "rimraf bundle && rolldown -c",
         "start": "node .",
-        "dev": "docker compose up --build --force-recreate -d && nodemon src/server.ts",
+        "dev": "docker compose up -d && nodemon src/server.ts",
         "format": "oxfmt",
         "lint": "oxlint",
         "lint:fix": "oxlint --fix",

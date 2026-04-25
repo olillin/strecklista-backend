@@ -22,6 +22,7 @@ export interface OfflineGroupUser {
     user: OfflineUser
     group: OfflineGroup
     balance: Decimal
+    externalId: number | null
 }
 
 // Groups
@@ -108,6 +109,7 @@ export async function softAddGroupUser(
                 gammaId: groupUser.group.gammaId as gamma.GroupId,
             },
             balance: balance,
+            externalId: groupUser.externalId,
         }
     }
 
@@ -147,12 +149,18 @@ export async function softAddGroupUser(
     })
 }
 
+interface GroupAndUserData {
+    user: GroupUserData
+    group: OfflineGroup
+    externalId: number | null
+}
+
 async function _getUserInGroup(
     userId: number,
     groupId: number,
     tx: PrismaTransactionalClient
 ): Promise<OfflineGroupUser | null> {
-    const groupUser: { user: GroupUserData; group: OfflineGroup } | null =
+    const groupUser: GroupAndUserData | null =
         await tx.groupUser
             .findFirst({
                 where: {
@@ -180,7 +188,8 @@ async function _getUserInGroup(
                         id: groupUser.group.id,
                         gammaId: groupUser.group.gammaId as gamma.GroupId,
                     },
-                } satisfies { user: GroupUserData; group: OfflineGroup }
+                    externalId: groupUser.externalId,
+                } satisfies GroupAndUserData
             })
     if (groupUser === null) return null
     const balance = calculateBalance(groupUser.user)
@@ -191,6 +200,7 @@ async function _getUserInGroup(
         },
         group: groupUser.group,
         balance: balance,
+        externalId: groupUser.externalId,
     }
 }
 
@@ -384,6 +394,7 @@ export async function getOfflineUsersInGroup(
                 select: selectUserData(groupId),
             },
             group: true,
+            externalId: true
         },
     })
 
@@ -404,7 +415,8 @@ export async function getOfflineUsersInGroup(
                 id: groupUser.group.id,
                 gammaId: groupUser.group.gammaId as gamma.GroupId,
             },
-            balance,
+            balance: balance,
+            externalId: groupUser.externalId,
         } satisfies OfflineGroupUser
     })
 }
@@ -417,6 +429,20 @@ export async function isUserInGroup(
         .findFirst({
             where: {
                 userId: userId,
+                groupId: groupId,
+            },
+        })
+        .then(groupUser => groupUser !== null)
+}
+
+export async function isExternalUserInGroup(
+    externalUserId: number,
+    groupId: number
+): Promise<boolean> {
+    return prisma.groupUser
+        .findFirst({
+            where: {
+                externalId: externalUserId,
                 groupId: groupId,
             },
         })

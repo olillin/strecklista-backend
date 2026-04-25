@@ -20,9 +20,14 @@ export interface PurchaseItem {
     purchasePrice: JsonPrice
 }
 
+export interface PurchaseExternalItem {
+    externalId: number
+    quantity: number
+}
+
 export interface PostPurchaseBody {
     userId: number
-    items: PurchaseItem[]
+    items: PurchaseItem[] | PurchaseExternalItem[]
     comment?: string
 }
 

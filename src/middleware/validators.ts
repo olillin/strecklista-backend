@@ -382,58 +382,46 @@ export const postPurchase = () => [
         .trim()
         .isLength({ max: 1000 })
         .withMessage(ApiError.InvalidComment),
-    oneOf([
-        body('userId')
-            .exists()
+    oneOf([body('userId').exists(), body('externalUserId').exists()]),
+    body('userId')
+        .if(body('userId').exists())
+        .isInt({ min: 1 })
+        .withMessage(ApiError.InvalidUserId)
+        .bail()
+        .custom(checkUserExistsInGroup),
+    body('externalUserId')
+        .if(body('externalUserId').exists())
+        .isInt()
+        .withMessage(ApiError.InvalidExternalId)
+        .bail()
+        .custom(checkExternalUserExistsInGroup),
+    body('items.*.quantity')
+        .exists()
+        .isInt({ min: 1 })
+        .withMessage(ApiError.PurchaseItemCount),
+    oneOf([body('items.*.id').exists(), body('items.*.externalId').exists()]),
+    ...when(body('items.*.id').exists(), ({ body }) => [
+        body('items.*.id')
             .isInt({ min: 1 })
-            .withMessage(ApiError.InvalidUserId)
+            .withMessage(ApiError.InvalidItemId)
             .bail()
-            .custom(checkUserExistsInGroup),
-        body('externalId')
-            .exists()
-            .isInt()
-            .withMessage(ApiError.InvalidExternalId)
+            .custom(checkItemExistsInGroup)
             .bail()
-            .custom(checkExternalUserExistsInGroup),
+            .custom(checkItemVisible)
+            .withMessage(ApiError.PurchaseInvisible),
+        body('items.*.purchasePrice').exists().isObject(),
+        body('items.*.purchasePrice.price').exists().isDecimal(),
+        body('items.*.purchasePrice.displayName').exists().isString().trim(),
     ]),
-    oneOf([
-        [
-            body('items.*.id')
-                .exists()
-                .isInt({ min: 1 })
-                .withMessage(ApiError.InvalidItemId)
-                .bail()
-                .custom(checkItemExistsInGroup)
-                .bail()
-                .custom(checkItemVisible)
-                .withMessage(ApiError.PurchaseInvisible),
-            body('items.*.quantity')
-                .exists()
-                .isInt({ min: 1 })
-                .withMessage(ApiError.PurchaseItemCount),
-            body('items.*.purchasePrice').exists().isObject(),
-            body('items.*.purchasePrice.price').exists().isDecimal(),
-            body('items.*.purchasePrice.displayName')
-                .exists()
-                .isString()
-                .trim(),
-        ],
-        [
-            body('items.*.externalId')
-                .exists()
-                .isInt()
-                .withMessage(ApiError.InvalidExternalId)
-                .bail()
-                .custom(checkExternalItemExistsInGroup)
-                .bail()
-                .custom(checkExternalItemVisible)
-                .withMessage(ApiError.PurchaseInvisible),
-            body('items.*.quantity')
-                .exists()
-                .isInt({ min: 1 })
-                .withMessage(ApiError.PurchaseItemCount),
-        ],
-    ]),
+    body('items.*.externalId')
+        .if(body('items.*.externalId').exists())
+        .isInt()
+        .withMessage(ApiError.InvalidExternalId)
+        .bail()
+        .custom(checkExternalItemExistsInGroup)
+        .bail()
+        .custom(checkExternalItemVisible)
+        .withMessage(ApiError.PurchaseInvisible),
 ]
 
 export const postDeposit = () => [

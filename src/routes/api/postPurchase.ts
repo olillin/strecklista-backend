@@ -6,7 +6,10 @@ import {
 } from '@/middleware/validateToken.js'
 import { ApiError, sendError, unexpectedError } from '@/errors.js'
 import { createPurchase } from '@/services/transactionService.js'
-import { getOfflineGroupUser } from '@/services/userService.js'
+import {
+    findUserByExternalId,
+    getOfflineGroupUser,
+} from '@/services/userService.js'
 import { convertDecimalToNumber } from '@/util/decimalToNumber.js'
 
 export interface JsonPrice {
@@ -32,19 +35,36 @@ export function isPurchaseExternalItem(
     return item.hasOwnProperty('externalId')
 }
 
-export interface PostPurchaseBody {
-    userId: number
+export type PostPurchaseBody = (
+    | {
+          userId: number
+          externalUserId: undefined
+      }
+    | {
+          userId: undefined
+          externalUserId: number
+      }
+) & {
     items: PurchaseItem[] | PurchaseExternalItem[]
     comment?: string
 }
 
 export default async function postPurchase(req: Request, res: Response) {
-    const { userId: createdFor, items, comment } = req.body as PostPurchaseBody
+    const { userId, externalUserId, items, comment } =
+        req.body as PostPurchaseBody
 
     const groupId = getGroupId(res)
     const createdBy = getTransactionCreator(res)
     if (groupId == null || createdBy == null) {
         sendError(res, ApiError.Unauthorized)
+        return
+    }
+
+    // Resolve user ID from external ID
+    const createdFor =
+        userId ?? (await findUserByExternalId(externalUserId, groupId))
+    if (createdFor == null) {
+        sendError(res, ApiError.UserNotExist)
         return
     }
 

@@ -449,6 +449,29 @@ export async function isExternalUserInGroup(
         .then(groupUser => groupUser !== null)
 }
 
+/**
+ * Get the normal user ID from an external ID.
+ * @param externalUserId The external user ID.
+ * @param groupId The group to look in.
+ * @return The normal user ID, or null if there is no user with the external ID in the group.
+ */
+export async function findUserByExternalId(
+    externalUserId: number,
+    groupId: number
+): Promise<number | null> {
+    return prisma.groupUser
+        .findFirst({
+            where: {
+                externalId: externalUserId,
+                groupId: groupId,
+            },
+            select: {
+                userId: true,
+            },
+        })
+        .then(groupUser => (groupUser ? groupUser.userId : null))
+}
+
 export interface GroupMemberUpdate {
     externalId?: number
 }

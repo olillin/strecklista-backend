@@ -134,6 +134,7 @@ UUID of a group in gamma.
   "user": User,
   "group": Group,
   "balance": decimal,
+  "externalId": int?,
 }
 ```
 
@@ -173,7 +174,7 @@ UUID of a group in gamma.
 {
   "price": decimal, // Price in SEK
   "displayName": string,
-  "externalId": int?
+  "externalId": int?, // External ID which can be used to purchase the item with this price
 }
 ```
 
@@ -183,10 +184,28 @@ UUID of a group in gamma.
 {
   "type": string,
   "id": int, // Numeric auto-incrementing id
-  "createdBy": int, // Id of the user who created the transaction
+  "createdBy": TransactionCreator,
   "createdTime": int, // Timestamp when this transaction was created in ms
   "removed": boolean, // The transaction is ignored for calculations such as user balances and item stock counts and it may be presented differently on the frontend
   "comment": string? // Optional comment
+}
+```
+
+### TransactionCreator
+
+#### For transactions created by a user
+
+```javascript
+{
+  "userId": int // ID of the user who created the transaction
+}
+```
+
+#### For transactions created by a group client
+
+```javascript
+{
+  "clientId": int // ID of the client who created the transaction
 }
 ```
 
@@ -711,15 +730,25 @@ The transaction after the update:
 
 ### POST /group/purchase
 
-Add a new purchase to a user. The user making the purchase is saved from auth.
+Add a new purchase to a user. The creator of the purchase is taken from the access token.
 
 #### Body
 
-| Name    | Required | Type                                                      | Description                     |
-| ------- | -------- | --------------------------------------------------------- | ------------------------------- |
-| userId  | Y        | Numeric user id                                           | The user to add the purchase to |
-| items   | Y        | { “id”: int, “quantity”: int “purchasePrice”: Price }\[\] | The items to purchase           |
-| comment | N        | string                                                    | An optional comment             |
+##### Normal
+
+| Name    | Required | Type                                                    | Description                     |
+| ------- | -------- | ------------------------------------------------------- | ------------------------------- |
+| userId  | Y        | Numeric user id                                         | The user to add the purchase to |
+| items   | Y        | `{ “id”: int, “quantity”: int “purchasePrice”: Price }` | The items to purchase           |
+| comment | N        | string                                                  | An optional comment             |
+
+##### With external IDs
+
+| Name           | Required | Type                                     | Description                                        |
+| -------------- | -------- | ---------------------------------------- | -------------------------------------------------- |
+| externalUserId | Y        | Numeric external user id                 | The external ID of the user to add the purchase to |
+| items          | Y        | `{ “externalId”: int, “quantity”: int }` | The items to purchase                              |
+| comment        | N        | string                                   | An optional comment                                |
 
 #### Response
 

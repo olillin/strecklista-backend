@@ -60,6 +60,7 @@ export async function createItem(
                     createMany: {
                         data: prices.map(price => ({
                             ...price,
+                            groupId,
                             externalId: price.externalId ?? null,
                         })),
                     },
@@ -355,6 +356,7 @@ export interface ItemPatch {
 }
 
 export async function updateItem(
+    groupId: number,
     itemId: number,
     patch: ItemPatch,
     userId?: number | null
@@ -379,6 +381,7 @@ export async function updateItem(
                         createMany: {
                             data: prices.map(price => ({
                                 ...price,
+                                groupId,
                                 externalId: price.externalId ?? null,
                             })),
                         },
@@ -534,11 +537,16 @@ export async function deleteItem(
 }
 
 // Prices
-export async function addPrice(itemId: number, price: Price): Promise<Price> {
+export async function addPrice(
+    groupId: number,
+    itemId: number,
+    price: Price
+): Promise<Price> {
     return prisma.price
         .create({
             data: {
                 itemId: itemId,
+                groupId: groupId,
                 price: price.price,
                 displayName: price.displayName,
                 externalId: price.externalId ?? null,

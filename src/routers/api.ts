@@ -31,6 +31,7 @@ async function createApiRouter(): Promise<Router> {
     const routes: [Method, string, HandlerName | ErrorResolvable, Scope?][] = [
         ['get', '/user', 'getUser'],
         ['get', '/group', 'getGroup', 'group.read'],
+        ['get', '/group/member/:id', 'getGroupMember', 'group.read'],
         ['get', '/group/transaction', 'getTransactions', 'transactions.read'],
         [
             'get',

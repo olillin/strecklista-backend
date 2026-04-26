@@ -29,21 +29,22 @@
 4. [API Endpoints](#api-endpoints)  
    4.1 [GET /user](#get-user)  
    4.2 [GET /group](#get-group)  
-   4.3 [GET /group/transaction](#get-grouptransaction)  
-   4.4 [GET /group/transaction-id](#get-grouptransactionid)  
-   4.5 [PATCH /group/transaction-id](#patch-grouptransactionid)  
-   4.6 [POST /group/purchase](#post-grouppurchase)  
-   4.7 [POST /group/deposit](#post-groupdeposit)  
-   4.8 [POST /group/stock](#post-groupstock)  
-   4.9 [GET /group/item](#get-groupitem)  
-   4.10 [POST /group/item](#post-groupitem)  
-   4.11 [GET /group/item-id](#get-groupitemid)  
-   4.12 [PATCH /group/item-id](#patch-groupitemid)  
-   4.13 [DELETE /group/item-id](#delete-groupitemid)
-   4.14 [GET /group/client](#get-group-client)
-   4.15 [POST /group/client](#post-group-client)
-   4.16 [GET /group/client/client-id](#get-group-clientid)
-   4.17 [DELETE /group/client/client-id](#delete-group-clientid)
+   4.3 [GET /group/member/\<id\>](#get-group-member)  
+   4.4 [GET /group/transaction](#get-grouptransaction)  
+   4.5 [GET /group/transaction/\<id\>](#get-grouptransactionid)  
+   4.6 [PATCH /group/transaction/\<id\>](#patch-grouptransactionid)  
+   4.7 [POST /group/purchase](#post-grouppurchase)  
+   4.8 [POST /group/deposit](#post-groupdeposit)  
+   4.9 [POST /group/stock](#post-groupstock)  
+   4.10 [GET /group/item](#get-groupitem)  
+   4.11 [POST /group/item](#post-groupitem)  
+   4.12 [GET /group/item/\<id\>](#get-groupitemid)  
+   4.13 [PATCH /group/item/\<id\>](#patch-groupitemid)  
+   4.14 [DELETE /group/item/\<id\>](#delete-groupitemid)
+   4.15 [GET /group/client](#get-group-client)
+   4.16 [POST /group/client](#post-group-client)
+   4.17 [GET /group/client/client/\<id\>](#get-group-clientid)
+   4.18 [DELETE /group/client/client/\<id\>](#delete-group-clientid)
 
 ## General
 
@@ -170,7 +171,8 @@ UUID of a group in gamma.
 ```javascript
 {
   "price": decimal, // Price in SEK
-  "displayName": string
+  "displayName": string,
+  "externalId": int?
 }
 ```
 
@@ -469,6 +471,38 @@ The group and it's members:
         "avatarUrl": "https://auth.chalmers.it/images/user/avatar/9acb43d4-42f3-4f9d-9f37-bc156463e1a5"
       }
     ]
+  }
+}
+```
+
+### GET /group/member
+
+Get info about a member of the group.
+
+#### Response
+
+Data about the user and their group as [GroupUser](#groupuser).
+
+##### Example
+
+```javascript
+{
+  "data": {
+    "user": {
+      "id": 1,
+      "gammaId": "2f63a363-af22-480d-be49-531c1831933c",
+      "nick": "Dough",
+      "firstName": "Jane",
+      "lastName": "Doe",
+      "avatarUrl": "https://auth.chalmers.it/images/2f63a363-af22-480d-be49-531c1831933c"
+    },
+    "group": {
+      "id": 1,
+      "gammaId": "3cf94646-2412-4896-bba9-5d2410ac0c62",
+      "avatarUrl": "https://auth.chalmers.it/images/3cf94646-2412-4896-bba9-5d2410ac0c62",
+      "prettyName": "P.R.I.T. 25"
+    },
+    "balance": 0,
   }
 }
 ```

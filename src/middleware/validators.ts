@@ -281,6 +281,15 @@ export const getUser = () => []
 
 export const getGroup = () => []
 
+export const getGroupMember = () => [
+    param('id')
+        .exists()
+        .isInt({ min: 1 })
+        .withMessage(ApiError.InvalidUserId)
+        .bail()
+        .custom(checkUserExistsInGroup),
+]
+
 export const getTransactions = () => [
     query('limit')
         .default(50)

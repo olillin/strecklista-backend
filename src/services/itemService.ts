@@ -602,6 +602,26 @@ export async function hasFavorite(
         })
 }
 
+export async function getItemByExternal(
+    externalItemId: number,
+    userId?: number | null
+): Promise<Item | null> {
+    const data: ItemData | null = await prisma.item
+        .findFirst({
+            where: {
+                prices: {
+                    some: {
+                        externalId: externalItemId,
+                    },
+                },
+            },
+            select: selectItemData(userId),
+        })
+        .then(item => (!item ? null : parseItemData(item)))
+    if (data === null) return null
+    return parseItem(data)
+}
+
 export async function getExternalCreatePurchasedItem(
     item: PurchaseExternalItem
 ): Promise<CreatePurchasedItem | null> {

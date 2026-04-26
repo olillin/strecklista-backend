@@ -574,6 +574,15 @@ export const deleteItem = () => [
         .custom(checkItemExistsInGroup),
 ]
 
+export const getItemByExternal = () => [
+    param('id')
+        .exists()
+        .isInt()
+        .withMessage(ApiError.InvalidExternalId)
+        .bail()
+        .custom(checkExternalItemExistsInGroup),
+]
+
 export const getGroupClient = () => [
     param('id')
         .exists()

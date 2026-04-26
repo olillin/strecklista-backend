@@ -13,12 +13,14 @@ See the [API docs][api] for specifics on how to use the new and updated endpoint
 ### Added
 
 - Group clients and related endpoints.
-- External IDs for items and group members:
+- External IDs for item prices and group members:
   Unique for every group.
 - New API endpoints:
     - `POST /oauth2/token` which supports `authorization_code` and `client_credentials` grant types.
     - `GET /group/member/\<id\>` which fetches info about a member of the group.
     - `PUT /group/member/\<id\>` which supports updating the `externalId` of a group member.
+    - `GET /group/member/by/external/\<id\>` which fetches info about a member of the group using their external ID.
+    - `GET /group/item/by/external/\<id\>` which fetches an item using one of its prices' external IDs.
 
 ### Changed
 
@@ -28,6 +30,6 @@ See the [API docs][api] for specifics on how to use the new and updated endpoint
     - `POST /authorize` has been moved to `POST /oauth2/authorize`.
     - Transactions have a new format for `createdBy` to allow users and clients to create transactions.
 - Improved separation of users and group users with new interfaces.
-- `POST /group/purchase` now supports external item and user IDs.
+- `POST /group/purchase` now supports external item price and user IDs.
 
 [api]: ./docs/API.md

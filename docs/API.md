@@ -29,9 +29,9 @@
 4. [API Endpoints](#api-endpoints)  
    4.1 [GET /user](#get-user)  
    4.2 [GET /group](#get-group)  
-   4.3 [GET /group/member/\<id\>](#get-group-memberid)  
-   4.4 [PUT /group/member/\<id\>](#put-group-memberid)  
-   4.5 [GET /group/member/by/external/\<external id\>](#get-group-member-by-externalid)  
+   4.3 [GET /group/member/\<id\>](#get-groupmemberid)  
+   4.4 [PUT /group/member/\<id\>](#put-groupmemberid)  
+   4.5 [GET /group/member/by/external/\<external id\>](#get-groupmemberbyexternalid)  
    4.6 [GET /group/transaction](#get-grouptransaction)  
    4.7 [GET /group/transaction/\<id\>](#get-grouptransactionid)  
    4.8 [PATCH /group/transaction/\<id\>](#patch-grouptransactionid)  
@@ -42,11 +42,12 @@
    4.13 [POST /group/item](#post-groupitem)  
    4.14 [GET /group/item/\<id\>](#get-groupitemid)  
    4.15 [PATCH /group/item/\<id\>](#patch-groupitemid)  
-   4.16 [DELETE /group/item/\<id\>](#delete-groupitemid)
-   4.17 [GET /group/client](#get-group-client)
-   4.18 [POST /group/client](#post-group-client)
-   4.19 [GET /group/client/client/\<id\>](#get-group-clientid)
-   4.20 [DELETE /group/client/client/\<id\>](#delete-group-clientid)
+   4.16 [DELETE /group/item/\<id\>](#delete-groupitemid)  
+   4.17 [GET /group/item/by/external/\<id\>](#get-groupitembyexternalid)  
+   4.18 [GET /group/client](#get-group-client)  
+   4.19 [POST /group/client](#post-group-client)  
+   4.20 [GET /group/client/client/\<id\>](#get-group-clientid)  
+   4.21 [DELETE /group/client/client/\<id\>](#delete-group-clientid)
 
 ## General
 
@@ -1101,6 +1102,50 @@ Delete an item
 | Code | Error               |
 | ---- | ------------------- |
 | 404  | Item does not exist |
+
+### GET /group/item/by/external/\<id\>
+
+Get info about an item by its external ID.
+
+#### Response
+
+```javascript
+{
+  "data": {
+    "item": Item
+  }
+}
+```
+
+##### Example
+
+```javascript
+{
+  "data": {
+    "item": {
+      "id": 3,
+      "createdTime": 1738564532,
+      "icon": "https://example.com/product-images/fanta-exotic.png",
+      "displayName": "Läsk",
+      "prices": [
+        {
+          "displayName": "Internt",
+          "price": 7.0,
+          "externalId": 978020137962
+        },
+        {
+          "displayName": "Pateter",
+          "price": 10.0
+        }
+      ],
+      "stock": 19,
+      "timesPurchased": 3,
+      "visible": true,
+      "favorite": false
+    }
+  }
+}
+```
 
 ### GET /group/client/\<id\>
 

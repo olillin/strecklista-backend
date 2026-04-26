@@ -12,6 +12,7 @@ import { convertDecimalToNumber } from '@/util/decimalToNumber.js'
 export interface JsonPrice {
     price: number
     displayName: string
+    externalId?: number
 }
 
 export interface PurchaseItem {
@@ -23,6 +24,12 @@ export interface PurchaseItem {
 export interface PurchaseExternalItem {
     externalId: number
     quantity: number
+}
+
+export function isPurchaseExternalItem(
+    item: PurchaseItem | PurchaseExternalItem
+): item is PurchaseExternalItem {
+    return item.hasOwnProperty('externalId')
 }
 
 export interface PostPurchaseBody {

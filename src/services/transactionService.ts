@@ -1,6 +1,11 @@
 import { isValidComment } from '@/util/helpers.js'
 import { prisma } from '@/lib/prisma.js'
-import { getBareItem, getItem, type Price } from '@/services/itemService.js'
+import {
+    getBareItem,
+    getExternalCreatePurchasedItem,
+    getItem,
+    type Price,
+} from '@/services/itemService.js'
 import { Decimal } from '@prisma/client/runtime/client'
 import type { TransactionType as PrismaTransactionType } from '@/generated/prisma/enums.js'
 import {
@@ -8,7 +13,11 @@ import {
     type ItemStockUpdate as PrismaItemStockUpdate,
     Prisma,
 } from '@/generated/prisma/client.js'
-import type { PurchaseExternalItem, PurchaseItem } from '@/routes/api/postPurchase.js'
+import {
+    isPurchaseExternalItem,
+    type PurchaseExternalItem,
+    type PurchaseItem,
+} from '@/routes/api/postPurchase.js'
 import type { PostItemStockUpdate } from '@/routes/api/postStockUpdate.js'
 import type {
     TransactionSelect,
@@ -45,6 +54,9 @@ export interface PurchasedItem {
     quantity: number
     purchasePrice: Price
 }
+
+export type CreatePurchasedItem =
+    PurchasedItemUncheckedCreateWithoutPurchaseInput
 
 export interface Deposit extends Transaction<'deposit'> {
     createdFor: number
@@ -346,7 +358,18 @@ export async function createPurchase(
 
     // Map items
     const purchasedItems = await Promise.all(
-        items.map(async item => {
+        items.map<Promise<CreatePurchasedItem>>(async item => {
+            if (isPurchaseExternalItem(item)) {
+                const createPurchasedItem =
+                    await getExternalCreatePurchasedItem(item)
+                if (!createPurchasedItem) {
+                    throw new Error(
+                        `Item with external id ${item.externalId} does not exist`
+                    )
+                }
+                return createPurchasedItem
+            }
+
             const dbItem = await getBareItem(item.id)
             if (!dbItem) {
                 throw new Error(`Item with id ${item.id} does not exist`)
@@ -359,7 +382,7 @@ export async function createPurchase(
                 quantity: item.quantity,
                 purchasePrice: new Decimal(item.purchasePrice.price),
                 purchasePriceName: item.purchasePrice.displayName,
-            } satisfies PurchasedItemUncheckedCreateWithoutPurchaseInput
+            }
         })
     )
 

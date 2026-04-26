@@ -5,6 +5,8 @@ import type {
     ItemUpdateInput,
 } from '@/generated/prisma/models/Item.js'
 import { Decimal } from '@prisma/client/runtime/client'
+import type { PurchaseExternalItem } from '@/routes/api/postPurchase.js'
+import type { CreatePurchasedItem } from './transactionService.js'
 
 export interface Item {
     id: number
@@ -24,6 +26,7 @@ export interface ItemWithFavorite extends Item {
 export interface Price {
     price: Decimal
     displayName: string
+    externalId?: number
 }
 
 export interface ItemFlags {
@@ -55,7 +58,10 @@ export async function createItem(
                 displayName: displayName,
                 prices: {
                     createMany: {
-                        data: prices,
+                        data: prices.map(price => ({
+                            ...price,
+                            externalId: price.externalId ?? null,
+                        })),
                     },
                 },
                 iconUrl: iconUrl ?? null,
@@ -74,7 +80,11 @@ export async function createItem(
                 createdTime: data.createdTime,
                 icon: data.iconUrl ?? undefined,
                 displayName: data.displayName,
-                prices: data.prices,
+                prices: data.prices.map(price =>
+                    Object.assign(price, {
+                        externalId: price.externalId ?? undefined,
+                    })
+                ),
                 stock: 0,
                 timesPurchased: 0,
                 visible: true,
@@ -186,6 +196,50 @@ function selectItemData(userId: number | undefined | null) {
     } satisfies ItemSelect
 }
 
+interface SelectedItemData {
+    id: number
+    groupId: number
+    displayName: string
+    iconUrl: string | null
+    createdTime: Date
+    invisible: boolean
+    prices: {
+        displayName: string
+        price: Decimal
+        externalId: number | null
+    }[]
+    purchasedItems: {
+        quantity: number
+        purchase: {
+            transaction: {
+                createdTime: Date
+            }
+        }
+    }[]
+    itemStockUpdates: {
+        stockUpdate: {
+            transaction: {
+                createdTime: Date
+            }
+        }
+        after: number
+    }[]
+    favorites: {
+        itemId: number
+        userId: number
+    }[]
+}
+
+function parseItemData(data: SelectedItemData): ItemData {
+    return {
+        ...data,
+        prices: data.prices.map(price => ({
+            ...price,
+            externalId: price.externalId ?? undefined,
+        })),
+    }
+}
+
 function parseItem(data: ItemData): Item | ItemWithFavorite {
     // Calculate stock
     const latestStockUpdate = data.itemStockUpdates[0]
@@ -232,12 +286,14 @@ export async function getItem(
     itemId: number,
     userId?: number | null
 ): Promise<Item | ItemWithFavorite | null> {
-    const data: ItemData | null = await prisma.item.findFirst({
-        where: {
-            id: itemId,
-        },
-        select: selectItemData(userId),
-    })
+    const data: ItemData | null = await prisma.item
+        .findFirst({
+            where: {
+                id: itemId,
+            },
+            select: selectItemData(userId),
+        })
+        .then(item => (!item ? null : parseItemData(item)))
     if (data === null) return null
     return parseItem(data)
 }
@@ -247,33 +303,47 @@ export async function getItemsInGroup(
     userId?: number | null,
     visibleOnly: boolean = false
 ): Promise<Item[] | ItemWithFavorite[]> {
-    const items: ItemData[] = await prisma.item.findMany({
-        where: {
-            groupId: groupId,
-            invisible: visibleOnly ? false : Prisma.skip,
-        },
-        select: selectItemData(userId),
-    })
+    const items: ItemData[] = await prisma.item
+        .findMany({
+            where: {
+                groupId: groupId,
+                invisible: visibleOnly ? false : Prisma.skip,
+            },
+            select: selectItemData(userId),
+        })
+        .then(items => items.map(parseItemData))
     return items.map(data => parseItem(data))
 }
 
 export type BareItemWithPrices = PrismaItem & { prices: Price[] }
 
-export function getBareItem(
+export async function getBareItem(
     itemId: number
 ): Promise<BareItemWithPrices | null> {
-    return prisma.item.findFirst({
-        where: {
-            id: itemId,
-        },
-        include: {
-            prices: {
-                omit: {
-                    itemId: true,
+    return prisma.item
+        .findFirst({
+            where: {
+                id: itemId,
+            },
+            include: {
+                prices: {
+                    omit: {
+                        itemId: true,
+                    },
                 },
             },
-        },
-    })
+        })
+        .then(item =>
+            !item
+                ? null
+                : {
+                      ...item,
+                      prices: item.prices.map(price => ({
+                          ...price,
+                          externalId: price.externalId ?? undefined,
+                      })),
+                  }
+        )
 }
 
 export interface ItemPatch {
@@ -307,7 +377,10 @@ export async function updateItem(
                 data: {
                     prices: {
                         createMany: {
-                            data: prices,
+                            data: prices.map(price => ({
+                                ...price,
+                                externalId: price.externalId ?? null,
+                            })),
                         },
                     },
                 },
@@ -423,19 +496,21 @@ export async function externalItemExistsInGroup(
         .then(item => item !== null)
 }
 
-export async function isExternalItemVisible(externalItemId: number): Promise<boolean> {
+export async function isExternalItemVisible(
+    externalItemId: number
+): Promise<boolean> {
     const item = await prisma.item.findFirst({
-            where: {
-                prices: {
-                    some: {
-                        externalId: externalItemId,
-                    },
+        where: {
+            prices: {
+                some: {
+                    externalId: externalItemId,
                 },
             },
-            select: {
-                invisible: true,
-            },
-        })
+        },
+        select: {
+            invisible: true,
+        },
+    })
     if (item === null) {
         throw new Error('Item does not exist')
     }
@@ -460,13 +535,19 @@ export async function deleteItem(
 
 // Prices
 export async function addPrice(itemId: number, price: Price): Promise<Price> {
-    return prisma.price.create({
-        data: {
-            itemId: itemId,
-            price: price.price,
-            displayName: price.displayName,
-        },
-    })
+    return prisma.price
+        .create({
+            data: {
+                itemId: itemId,
+                price: price.price,
+                displayName: price.displayName,
+                externalId: price.externalId ?? null,
+            },
+        })
+        .then(price => ({
+            ...price,
+            externalId: price.externalId ?? undefined,
+        }))
 }
 
 // Favorites
@@ -519,4 +600,28 @@ export async function hasFavorite(
         .then(favoriteItem => {
             return favoriteItem !== null
         })
+}
+
+export async function getExternalCreatePurchasedItem(
+    item: PurchaseExternalItem
+): Promise<CreatePurchasedItem | null> {
+    const price = await prisma.price.findFirst({
+        where: {
+            externalId: item.externalId,
+        },
+        include: {
+            item: true,
+        },
+    })
+
+    if (price == null) return null
+
+    return {
+        itemId: price.item.id,
+        displayName: price.item.displayName,
+        iconUrl: price.item.iconUrl,
+        quantity: item.quantity,
+        purchasePrice: price.price,
+        purchasePriceName: price.displayName,
+    }
 }

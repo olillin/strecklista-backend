@@ -13,12 +13,11 @@ export function convertDecimalToNumber<T>(value: T): DecimalToNumber<T> {
     if (value instanceof Decimal) {
         /* @ts-expect-error */
         return value.toNumber()
-    } else if (typeof value === 'object') {
+    } else if (typeof value === 'object' && value != null) {
         if (Array.isArray(value)) {
             /* @ts-expect-error */
             return value.map(x => convertDecimalToNumber(x))
         } else {
-            /* @ts-expect-error */
             const entries = Object.entries(value).map(([key, value]) => {
                 return [key, convertDecimalToNumber(value)]
             })

@@ -111,7 +111,7 @@ export async function checkExternalItemExistsInGroup(
     try {
         externalId = parseInt(value)
     } catch {
-        throw ApiError.InvalidItemId
+        throw ApiError.InvalidExternalId
     }
     const groupId = requireGroupId(meta)
     const exists = await externalItemExistsInGroup(externalId, groupId)
@@ -126,7 +126,7 @@ export async function checkExternalItemVisible(value: string): Promise<void> {
     try {
         externalId = parseInt(value)
     } catch {
-        throw ApiError.InvalidItemId
+        throw ApiError.InvalidExternalId
     }
 
     // Check if visible
@@ -136,6 +136,22 @@ export async function checkExternalItemVisible(value: string): Promise<void> {
     }
 }
 
+export async function checkPriceExternalIdUnique(
+    value: string,
+    meta: Meta
+): Promise<void> {
+    let externalId: number
+    try {
+        externalId = parseInt(value)
+    } catch {
+        throw ApiError.InvalidExternalId
+    }
+    const groupId = requireGroupId(meta)
+    const exists = await externalItemExistsInGroup(externalId, groupId)
+    if (exists) {
+        throw ApiError.ExternalIdNotUnique
+    }
+}
 
 export async function checkTransactionExistsInGroup(
     value: string,
@@ -328,7 +344,7 @@ export const postPurchase = () => [
         body('externalId')
             .exists()
             .isInt()
-            .withMessage(ApiError.InvalidUserId)
+            .withMessage(ApiError.InvalidExternalId)
             .bail()
             .custom(checkExternalUserExistsInGroup),
     ]),
@@ -349,13 +365,16 @@ export const postPurchase = () => [
                 .withMessage(ApiError.PurchaseItemCount),
             body('items.*.purchasePrice').exists().isObject(),
             body('items.*.purchasePrice.price').exists().isDecimal(),
-            body('items.*.purchasePrice.displayName').exists().isString().trim(),
+            body('items.*.purchasePrice.displayName')
+                .exists()
+                .isString()
+                .trim(),
         ],
         [
             body('items.*.externalId')
                 .exists()
                 .isInt()
-                .withMessage(ApiError.InvalidItemId)
+                .withMessage(ApiError.InvalidExternalId)
                 .bail()
                 .custom(checkExternalItemExistsInGroup)
                 .bail()
@@ -365,7 +384,7 @@ export const postPurchase = () => [
                 .exists()
                 .isInt({ min: 1 })
                 .withMessage(ApiError.PurchaseItemCount),
-        ]
+        ],
     ]),
 ]
 
@@ -447,6 +466,11 @@ export const postItem = () => [
         .withMessage(ApiError.MissingPrices),
     body('prices.*.price').exists().isDecimal(),
     body('prices.*.displayName').exists().isString().bail().trim().notEmpty(),
+    body('prices.*.externalId')
+        .optional()
+        .isInt()
+        .withMessage(ApiError.InvalidExternalId)
+        .custom(checkPriceExternalIdUnique),
     body('icon').optional().isURL(),
 ]
 
@@ -488,6 +512,11 @@ export const patchItem = () => [
         .withMessage(ApiError.MissingPrices),
     body('prices.*.price').isDecimal(),
     body('prices.*.displayName').isString().trim().notEmpty(),
+    body('prices.*.externalId')
+        .optional()
+        .isInt()
+        .withMessage(ApiError.InvalidExternalId)
+        .custom(checkPriceExternalIdUnique),
     body('visible').optional().isBoolean(),
 ]
 

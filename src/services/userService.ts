@@ -160,37 +160,36 @@ async function _getUserInGroup(
     groupId: number,
     tx: PrismaTransactionalClient
 ): Promise<OfflineGroupUser | null> {
-    const groupUser: GroupAndUserData | null =
-        await tx.groupUser
-            .findFirst({
-                where: {
-                    userId: userId,
-                    groupId: groupId,
+    const groupUser: GroupAndUserData | null = await tx.groupUser
+        .findFirst({
+            where: {
+                userId: userId,
+                groupId: groupId,
+            },
+            include: {
+                user: {
+                    select: selectUserData(groupId),
                 },
-                include: {
-                    user: {
-                        select: selectUserData(groupId),
-                    },
-                    group: true,
-                },
-            })
-            .then(groupUser => {
-                if (groupUser == null) return null
+                group: true,
+            },
+        })
+        .then(groupUser => {
+            if (groupUser == null) return null
 
-                return {
-                    user: {
-                        id: groupUser.user.id,
-                        gammaId: groupUser.user.gammaId as gamma.UserId,
-                        receivedDeposits: groupUser.user.receivedDeposits,
-                        receivedPurchases: groupUser.user.receivedPurchases,
-                    },
-                    group: {
-                        id: groupUser.group.id,
-                        gammaId: groupUser.group.gammaId as gamma.GroupId,
-                    },
-                    externalId: groupUser.externalId,
-                } satisfies GroupAndUserData
-            })
+            return {
+                user: {
+                    id: groupUser.user.id,
+                    gammaId: groupUser.user.gammaId as gamma.UserId,
+                    receivedDeposits: groupUser.user.receivedDeposits,
+                    receivedPurchases: groupUser.user.receivedPurchases,
+                },
+                group: {
+                    id: groupUser.group.id,
+                    gammaId: groupUser.group.gammaId as gamma.GroupId,
+                },
+                externalId: groupUser.externalId,
+            } satisfies GroupAndUserData
+        })
     if (groupUser === null) return null
     const balance = calculateBalance(groupUser.user)
     return {
@@ -394,7 +393,7 @@ export async function getOfflineUsersInGroup(
                 select: selectUserData(groupId),
             },
             group: true,
-            externalId: true
+            externalId: true,
         },
     })
 

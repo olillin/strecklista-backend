@@ -42,6 +42,7 @@ function createItemPatch(body: PatchItemBody): ItemPatch {
             ({
                 displayName: price.displayName,
                 price: new Decimal(price.price),
+                externalId: price.externalId,
             }) satisfies Price
     )
     return {

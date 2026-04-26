@@ -20,6 +20,8 @@ export enum ApiError {
     InvalidUrl,
     InvalidClientId,
     ClientNotExist,
+    InvalidExternalId,
+    ExternalIdNotUnique,
 
     // Authorization
     Unauthorized,
@@ -89,6 +91,8 @@ const errorDefinitions: { [key in ApiError]: ErrorDefinition } = {
     [ApiError.InvalidUrl]: err(400, 'URL is invalid'),
     [ApiError.InvalidClientId]: err(400, 'Invalid client ID'),
     [ApiError.ClientNotExist]: err(404, 'Client does not exist'),
+    [ApiError.InvalidExternalId]: err(400, 'Invalid external ID'),
+    [ApiError.ExternalIdNotUnique]: err(403, 'External ID must be unique'),
 
     // Authorization
     [ApiError.Unauthorized]: err(401, 'Unauthorized'),
@@ -167,7 +171,7 @@ const errorDefinitions: { [key in ApiError]: ErrorDefinition } = {
     [ApiError.InvalidOffset]: err(400, 'Offset must be a positive integer'),
 
     // Create/modify Item
-    [ApiError.DisplayNameNotUnique]: err(403, 'Display name is not unique'),
+    [ApiError.DisplayNameNotUnique]: err(403, 'Display name must be unique'),
     [ApiError.MissingPrices]: err(400, 'An item must have at least one price'),
 
     // List items

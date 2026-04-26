@@ -27,6 +27,7 @@ export default async function postItem(req: Request, res: Response) {
             ({
                 displayName: price.displayName,
                 price: new Decimal(price.price),
+                externalId: price.externalId,
             }) satisfies Price
     )
     const item: Item = await createItem(

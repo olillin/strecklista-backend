@@ -7,16 +7,27 @@ import {
     toGroupUserResponse,
 } from '@/responses.js'
 import { getGroupUser } from '@/services/gammaService.js'
+import { findUserByExternalId } from '@/services/userService.js'
 
-export default async function getGroupMember(req: Request, res: Response) {
+export default async function getGroupMemberByExternal(
+    req: Request,
+    res: Response
+) {
     if (typeof req.params.id !== 'string') {
         throw new Error('Invalid id, expected string but got array')
     }
-    const userId = parseInt(req.params.id)
+    const externalUserId = parseInt(req.params.id)
     const groupId = getGroupId(res)
     const gammaGroupId = getGammaGroupId(res)
     if (groupId == null || gammaGroupId == null) {
         sendError(res, ApiError.Unauthorized)
+        return
+    }
+
+    // Resolve external ID
+    const userId = await findUserByExternalId(externalUserId, groupId)
+    if (userId == null) {
+        sendError(res, ApiError.UserNotExist)
         return
     }
 

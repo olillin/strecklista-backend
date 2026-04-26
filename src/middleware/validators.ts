@@ -329,6 +329,15 @@ export const putGroupMember = () => [
         .custom(checkExternalUserUniqueInGroup),
 ]
 
+export const getGroupMemberByExternal = () => [
+    param('id')
+        .exists()
+        .isInt()
+        .withMessage(ApiError.InvalidExternalId)
+        .bail()
+        .custom(checkExternalUserExistsInGroup),
+]
+
 export const getTransactions = () => [
     query('limit')
         .default(50)

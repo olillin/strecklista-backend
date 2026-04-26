@@ -31,21 +31,22 @@
    4.2 [GET /group](#get-group)  
    4.3 [GET /group/member/\<id\>](#get-group-memberid)  
    4.4 [PUT /group/member/\<id\>](#put-group-memberid)  
-   4.5 [GET /group/transaction](#get-grouptransaction)  
-   4.6 [GET /group/transaction/\<id\>](#get-grouptransactionid)  
-   4.7 [PATCH /group/transaction/\<id\>](#patch-grouptransactionid)  
-   4.8 [POST /group/purchase](#post-grouppurchase)  
-   4.9 [POST /group/deposit](#post-groupdeposit)  
-   4.10 [POST /group/stock](#post-groupstock)  
-   4.11 [GET /group/item](#get-groupitem)  
-   4.12 [POST /group/item](#post-groupitem)  
-   4.13 [GET /group/item/\<id\>](#get-groupitemid)  
-   4.14 [PATCH /group/item/\<id\>](#patch-groupitemid)  
-   4.15 [DELETE /group/item/\<id\>](#delete-groupitemid)
-   4.16 [GET /group/client](#get-group-client)
-   4.17 [POST /group/client](#post-group-client)
-   4.18 [GET /group/client/client/\<id\>](#get-group-clientid)
-   4.19 [DELETE /group/client/client/\<id\>](#delete-group-clientid)
+   4.5 [GET /group/member/by/external/\<external id\>](#get-group-member-by-externalid)  
+   4.6 [GET /group/transaction](#get-grouptransaction)  
+   4.7 [GET /group/transaction/\<id\>](#get-grouptransactionid)  
+   4.8 [PATCH /group/transaction/\<id\>](#patch-grouptransactionid)  
+   4.9 [POST /group/purchase](#post-grouppurchase)  
+   4.10 [POST /group/deposit](#post-groupdeposit)  
+   4.11 [POST /group/stock](#post-groupstock)  
+   4.12 [GET /group/item](#get-groupitem)  
+   4.13 [POST /group/item](#post-groupitem)  
+   4.14 [GET /group/item/\<id\>](#get-groupitemid)  
+   4.15 [PATCH /group/item/\<id\>](#patch-groupitemid)  
+   4.16 [DELETE /group/item/\<id\>](#delete-groupitemid)
+   4.17 [GET /group/client](#get-group-client)
+   4.18 [POST /group/client](#post-group-client)
+   4.19 [GET /group/client/client/\<id\>](#get-group-clientid)
+   4.20 [DELETE /group/client/client/\<id\>](#delete-group-clientid)
 
 ## General
 
@@ -530,6 +531,39 @@ Data about the user and their group as [GroupUser](#groupuser).
 ### PUT /group/member/\<id\>
 
 Update a member of the group.
+
+#### Response
+
+Data about the user and their group as [GroupUser](#groupuser).
+
+##### Example
+
+```javascript
+{
+  "data": {
+    "user": {
+      "id": 1,
+      "gammaId": "2f63a363-af22-480d-be49-531c1831933c",
+      "nick": "Dough",
+      "firstName": "Jane",
+      "lastName": "Doe",
+      "avatarUrl": "https://auth.chalmers.it/images/2f63a363-af22-480d-be49-531c1831933c"
+    },
+    "group": {
+      "id": 1,
+      "gammaId": "3cf94646-2412-4896-bba9-5d2410ac0c62",
+      "avatarUrl": "https://auth.chalmers.it/images/3cf94646-2412-4896-bba9-5d2410ac0c62",
+      "prettyName": "P.R.I.T. 25"
+    },
+    "balance": 0,
+    "externalId": 978020137962
+  }
+}
+```
+
+### GET /group/member/by/external/\<id\>
+
+Get info about a member of the group by their external id.
 
 #### Response
 

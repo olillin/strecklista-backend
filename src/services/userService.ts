@@ -6,6 +6,7 @@ import {
 } from '@prisma/client/runtime/client'
 import type { UserSelect } from '@/generated/prisma/models/User.js'
 import { Prisma } from '@/generated/prisma/client.js'
+import type { GroupUserUpdateInput } from '@/generated/prisma/models.js'
 export type PrismaTransactionalClient = Prisma.TransactionClient
 
 export interface OfflineGroup {
@@ -22,7 +23,7 @@ export interface OfflineGroupUser {
     user: OfflineUser
     group: OfflineGroup
     balance: Decimal
-    externalId: number | null
+    externalId?: number
 }
 
 // Groups
@@ -109,7 +110,7 @@ export async function softAddGroupUser(
                 gammaId: groupUser.group.gammaId as gamma.GroupId,
             },
             balance: balance,
-            externalId: groupUser.externalId,
+            externalId: groupUser.externalId ?? undefined,
         }
     }
 
@@ -199,7 +200,7 @@ async function _getUserInGroup(
         },
         group: groupUser.group,
         balance: balance,
-        externalId: groupUser.externalId,
+        externalId: groupUser.externalId ?? undefined,
     }
 }
 
@@ -415,7 +416,7 @@ export async function getOfflineUsersInGroup(
                 gammaId: groupUser.group.gammaId as gamma.GroupId,
             },
             balance: balance,
-            externalId: groupUser.externalId,
+            externalId: groupUser.externalId ?? undefined,
         } satisfies OfflineGroupUser
     })
 }
@@ -446,4 +447,36 @@ export async function isExternalUserInGroup(
             },
         })
         .then(groupUser => groupUser !== null)
+}
+
+export interface GroupMemberUpdate {
+    externalId?: number
+}
+
+export async function updateGroupMember(
+    userId: number,
+    groupId: number,
+    update: GroupMemberUpdate
+): Promise<void> {
+    const updateData: GroupUserUpdateInput = {
+        externalId: null,
+    }
+
+    Object.entries(update).forEach(([key, value]) => {
+        if (value === undefined) return
+        switch (key) {
+            case 'externalId':
+                updateData[key] = value
+        }
+    })
+
+    await prisma.groupUser.update({
+        where: {
+            groupId_userId: {
+                userId,
+                groupId,
+            },
+        },
+        data: updateData,
+    })
 }

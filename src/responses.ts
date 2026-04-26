@@ -30,6 +30,7 @@ export type GroupUserResponse = DecimalToNumber<{
     user: User
     group: Group
     balance: number
+    externalId?: number
 }>
 
 export type GroupResponse = DecimalToNumber<{
@@ -82,6 +83,7 @@ export function toGroupUserResponse(groupUser: GroupUser): GroupUserResponse {
         user: groupUser.user,
         group: groupUser.group,
         balance: groupUser.balance.toNumber(),
+        externalId: groupUser.externalId,
     }
 }
 

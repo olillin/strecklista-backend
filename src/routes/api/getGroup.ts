@@ -53,6 +53,7 @@ export default async function getGroup(
                     return {
                         ...user,
                         balance: offlineGroupUser.balance.toNumber(),
+                        externalId: offlineGroupUser.externalId,
                     } satisfies DecimalToNumber<GroupMember>
                 })
             )

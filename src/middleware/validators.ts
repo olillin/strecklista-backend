@@ -75,7 +75,7 @@ export async function checkExternalUserExistsInGroup(
     try {
         externalId = parseInt(value)
     } catch {
-        throw ApiError.InvalidUserId
+        throw ApiError.InvalidExternalId
     }
 
     // Check if user exists
@@ -83,6 +83,30 @@ export async function checkExternalUserExistsInGroup(
     const exists = await isExternalUserInGroup(externalId, groupId)
     if (!exists) {
         throw ApiError.UserNotExist
+    }
+}
+
+/**
+ * Checks that there does not exist a user with the external id in `value` in
+ * the same group as the user making the request.
+ */
+export async function checkExternalUserUniqueInGroup(
+    value: string,
+    meta: Meta
+): Promise<void> {
+    // Get user ID
+    let externalId: number
+    try {
+        externalId = parseInt(value)
+    } catch {
+        throw ApiError.InvalidExternalId
+    }
+
+    // Check if user exists
+    const groupId = requireGroupId(meta)
+    const exists = await isExternalUserInGroup(externalId, groupId)
+    if (exists) {
+        throw ApiError.ExternalIdNotUnique
     }
 }
 
@@ -288,6 +312,21 @@ export const getGroupMember = () => [
         .withMessage(ApiError.InvalidUserId)
         .bail()
         .custom(checkUserExistsInGroup),
+]
+
+export const putGroupMember = () => [
+    param('id')
+        .exists()
+        .isInt({ min: 1 })
+        .withMessage(ApiError.InvalidUserId)
+        .bail()
+        .custom(checkUserExistsInGroup),
+    body('externalId')
+        .optional()
+        .isInt()
+        .withMessage(ApiError.InvalidExternalId)
+        .bail()
+        .custom(checkExternalUserUniqueInGroup),
 ]
 
 export const getTransactions = () => [

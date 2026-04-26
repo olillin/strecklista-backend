@@ -33,10 +33,12 @@ export interface GroupUser {
     user: User
     group: Group
     balance: Decimal
+    externalId?: number
 }
 
 export interface GroupMember extends User {
     balance: Decimal
+    externalId?: number
 }
 
 export type GammaUser = gamma.User | gamma.UserInfo
@@ -165,6 +167,7 @@ export function completeGroupUser(
             prettyName: gammaGroup?.prettyName ?? NOT_AVAILABLE,
         },
         balance: offlineGroupUser.balance,
+        externalId: offlineGroupUser.externalId ?? undefined,
     }
 }
 

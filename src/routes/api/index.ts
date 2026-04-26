@@ -1,6 +1,7 @@
 export { default as getUser } from './getUser.js'
 export { default as getGroup } from './getGroup.js'
 export { default as getGroupMember } from './getGroupMember.js'
+export { default as putGroupMember } from './putGroupMember.js'
 export { default as getTransactions } from './getTransactions.js'
 export { default as getTransaction } from './getTransaction.js'
 export { default as patchTransaction } from './patchTransaction.js'

@@ -32,6 +32,7 @@ async function createApiRouter(): Promise<Router> {
         ['get', '/user', 'getUser'],
         ['get', '/group', 'getGroup', 'group.read'],
         ['get', '/group/member/:id', 'getGroupMember', 'group.read'],
+        ['put', '/group/member/:id', 'putGroupMember'],
         ['get', '/group/transaction', 'getTransactions', 'transactions.read'],
         [
             'get',

@@ -1,7 +1,6 @@
 /*
   Warnings:
 
-  - You are about to drop the column `createdById` on the `Transaction` table. All the data in the column will be lost.
   - A unique constraint covering the columns `[groupId,externalId]` on the table `GroupUser` will be added. If there are existing duplicate values, this will fail.
   - A unique constraint covering the columns `[groupId,externalId]` on the table `Price` will be added. If there are existing duplicate values, this will fail.
 
@@ -23,9 +22,8 @@ FROM "Item" i
 WHERE p."itemId" = i."id";
 
 -- AlterTable
-ALTER TABLE "Transaction" DROP COLUMN "createdById",
-ADD COLUMN     "createdByClientId" VARCHAR(26),
-ADD COLUMN     "createdByUserId" INTEGER;
+ALTER TABLE "Transaction" RENAME COLUMN "createdById" TO "createdByUserId";
+ALTER TABLE "Transaction" ADD COLUMN "createdByClientId" VARCHAR(26);
 
 -- CreateTable
 CREATE TABLE "ApiClient" (

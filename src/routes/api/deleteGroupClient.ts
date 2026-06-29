@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express'
-import { getGroupId } from '@/middleware/validateToken.js'
+import { getGroupId, getUserId } from '@/middleware/validateToken.js'
 import { ApiError, sendError } from '@/errors.js'
 import * as clientService from '@/services/clientService.js'
 
@@ -15,6 +15,13 @@ export default async function deleteGroupClient(
         const clientId = req.params.id
         const groupId = getGroupId(res)
         if (groupId == null) {
+            sendError(res, ApiError.Unauthorized)
+            return
+        }
+
+        // Require user token (not client token) for client deletion
+        const userId = getUserId(res)
+        if (userId == null) {
             sendError(res, ApiError.Unauthorized)
             return
         }

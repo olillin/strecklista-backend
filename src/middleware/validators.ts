@@ -144,7 +144,10 @@ export async function checkExternalItemExistsInGroup(
     }
 }
 
-export async function checkExternalItemVisible(value: string): Promise<void> {
+export async function checkExternalItemVisible(
+    value: string,
+    meta: Meta
+): Promise<void> {
     // Get id
     let externalId: number
     try {
@@ -154,7 +157,8 @@ export async function checkExternalItemVisible(value: string): Promise<void> {
     }
 
     // Check if visible
-    const visible = await isExternalItemVisible(externalId)
+    const groupId = requireGroupId(meta)
+    const visible = await isExternalItemVisible(externalId, groupId)
     if (!visible) {
         throw ApiError.PurchaseInvisible
     }

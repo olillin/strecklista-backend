@@ -361,6 +361,12 @@ export async function updateItem(
     patch: ItemPatch,
     userId?: number | null
 ): Promise<Item | ItemWithFavorite> {
+    // Verify item belongs to the group
+    const itemBelongsToGroup = await itemExistsInGroup(itemId, groupId)
+    if (!itemBelongsToGroup) {
+        throw new Error('Item does not belong to the specified group')
+    }
+
     const updateData: ItemUpdateInput = {}
 
     const queuedChanges: (() => Promise<any>)[] = []
@@ -500,7 +506,8 @@ export async function externalItemExistsInGroup(
 }
 
 export async function isExternalItemVisible(
-    externalItemId: number
+    externalItemId: number,
+    groupId: number
 ): Promise<boolean> {
     const item = await prisma.item.findFirst({
         where: {
@@ -509,6 +516,7 @@ export async function isExternalItemVisible(
                     externalId: externalItemId,
                 },
             },
+            groupId: groupId,
         },
         select: {
             invisible: true,
@@ -612,6 +620,7 @@ export async function hasFavorite(
 
 export async function getItemByExternal(
     externalItemId: number,
+    groupId: number,
     userId?: number | null
 ): Promise<Item | null> {
     const data: ItemData | null = await prisma.item
@@ -622,6 +631,7 @@ export async function getItemByExternal(
                         externalId: externalItemId,
                     },
                 },
+                groupId: groupId,
             },
             select: selectItemData(userId),
         })
@@ -631,11 +641,13 @@ export async function getItemByExternal(
 }
 
 export async function getExternalCreatePurchasedItem(
-    item: PurchaseExternalItem
+    item: PurchaseExternalItem,
+    groupId: number
 ): Promise<CreatePurchasedItem | null> {
     const price = await prisma.price.findFirst({
         where: {
             externalId: item.externalId,
+            groupId: groupId,
         },
         include: {
             item: true,

@@ -18,7 +18,7 @@ export default async function getItemByExternal(req: Request, res: Response) {
         return
     }
 
-    const item = await itemService.getItemByExternal(externalItemId, userId)
+    const item = await itemService.getItemByExternal(externalItemId, groupId, userId)
 
     if (item === null) {
         sendError(res, ApiError.ItemNotExist)

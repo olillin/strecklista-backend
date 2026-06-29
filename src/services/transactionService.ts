@@ -361,7 +361,7 @@ export async function createPurchase(
         items.map<Promise<CreatePurchasedItem>>(async item => {
             if (isPurchaseExternalItem(item)) {
                 const createPurchasedItem =
-                    await getExternalCreatePurchasedItem(item)
+                    await getExternalCreatePurchasedItem(item, groupId)
                 if (!createPurchasedItem) {
                     throw new Error(
                         `Item with external id ${item.externalId} does not exist`

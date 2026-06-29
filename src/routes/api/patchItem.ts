@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express'
-import { getUserId } from '@/middleware/validateToken.js'
+import { getUserId, getGroupId } from '@/middleware/validateToken.js'
 import type { ItemResponse, ResponseBody } from '@/responses.js'
 import {
     updateItem,
@@ -28,7 +28,7 @@ export default async function patchItem(req: Request, res: Response) {
     const patch = createItemPatch(req.body as PatchItemBody)
 
     const userId = getUserId(res)
-    const groupId = getUserId(res)
+    const groupId = getGroupId(res)
     if (groupId == null) {
         sendError(res, ApiError.Unauthorized)
         return

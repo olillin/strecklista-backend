@@ -13,14 +13,7 @@ async function createApiRouter(): Promise<Router> {
     api.use(validateToken)
 
     type Method =
-        | 'all'
-        | 'get'
-        | 'post'
-        | 'put'
-        | 'delete'
-        | 'patch'
-        | 'options'
-        | 'head'
+        'all' | 'get' | 'post' | 'put' | 'delete' | 'patch' | 'options' | 'head'
     type HandlerName = keyof typeof validators & keyof typeof apiRoutes
 
     /*

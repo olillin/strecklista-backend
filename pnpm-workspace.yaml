@@ -1,0 +1,50 @@
+allowBuilds:
+  '@prisma/engines': true
+  esbuild: true
+  prisma: true
+
+minimumReleaseAgeExclude:
+  - '@prisma/adapter-pg@7.10.0'
+  - '@prisma/client-runtime-utils@7.10.0'
+  - '@prisma/client@7.10.0'
+  - '@prisma/config@7.10.0'
+  - '@prisma/debug@7.10.0'
+  - '@prisma/driver-adapter-utils@7.10.0'
+  - '@prisma/engines@7.10.0'
+  - '@prisma/fetch-engine@7.10.0'
+  - '@prisma/get-platform@7.10.0'
+  - '@rollup/rollup-android-arm-eabi@4.63.0'
+  - '@rollup/rollup-android-arm64@4.63.0'
+  - '@rollup/rollup-darwin-arm64@4.63.0'
+  - '@rollup/rollup-darwin-x64@4.63.0'
+  - '@rollup/rollup-freebsd-arm64@4.63.0'
+  - '@rollup/rollup-freebsd-x64@4.63.0'
+  - '@rollup/rollup-linux-arm-gnueabihf@4.63.0'
+  - '@rollup/rollup-linux-arm-musleabihf@4.63.0'
+  - '@rollup/rollup-linux-arm64-gnu@4.63.0'
+  - '@rollup/rollup-linux-arm64-musl@4.63.0'
+  - '@rollup/rollup-linux-loong64-gnu@4.63.0'
+  - '@rollup/rollup-linux-loong64-musl@4.63.0'
+  - '@rollup/rollup-linux-ppc64-gnu@4.63.0'
+  - '@rollup/rollup-linux-ppc64-musl@4.63.0'
+  - '@rollup/rollup-linux-riscv64-gnu@4.63.0'
+  - '@rollup/rollup-linux-riscv64-musl@4.63.0'
+  - '@rollup/rollup-linux-s390x-gnu@4.63.0'
+  - '@rollup/rollup-linux-x64-gnu@4.63.0'
+  - '@rollup/rollup-linux-x64-musl@4.63.0'
+  - '@rollup/rollup-openbsd-x64@4.63.0'
+  - '@rollup/rollup-openharmony-arm64@4.63.0'
+  - '@rollup/rollup-win32-arm64-msvc@4.63.0'
+  - '@rollup/rollup-win32-ia32-msvc@4.63.0'
+  - '@rollup/rollup-win32-x64-gnu@4.63.0'
+  - '@rollup/rollup-win32-x64-msvc@4.63.0'
+  - prisma@7.10.0
+  - rollup@4.63.0
+  - gammait@1.1.0
+
+onlyBuiltDependencies:
+  - '@prisma/engines'
+  - prisma
+
+overrides:
+  deepmerge-ts@<8.0.0: '>=8.0.0'

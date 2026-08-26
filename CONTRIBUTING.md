@@ -36,12 +36,12 @@ To be able to setup and run the server you will need the following:
     ```
 
 2. The backend requires a Gamma client to authenticate users and provide access
-    to profile and group information. Follow the instructions in the
-    [Gamma docs](https://gamma-docs.olillin.com/website/#creating-a-user-client).
-    Make sure that _Generate api key_ is selected and _Redirect url_ is set to
-    the callback URL for your frontend. If you are using the
-    [frontend by Göken](https://github.com/erikpersson0884/strecklista) the
-    redirect url should be `http://localhost:3000/callback`.
+   to profile and group information. Follow the instructions in the
+   [Gamma docs](https://gamma-docs.olillin.com/website/#creating-a-user-client).
+   Make sure that _Generate api key_ is selected and _Redirect url_ is set to
+   the callback URL for your frontend. If you are using the
+   [frontend by Göken](https://github.com/erikpersson0884/strecklista) the
+   redirect url should be `http://localhost:3000/callback`.
 
     Then copy the `.env.example` file to `.env` and fill in the details from
     your newly created Gamma client according to the labels in the image below:
@@ -68,11 +68,7 @@ database.
 
 ### Setup the database
 
-To create the tables in the database you must run this command:
-
-```console
-pnpm prisma:push
-```
+The database is automatically initialized when the server starts.
 
 The development database is not saved between restarts, you may want to add
 development data with the seed:

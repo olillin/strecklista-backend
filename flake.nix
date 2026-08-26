@@ -12,10 +12,12 @@
         buildInputs = with pkgs; [
           nodejs_24
           pnpm
-          nodePackages.prisma
-          prisma-engines
+          prisma_7
+          prisma-engines_7
         ];
-        shellHook = with pkgs; ''
+        shellHook = let
+          prisma-engines = pkgs.prisma-engines_7;
+        in ''
           # Prisma related
           export PRISMA_SCHEMA_ENGINE_BINARY="${prisma-engines}/bin/schema-engine"
           export PRISMA_QUERY_ENGINE_BINARY="${prisma-engines}/bin/query-engine"

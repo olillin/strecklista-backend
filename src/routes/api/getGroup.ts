@@ -11,7 +11,7 @@ import { GroupResponse, ResponseBody } from '../../responses'
 import { getAuthorizedGroup } from '../../util/helpers'
 import { getUsersInGroup, OfflineGroup } from '../../services/userService'
 import { User, completeUser, completeGroup } from '../../services/gammaService'
-import { DecimalToNumber } from '../../util/decimalToNumber'
+import { ToJSON } from '../../util/convertToJson'
 
 export default async function getGroup(
     req: Request,
@@ -42,7 +42,7 @@ export default async function getGroup(
 
         // Get members
         const offlineUsers = await getUsersInGroup(groupId)
-        let members: DecimalToNumber<User[]>
+        let members: ToJSON<User[]>
         try {
             members = await Promise.all(
                 offlineUsers.map(async offlineUser => {

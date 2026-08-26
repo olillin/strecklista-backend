@@ -4,7 +4,7 @@ import { getGroupId } from '../../middleware/validateToken'
 import { createItem, Item, Price } from '../../services/itemService'
 import { JsonPrice } from './postPurchase'
 import { Decimal } from '@prisma/client/runtime/client'
-import { convertDecimalToNumber } from '../../util/decimalToNumber'
+import { convertToJson } from '../../util/convertToJson'
 
 export interface PostItemBody {
     displayName: string
@@ -26,7 +26,7 @@ export default async function postItem(req: Request, res: Response) {
     const item: Item = await createItem(groupId, displayName, prices, icon) //
 
     const body: ResponseBody<ItemResponse> = {
-        data: { item: convertDecimalToNumber(item) },
+        data: { item: convertToJson(item) },
     }
     const resourceUri = req.baseUrl + `/group/item/${item.id}`
     res.status(201).set('Location', resourceUri).json(body)

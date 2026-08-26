@@ -4,7 +4,7 @@ import { getGroupId, getUserId } from '../../middleware/validateToken'
 import { sendError, unexpectedError } from '../../errors'
 import { createDeposit } from '../../services/transactionService'
 import { getUser } from '../../services/userService'
-import { convertDecimalToNumber } from '../../util/decimalToNumber'
+import { convertToJson } from '../../util/convertToJson'
 
 export interface PostDepositBody {
     userId: number
@@ -38,7 +38,7 @@ export default async function postDeposit(req: Request, res: Response) {
     const balance = user.balance
     const body: ResponseBody<CreatedTransactionResponse> = {
         data: {
-            transaction: convertDecimalToNumber(deposit),
+            transaction: convertToJson(deposit),
             balance: balance.toNumber(),
         },
     }

@@ -14,7 +14,7 @@ import {
 } from './services/transactionService'
 import { OfflineGroupUser } from './services/userService'
 import * as gamma from 'gammait'
-import { DecimalToNumber } from './util/decimalToNumber'
+import { ToJSON } from './util/convertToJson'
 
 export type ResponseBody<T> = [T] extends [never]
     ? { error: ResponseError }
@@ -25,12 +25,12 @@ export interface ResponseError {
     message: string
 }
 
-export type UserResponse = DecimalToNumber<{
+export type UserResponse = ToJSON<{
     user: User
     group: Group
 }>
 
-export type GroupResponse = DecimalToNumber<{
+export type GroupResponse = ToJSON<{
     group: Group
     members: User[]
 }>
@@ -39,15 +39,15 @@ export interface LoginResponse extends UserResponse, JWT {
     token_type: string
 }
 
-export type ItemsResponse = DecimalToNumber<{
+export type ItemsResponse = ToJSON<{
     items: Item[]
 }>
 
-export type ItemResponse = DecimalToNumber<{
+export type ItemResponse = ToJSON<{
     item: Item
 }>
 
-export type TransactionResponse = DecimalToNumber<{
+export type TransactionResponse = ToJSON<{
     transaction: AnyTransaction
 }>
 
@@ -61,7 +61,7 @@ export interface PaginatedResponse {
 }
 
 export type TransactionsResponse = PaginatedResponse &
-    DecimalToNumber<{
+    ToJSON<{
         transactions: Transaction<TransactionType>[]
     }>
 

@@ -4,7 +4,7 @@ import { ItemResponse, ResponseBody } from '../../responses'
 import { updateItem, Price, ItemPatch } from '../../services/itemService'
 import { JsonPrice } from './postPurchase'
 import { Decimal } from '@prisma/client/runtime/client'
-import { convertDecimalToNumber } from '../../util/decimalToNumber'
+import { convertToJson } from '../../util/convertToJson'
 
 export interface PatchItemBody {
     icon?: string
@@ -25,7 +25,7 @@ export default async function patchItem(req: Request, res: Response) {
     const newItem = await updateItem(itemId, userId, patch)
 
     const body: ResponseBody<ItemResponse> = {
-        data: { item: convertDecimalToNumber(newItem) },
+        data: { item: convertToJson(newItem) },
     }
     res.json(body)
 }

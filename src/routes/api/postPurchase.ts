@@ -4,7 +4,7 @@ import { getGroupId, getUserId } from '../../middleware/validateToken'
 import { sendError, unexpectedError } from '../../errors'
 import { createPurchase } from '../../services/transactionService'
 import { getUser } from '../../services/userService'
-import { convertDecimalToNumber } from '../../util/decimalToNumber'
+import { convertToJson } from '../../util/convertToJson'
 
 export interface JsonPrice {
     price: number
@@ -49,7 +49,7 @@ export default async function postPurchase(req: Request, res: Response) {
     const balance = user.balance
     const body: ResponseBody<CreatedTransactionResponse> = {
         data: {
-            transaction: convertDecimalToNumber(purchase),
+            transaction: convertToJson(purchase),
             balance: balance.toNumber(),
         },
     }

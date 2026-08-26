@@ -5,7 +5,7 @@
     "main": "bundle/server.js",
     "type": "module",
     "scripts": {
-        "postinstall": "copy-env-cli && prisma generate",
+        "postinstall": "(copy-env-cli || true) && (prisma generate || true)",
         "build": "rimraf bundle && rolldown -c",
         "start": "node .",
         "dev": "docker compose up -d && nodemon src/server.ts",

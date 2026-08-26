@@ -68,11 +68,7 @@ database.
 
 ### Setup the database
 
-To create the tables in the database you must run this command:
-
-```console
-pnpm prisma db push
-```
+The database is automatically initialized when the server starts.
 
 The development database is not saved between restarts, you may want to add
 development data with the seed:

@@ -13,7 +13,7 @@ import {
     getGammaGroup,
     type GroupMember,
 } from '@/services/gammaService.js'
-import type { DecimalToNumber } from '@/util/decimalToNumber.js'
+import type { ToJSON } from '@/util/convertToJson.js'
 
 export default async function getGroup(
     _req: Request,
@@ -37,7 +37,7 @@ export default async function getGroup(
 
         // Get members
         const offlineGroupUsers = await getOfflineUsersInGroup(groupId)
-        let members: DecimalToNumber<GroupMember[]>
+        let members: ToJSON<GroupMember[]>
         try {
             members = await Promise.all(
                 offlineGroupUsers.map(async offlineGroupUser => {
@@ -54,7 +54,7 @@ export default async function getGroup(
                         ...user,
                         balance: offlineGroupUser.balance.toNumber(),
                         externalId: offlineGroupUser.externalId,
-                    } satisfies DecimalToNumber<GroupMember>
+                    } satisfies ToJSON<GroupMember>
                 })
             )
         } catch (e) {

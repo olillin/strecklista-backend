@@ -11,11 +11,11 @@ import type {
     Transaction,
     TransactionType,
 } from '@/services/transactionService.js'
-import type { DecimalToNumber } from '@/util/decimalToNumber.js'
 import type {
     GroupClient,
     GroupClientWithSecret,
-} from './services/clientService.js'
+} from '@/services/clientService.js'
+import type { ToJSON } from '@/util/convertToJson.js'
 
 export type ResponseBody<T> = [T] extends [never]
     ? { error: ResponseError }
@@ -26,29 +26,29 @@ export interface ResponseError {
     message: string
 }
 
-export type GroupUserResponse = DecimalToNumber<{
+export type GroupUserResponse = ToJSON<{
     user: User
     group: Group
     balance: number
     externalId?: number
 }>
 
-export type GroupResponse = DecimalToNumber<{
+export type GroupResponse = ToJSON<{
     group: Group
     members: GroupMember[]
 }>
 
 export type LoginResponse = JwtWithToken & GroupUserResponse
 
-export type ItemsResponse = DecimalToNumber<{
+export type ItemsResponse = ToJSON<{
     items: Item[]
 }>
 
-export type ItemResponse = DecimalToNumber<{
+export type ItemResponse = ToJSON<{
     item: Item
 }>
 
-export type TransactionResponse = DecimalToNumber<{
+export type TransactionResponse = ToJSON<{
     transaction: AnyTransaction
 }>
 
@@ -62,7 +62,7 @@ export interface PaginatedResponse {
 }
 
 export type TransactionsResponse = PaginatedResponse &
-    DecimalToNumber<{
+    ToJSON<{
         transactions: Transaction<TransactionType>[]
     }>
 

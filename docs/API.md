@@ -159,7 +159,7 @@ UUID of a group in gamma.
 ```javascript
 {
   "id": int, // Numeric auto-incrementing item id
-  "addedTime": int, // Timestamp where this item was created in ms
+  "createdTime": int, // Timestamp where this item was created in ms
   "icon": string?, // URL to the item icon
   "displayName": string,
   "prices": Price[],

@@ -1,6 +1,4 @@
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma } from '../src/lib/prisma'
 
 console.log('Adding example data')
 
@@ -33,7 +31,7 @@ async function main() {
                     {
                         displayName: 'Fanta',
                         prices: {
-                            create: [{ displayName: 'P.R.I.T.', price: 7 }],
+                            create: [{ displayName: 'Internt', price: 7 }],
                         },
                     },
                     {
@@ -42,9 +40,9 @@ async function main() {
                             'https://product-cdn.systembolaget.se/productimages/507795/507795_400.png',
                         prices: {
                             create: [
-                                { displayName: 'P.R.I.T.', price: 10 },
+                                { displayName: 'Internt', price: 10 },
                                 { displayName: 'Pateter', price: 12 },
-                                { displayName: 'Extern', price: 15 },
+                                { displayName: 'Externt', price: 15 },
                             ],
                         },
                     },
@@ -90,7 +88,7 @@ async function main() {
                                 itemId: fanta!.id,
                                 displayName: 'Fanta Orange',
                                 purchasePrice: 7,
-                                purchasePriceName: 'P.R.I.T.',
+                                purchasePriceName: 'Internt',
                                 quantity: 2,
                             },
                         ],
@@ -114,14 +112,14 @@ async function main() {
                                 itemId: cocaCola!.id,
                                 displayName: 'Coca-Cola',
                                 purchasePrice: 10,
-                                purchasePriceName: 'P.R.I.T.',
+                                purchasePriceName: 'Internt',
                                 quantity: 3,
                             },
                             {
                                 itemId: fanta!.id,
                                 displayName: 'Fanta Orange',
                                 purchasePrice: 7,
-                                purchasePriceName: 'P.R.I.T.',
+                                purchasePriceName: 'Internt',
                                 quantity: 1,
                             },
                         ],
@@ -218,7 +216,7 @@ async function main() {
                                 itemId: fredagDrink!.id,
                                 displayName: "Fredag's läskiga dryck",
                                 purchasePrice: 16,
-                                purchasePriceName: 'De som vågar',
+                                purchasePriceName: 'Internt',
                                 quantity: 1,
                             },
                         ],
@@ -276,7 +274,7 @@ async function main() {
                             itemId: fredagDrink!.id,
                             displayName: "Fredag's läskiga dryck",
                             purchasePrice: 16,
-                            purchasePriceName: 'De som vågar',
+                            purchasePriceName: 'Internt',
                             quantity: 2,
                         },
                     },

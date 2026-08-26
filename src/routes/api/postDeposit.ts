@@ -6,7 +6,7 @@ import {
 } from '@/middleware/validateToken.js'
 import { ApiError, sendError, unexpectedError } from '@/errors.js'
 import { createDeposit } from '@/services/transactionService.js'
-import { convertDecimalToNumber } from '@/util/decimalToNumber.js'
+import { convertToJson } from '@/util/convertToJson.js'
 import { getOfflineGroupUser } from '@/services/userService.js'
 
 export interface PostDepositBody {
@@ -44,7 +44,7 @@ export default async function postDeposit(req: Request, res: Response) {
     }
     const body: ResponseBody<CreatedTransactionResponse> = {
         data: {
-            transaction: convertDecimalToNumber(deposit),
+            transaction: convertToJson(deposit),
             balance: groupUser.balance.toNumber(),
         },
     }

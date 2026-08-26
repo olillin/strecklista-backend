@@ -7,7 +7,7 @@ import {
     type Item,
 } from '@/services/itemService.js'
 import type { ItemSortMode } from '@/middleware/validators.js'
-import { convertDecimalToNumber } from '@/util/decimalToNumber.js'
+import { convertToJson } from '@/util/convertToJson.js'
 import { ApiError, sendError } from '@/errors.js'
 
 type ItemCompareFunction = (a: Item, b: Item) => number
@@ -57,7 +57,7 @@ export default async function getItems(req: Request, res: Response) {
     }
 
     const body: ResponseBody<ItemsResponse> = {
-        data: { items: convertDecimalToNumber(items) },
+        data: { items: convertToJson(items) },
     }
     res.json(body)
 }

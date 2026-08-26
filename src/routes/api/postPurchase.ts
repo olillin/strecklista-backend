@@ -10,7 +10,7 @@ import {
     findUserByExternalId,
     getOfflineGroupUser,
 } from '@/services/userService.js'
-import { convertDecimalToNumber } from '@/util/decimalToNumber.js'
+import { convertToJson } from '@/util/convertToJson.js'
 
 export interface JsonPrice {
     price: number
@@ -87,7 +87,7 @@ export default async function postPurchase(req: Request, res: Response) {
     }
     const body: ResponseBody<CreatedTransactionResponse> = {
         data: {
-            transaction: convertDecimalToNumber(purchase),
+            transaction: convertToJson(purchase),
             balance: groupUser.balance.toNumber(),
         },
     }

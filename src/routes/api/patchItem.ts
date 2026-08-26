@@ -8,8 +8,8 @@ import {
 } from '@/services/itemService.js'
 import type { JsonPrice } from '@/routes/api/postPurchase.js'
 import { Decimal } from '@prisma/client/runtime/client'
-import { convertDecimalToNumber } from '@/util/decimalToNumber.js'
 import { ApiError, sendError } from '@/errors.js'
+import { convertToJson } from '@/util/convertToJson.js'
 
 export interface PatchItemBody {
     icon?: string
@@ -37,7 +37,7 @@ export default async function patchItem(req: Request, res: Response) {
     const newItem = await updateItem(groupId, itemId, patch, userId)
 
     const body: ResponseBody<ItemResponse> = {
-        data: { item: convertDecimalToNumber(newItem) },
+        data: { item: convertToJson(newItem) },
     }
     res.json(body)
 }

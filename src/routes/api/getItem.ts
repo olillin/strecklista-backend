@@ -3,7 +3,7 @@ import { getUserId } from '@/middleware/validateToken.js'
 import { ApiError, sendError } from '@/errors.js'
 import type { ItemResponse, ResponseBody } from '@/responses.js'
 import * as itemService from '@/services/itemService.js'
-import { convertDecimalToNumber } from '@/util/decimalToNumber.js'
+import { convertToJson } from '@/util/convertToJson.js'
 
 export default async function getItem(req: Request, res: Response) {
     if (typeof req.params.id !== 'string') {
@@ -20,7 +20,7 @@ export default async function getItem(req: Request, res: Response) {
     }
 
     const body: ResponseBody<ItemResponse> = {
-        data: { item: convertDecimalToNumber(item) },
+        data: { item: convertToJson(item) },
     }
     res.json(body)
 }

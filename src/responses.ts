@@ -16,6 +16,7 @@ import type {
     GroupClientWithSecret,
 } from '@/services/clientService.js'
 import type { ToJSON } from '@/util/convertToJson.js'
+import type { Scope } from 'gammait'
 
 export type ResponseBody<T> = [T] extends [never]
     ? { error: ResponseError }
@@ -24,6 +25,11 @@ export type ResponseBody<T> = [T] extends [never]
 export interface ResponseError {
     code: number
     message: string
+}
+
+export type ServiceMetaResponse = {
+    version: string
+    supportedScopes: Scope[] | readonly Scope[]
 }
 
 export type GroupUserResponse = ToJSON<{

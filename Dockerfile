@@ -7,13 +7,12 @@ FROM node:24-alpine AS base
 # Set working directory for all build stages.
 WORKDIR /usr/src/app
 
-# Install pnpm
-RUN yarn global add pnpm
-
-
 ################################################################################
 # Create a stage for installing production dependecies.
 FROM base AS deps
+
+# Install pnpm
+RUN yarn global add pnpm
 
 # Download dependencies as a separate step to take advantage of Docker's caching.
 # Leverage a cache mount to /root/.npm to speed up subsequent builds.
@@ -29,6 +28,8 @@ RUN --mount=type=bind,source=package.json,target=package.json \
 # Create a stage for building the application.
 FROM deps AS build
 
+ARG VERSION
+
 # Install dev dependencies for build
 RUN --mount=type=bind,source=package.json,target=package.json \
     --mount=type=bind,source=pnpm-lock.yaml,target=pnpm-lock.yaml \
@@ -41,6 +42,8 @@ COPY . .
 
 # Generate the Prisma client
 RUN pnpm exec prisma generate
+
+ENV CURRENT_VERSION=${VERSION}
 
 # Run the build script.
 RUN pnpm build
@@ -57,13 +60,6 @@ ENV NODE_ENV=production
 RUN chown -R node:node /usr/src/app
 USER node
 
-# Copy package.json so that package manager commands can be used.
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .
-
-# Install Prisma
-RUN --mount=type=cache,target=/pnpm/store \
-    pnpm add prisma
-
 # Copy the production dependencies from the deps stage and also
 # the built application from the build stage into the image.
 COPY --from=build /usr/src/app/bundle ./bundle
@@ -74,4 +70,4 @@ COPY --from=build /usr/src/app/prisma.config.ts ./prisma.config.ts
 EXPOSE 8080
 
 # Run the application.
-CMD ["/bin/sh", "-c", "pnpm exec prisma migrate deploy && pnpm start"]
+CMD ["/bin/sh", "-c", "npx prisma@7.10.0 migrate deploy && node bundle/server.js"]

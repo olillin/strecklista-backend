@@ -632,3 +632,5 @@ export const deleteGroupClient = () => [
         .bail()
         .custom(checkClientExistsInGroup),
 ]
+
+export const getMeta = () => []

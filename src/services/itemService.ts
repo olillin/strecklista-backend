@@ -386,7 +386,6 @@ export async function updateItem(
                         createMany: {
                             data: prices.map(price => ({
                                 ...price,
-                                groupId,
                                 externalId: price.externalId ?? null,
                             })),
                         },

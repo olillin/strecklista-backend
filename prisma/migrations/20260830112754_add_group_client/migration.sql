@@ -39,6 +39,7 @@ FOR EACH ROW EXECUTE FUNCTION check_unique_external_id_per_group();
 
 -- AlterTable
 ALTER TABLE "Transaction" RENAME COLUMN "createdById" TO "createdByUserId";
+ALTER TABLE "Transaction" ALTER COLUMN "createdByUserId" DROP NOT NULL;
 ALTER TABLE "Transaction" ADD COLUMN "createdByClientId" VARCHAR(26);
 
 -- CreateTable

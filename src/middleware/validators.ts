@@ -369,7 +369,8 @@ export const postPurchase = () => [
         .custom(checkUserExistsInGroup),
     body('externalUserId')
         .if(body('externalUserId').exists())
-        .isInt()
+        .isString()
+        .isLength({ max: 100 })
         .withMessage(ApiError.InvalidExternalId)
         .bail()
         .custom(checkExternalUserExistsInGroup),

@@ -20,6 +20,8 @@
    2.10 [Deposit](#deposit)  
    2.11 [StockUpdate](#stockupdate)  
    2.12 [ItemStockUpdate](#itemstockupdate)
+   2.13 [GroupClient](#groupclient)
+   2.14 [ServiceMeta](#servicemeta)
 
 3. [Authorization](#authorization)  
    3.1 [Authorization Flow](#authorization-flow)  
@@ -48,6 +50,7 @@
    4.19 [POST /group/client](#post-group-client)  
    4.20 [GET /group/client/client/\<id\>](#get-group-clientid)  
    4.21 [DELETE /group/client/client/\<id\>](#delete-group-clientid)
+   4.22 [GET /meta](#get-meta)
 
 ## General
 
@@ -286,6 +289,15 @@ extends [Transaction](#transaction)
   "owner": User,
   "displayName": string,
   "description": string?
+}
+```
+
+### ServiceMeta
+
+```javascript
+{
+  "version": string, // Semantic version as v*.*.* or other named version
+  "supportedScopes": string[] // List of available group client scopes
 }
 ```
 
@@ -1345,3 +1357,31 @@ Delete a group client.
 | Code | Error                 |
 | ---- | --------------------- |
 | 404  | Client does not exist |
+
+### GET /meta
+
+Get metadata about the running service.
+
+#### Response
+
+Metadata about the service as [ServiceMeta](#servicemeta).
+
+##### Example
+
+```javascript
+{
+  "data": {
+    "version": "v",
+    "supportedScopes": [
+      "transactions.read",
+      "transactions.create",
+      "transactions.update",
+      "items.read",
+      "items.create",
+      "items.update",
+      "items.delete",
+      "group.read"
+    ]
+  }
+}
+```

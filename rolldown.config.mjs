@@ -1,9 +1,11 @@
-export default {
+import { defineConfig } from 'rolldown'
+
+export default defineConfig({
+    platform: 'node',
     input: 'src/server.ts',
     output: {
         dir: 'bundle',
-        platform: 'node',
-        format: 'es',
+        format: 'esm',
         transform: {
             typescript: {
                 onlyRemoveTypeImports: true,
@@ -12,4 +14,4 @@ export default {
         comments: false,
     },
     tsconfig: true,
-}
+})

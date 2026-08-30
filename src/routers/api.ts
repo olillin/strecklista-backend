@@ -72,7 +72,6 @@ async function createApiRouter(): Promise<Router> {
         ['post', '/group/client', 'postGroupClient'],
         // ['post', '/group/client/:id', 'updateClient'],
         ['delete', '/group/client/:id', 'deleteGroupClient'],
-        ['get', '/meta', 'getMeta'],
     ]
 
     for (const [method, path, name, scope] of routes) {

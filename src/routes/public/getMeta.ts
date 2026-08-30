@@ -1,5 +1,4 @@
-// TODO: Add to API docs
-
+import type { Request, Response } from 'express'
 import { supportedScopes } from '@/services/clientService.js'
 import type { ResponseBody, ServiceMetaResponse } from '@/responses.js'
 import env from '@/config/env.js'

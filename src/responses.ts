@@ -12,11 +12,11 @@ import type {
     TransactionType,
 } from '@/services/transactionService.js'
 import type {
+    Scope,
     GroupClient,
     GroupClientWithSecret,
 } from '@/services/clientService.js'
 import type { ToJSON } from '@/util/convertToJson.js'
-import type { Scope } from 'gammait'
 
 export type ResponseBody<T> = [T] extends [never]
     ? { error: ResponseError }

@@ -10,6 +10,7 @@ import createApiRouter from '@/routers/api.js'
 import appendHeader from '@/middleware/setHeader.js'
 import cors, { type CorsOptions } from 'cors'
 import createOAuth2Router from '@/routers/oauth2.js'
+import createPublicRouter from './routers/public.js'
 
 const exposeCors =
     env.EXPOSE_CORS.toLowerCase() === 'true' || env.EXPOSE_CORS === '1'
@@ -52,8 +53,11 @@ async function main() {
     const oauth2Router = createOAuth2Router()
     app.use('/oauth2', oauth2Router)
 
-    const api = await createApiRouter()
-    app.use('/', api)
+    const publicRouter = await createPublicRouter()
+    app.use('/', publicRouter)
+
+    const apiRouter = await createApiRouter()
+    app.use('/', apiRouter)
 
     app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
         console.error(err)

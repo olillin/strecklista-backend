@@ -36,7 +36,7 @@ export type GroupUserResponse = ToJSON<{
     user: User
     group: Group
     balance: number
-    externalId?: number
+    externalId?: string
 }>
 
 export type GroupResponse = ToJSON<{

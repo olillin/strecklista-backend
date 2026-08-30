@@ -17,7 +17,6 @@ model Group {
 
   users        GroupUser[]
   items        Item[]
-  prices       Price[]
   transactions Transaction[]
 
   apiClients    ApiClient[]
@@ -44,7 +43,7 @@ model GroupUser {
   userId  Int
   user    User @relation(fields: [userId], references: [id])
 
-  externalId Int?
+  externalId String? @db.VarChar(100)
 
   @@id([groupId, userId])
   @@unique([groupId, externalId])
@@ -72,16 +71,12 @@ model Price {
   itemId Int
   item   Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
-  groupId Int
-  group   Group @relation(fields: [groupId], references: [id])
-
   displayName String  @db.VarChar(30)
   price       Decimal @db.Decimal(7, 2)
 
-  externalId Int?
+  externalId String? @db.VarChar(100)
 
   @@id([itemId, displayName])
-  @@unique([groupId, externalId])
 }
 
 enum TransactionType {

@@ -26,7 +26,7 @@ export interface ItemWithFavorite extends Item {
 export interface Price {
     price: Decimal
     displayName: string
-    externalId?: number
+    externalId?: string
 }
 
 export interface ItemFlags {
@@ -60,7 +60,6 @@ export async function createItem(
                     createMany: {
                         data: prices.map(price => ({
                             ...price,
-                            groupId,
                             externalId: price.externalId ?? null,
                         })),
                     },
@@ -207,7 +206,7 @@ interface SelectedItemData {
     prices: {
         displayName: string
         price: Decimal
-        externalId: number | null
+        externalId: string | null
     }[]
     purchasedItems: {
         quantity: number
@@ -488,7 +487,7 @@ export async function isItemVisible(itemId: number): Promise<boolean> {
 }
 
 export async function externalItemExistsInGroup(
-    externalItemId: number,
+    externalItemId: string,
     groupId: number
 ): Promise<boolean> {
     return prisma.item
@@ -506,7 +505,7 @@ export async function externalItemExistsInGroup(
 }
 
 export async function isExternalItemVisible(
-    externalItemId: number,
+    externalItemId: string,
     groupId: number
 ): Promise<boolean> {
     const item = await prisma.item.findFirst({
@@ -545,16 +544,11 @@ export async function deleteItem(
 }
 
 // Prices
-export async function addPrice(
-    groupId: number,
-    itemId: number,
-    price: Price
-): Promise<Price> {
+export async function addPrice(itemId: number, price: Price): Promise<Price> {
     return prisma.price
         .create({
             data: {
                 itemId: itemId,
-                groupId: groupId,
                 price: price.price,
                 displayName: price.displayName,
                 externalId: price.externalId ?? null,
@@ -619,7 +613,7 @@ export async function hasFavorite(
 }
 
 export async function getItemByExternal(
-    externalItemId: number,
+    externalItemId: string,
     groupId: number,
     userId?: number | null
 ): Promise<Item | null> {
@@ -647,7 +641,9 @@ export async function getExternalCreatePurchasedItem(
     const price = await prisma.price.findFirst({
         where: {
             externalId: item.externalId,
-            groupId: groupId,
+            item: {
+                groupId: groupId,
+            },
         },
         include: {
             item: true,

@@ -139,7 +139,7 @@ UUID of a group in gamma.
   "user": User,
   "group": Group,
   "balance": decimal,
-  "externalId": int?,
+  "externalId": string?,
 }
 ```
 
@@ -179,7 +179,7 @@ UUID of a group in gamma.
 {
   "price": decimal, // Price in SEK
   "displayName": string,
-  "externalId": int?, // External ID which can be used to purchase the item with this price
+  "externalId": string?, // External ID which can be used to purchase the item with this price
 }
 ```
 
@@ -569,7 +569,7 @@ Data about the user and their group as [GroupUser](#groupuser).
       "prettyName": "P.R.I.T. 25"
     },
     "balance": 0,
-    "externalId": 978020137962
+    "externalId": "978020137962"
   }
 }
 ```
@@ -602,7 +602,7 @@ Data about the user and their group as [GroupUser](#groupuser).
       "prettyName": "P.R.I.T. 25"
     },
     "balance": 0,
-    "externalId": 978020137962
+    "externalId": "978020137962"
   }
 }
 ```
@@ -791,11 +791,11 @@ Add a new purchase to a user. The creator of the purchase is taken from the acce
 
 ##### With external IDs
 
-| Name           | Required | Type                                     | Description                                        |
-| -------------- | -------- | ---------------------------------------- | -------------------------------------------------- |
-| externalUserId | Y        | Numeric external user id                 | The external ID of the user to add the purchase to |
-| items          | Y        | `{ “externalId”: int, “quantity”: int }` | The items to purchase                              |
-| comment        | N        | string                                   | An optional comment                                |
+| Name           | Required | Type                                        | Description                                        |
+| -------------- | -------- | ------------------------------------------- | -------------------------------------------------- |
+| externalUserId | Y        | Numeric external user id                    | The external ID of the user to add the purchase to |
+| items          | Y        | `{ “externalId”: string, “quantity”: int }` | The items to purchase                              |
+| comment        | N        | string                                      | An optional comment                                |
 
 #### Response
 
@@ -1143,7 +1143,7 @@ Get info about an item by its external ID.
         {
           "displayName": "Internt",
           "price": 7.0,
-          "externalId": 978020137962
+          "externalId": "978020137962"
         },
         {
           "displayName": "Pateter",

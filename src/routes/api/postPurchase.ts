@@ -15,7 +15,7 @@ import { convertToJson } from '@/util/convertToJson.js'
 export interface JsonPrice {
     price: number
     displayName: string
-    externalId?: number
+    externalId?: string
 }
 
 export interface PurchaseItem {
@@ -25,7 +25,7 @@ export interface PurchaseItem {
 }
 
 export interface PurchaseExternalItem {
-    externalId: number
+    externalId: string
     quantity: number
 }
 
@@ -42,7 +42,7 @@ export type PostPurchaseBody = (
       }
     | {
           userId: undefined
-          externalUserId: number
+          externalUserId: string
       }
 ) & {
     items: PurchaseItem[] | PurchaseExternalItem[]

@@ -91,7 +91,10 @@ const errorDefinitions: { [key in ApiError]: ErrorDefinition } = {
     [ApiError.InvalidUrl]: err(400, 'URL is invalid'),
     [ApiError.InvalidClientId]: err(400, 'Invalid client ID'),
     [ApiError.ClientNotExist]: err(404, 'Client does not exist'),
-    [ApiError.InvalidExternalId]: err(400, 'Invalid external ID'),
+    [ApiError.InvalidExternalId]: err(
+        400,
+        'Invalid external ID, must be a string which is at most 100 characters long'
+    ),
     [ApiError.ExternalIdNotUnique]: err(403, 'External ID must be unique'),
 
     // Authorization

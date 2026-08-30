@@ -9,7 +9,7 @@ export default async function getItemByExternal(req: Request, res: Response) {
     if (typeof req.params.id !== 'string') {
         throw new Error('Invalid id, expected string but got array')
     }
-    const externalItemId = parseInt(req.params.id)
+    const externalItemId = req.params.id
 
     const groupId = getGroupId(res)
     const userId = getUserId(res)

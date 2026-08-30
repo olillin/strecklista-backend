@@ -70,17 +70,9 @@ export async function checkExternalUserExistsInGroup(
     value: string,
     meta: Meta
 ): Promise<void> {
-    // Get user ID
-    let externalId: number
-    try {
-        externalId = parseInt(value)
-    } catch {
-        throw ApiError.InvalidExternalId
-    }
-
     // Check if user exists
     const groupId = requireGroupId(meta)
-    const exists = await isExternalUserInGroup(externalId, groupId)
+    const exists = await isExternalUserInGroup(value, groupId)
     if (!exists) {
         throw ApiError.UserNotExist
     }
@@ -94,17 +86,9 @@ export async function checkExternalUserUniqueInGroup(
     value: string,
     meta: Meta
 ): Promise<void> {
-    // Get user ID
-    let externalId: number
-    try {
-        externalId = parseInt(value)
-    } catch {
-        throw ApiError.InvalidExternalId
-    }
-
     // Check if user exists
     const groupId = requireGroupId(meta)
-    const exists = await isExternalUserInGroup(externalId, groupId)
+    const exists = await isExternalUserInGroup(value, groupId)
     if (exists) {
         throw ApiError.ExternalIdNotUnique
     }
@@ -131,14 +115,8 @@ export async function checkExternalItemExistsInGroup(
     value: string,
     meta: Meta
 ): Promise<void> {
-    let externalId: number
-    try {
-        externalId = parseInt(value)
-    } catch {
-        throw ApiError.InvalidExternalId
-    }
     const groupId = requireGroupId(meta)
-    const exists = await externalItemExistsInGroup(externalId, groupId)
+    const exists = await externalItemExistsInGroup(value, groupId)
     if (!exists) {
         throw ApiError.ItemNotExist
     }
@@ -148,17 +126,9 @@ export async function checkExternalItemVisible(
     value: string,
     meta: Meta
 ): Promise<void> {
-    // Get id
-    let externalId: number
-    try {
-        externalId = parseInt(value)
-    } catch {
-        throw ApiError.InvalidExternalId
-    }
-
     // Check if visible
     const groupId = requireGroupId(meta)
-    const visible = await isExternalItemVisible(externalId, groupId)
+    const visible = await isExternalItemVisible(value, groupId)
     if (!visible) {
         throw ApiError.PurchaseInvisible
     }
@@ -168,14 +138,8 @@ export async function checkPriceExternalIdUnique(
     value: string,
     meta: Meta
 ): Promise<void> {
-    let externalId: number
-    try {
-        externalId = parseInt(value)
-    } catch {
-        throw ApiError.InvalidExternalId
-    }
     const groupId = requireGroupId(meta)
-    const exists = await externalItemExistsInGroup(externalId, groupId)
+    const exists = await externalItemExistsInGroup(value, groupId)
     if (exists) {
         throw ApiError.ExternalIdNotUnique
     }
@@ -327,7 +291,8 @@ export const putGroupMember = () => [
         .custom(checkUserExistsInGroup),
     body('externalId')
         .optional()
-        .isInt()
+        .isString()
+        .isLength({ max: 100 })
         .withMessage(ApiError.InvalidExternalId)
         .bail()
         .custom(checkExternalUserUniqueInGroup),
@@ -428,7 +393,8 @@ export const postPurchase = () => [
     ]),
     body('items.*.externalId')
         .if(body('items.*.externalId').exists())
-        .isInt()
+        .isString()
+        .isLength({ max: 100 })
         .withMessage(ApiError.InvalidExternalId)
         .bail()
         .custom(checkExternalItemExistsInGroup)
@@ -517,7 +483,8 @@ export const postItem = () => [
     body('prices.*.displayName').exists().isString().bail().trim().notEmpty(),
     body('prices.*.externalId')
         .optional()
-        .isInt()
+        .isString()
+        .isLength({ max: 100 })
         .withMessage(ApiError.InvalidExternalId)
         .custom(checkPriceExternalIdUnique),
     body('icon').optional().isURL(),
@@ -563,7 +530,8 @@ export const patchItem = () => [
     body('prices.*.displayName').isString().trim().notEmpty(),
     body('prices.*.externalId')
         .optional()
-        .isInt()
+        .isString()
+        .isLength({ max: 100 })
         .withMessage(ApiError.InvalidExternalId)
         .custom(checkPriceExternalIdUnique),
     body('visible').optional().isBoolean(),

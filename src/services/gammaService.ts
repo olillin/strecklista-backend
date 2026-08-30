@@ -33,12 +33,12 @@ export interface GroupUser {
     user: User
     group: Group
     balance: Decimal
-    externalId?: number
+    externalId?: string
 }
 
 export interface GroupMember extends User {
     balance: Decimal
-    externalId?: number
+    externalId?: string
 }
 
 export type GammaUser = gamma.User | gamma.UserInfo

@@ -2,24 +2,40 @@
   Warnings:
 
   - A unique constraint covering the columns `[groupId,externalId]` on the table `GroupUser` will be added. If there are existing duplicate values, this will fail.
-  - A unique constraint covering the columns `[groupId,externalId]` on the table `Price` will be added. If there are existing duplicate values, this will fail.
 
 */
 -- DropForeignKey
 ALTER TABLE "Transaction" DROP CONSTRAINT "Transaction_createdById_fkey";
 
 -- AlterTable
-ALTER TABLE "GroupUser" ADD COLUMN     "externalId" INTEGER;
+ALTER TABLE "GroupUser" ADD COLUMN     "externalId" VARCHAR(100);
 
 -- AlterTable
-ALTER TABLE "Price" ADD COLUMN     "externalId" INTEGER,
+ALTER TABLE "Price" ADD COLUMN     "externalId" VARCHAR(100);
 
-ADD COLUMN "groupId" INTEGER;
+-- Create validation function for unique price externalId per group
+CREATE OR REPLACE FUNCTION check_unique_external_id_per_group()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 
+    FROM "Price" p
+    JOIN "Item" i ON p."itemId" = i."id"
+    WHERE i."groupId" = (SELECT "groupId" FROM "Item" WHERE "id" = NEW."itemId")
+      AND p."externalId" = NEW."externalId"
+      AND (p."itemId", p."displayName") IS DISTINCT FROM (NEW."itemId", NEW."displayName")
+  ) THEN
+    RAISE EXCEPTION 'externalId % already exists for this group', NEW."externalId"
+      USING ERRCODE = 'unique_violation';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
-UPDATE "Price" p
-SET "groupId" = i."groupId"
-FROM "Item" i
-WHERE p."itemId" = i."id";
+-- Attach externalId validation trigger to Price table
+CREATE TRIGGER enforce_unique_external_id_per_group
+BEFORE INSERT OR UPDATE ON "Price"
+FOR EACH ROW EXECUTE FUNCTION check_unique_external_id_per_group();
 
 -- AlterTable
 ALTER TABLE "Transaction" RENAME COLUMN "createdById" TO "createdByUserId";
@@ -41,12 +57,6 @@ CREATE TABLE "ApiClient" (
 
 -- CreateIndex
 CREATE UNIQUE INDEX "GroupUser_groupId_externalId_key" ON "GroupUser"("groupId", "externalId");
-
--- CreateIndex
-CREATE UNIQUE INDEX "Price_groupId_externalId_key" ON "Price"("groupId", "externalId");
-
--- AddForeignKey
-ALTER TABLE "Price" ADD CONSTRAINT "Price_groupId_fkey" FOREIGN KEY ("groupId") REFERENCES "Group"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Transaction" ADD CONSTRAINT "Transaction_createdByUserId_fkey" FOREIGN KEY ("createdByUserId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;

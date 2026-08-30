@@ -16,7 +16,7 @@ export default async function getGroupMemberByExternal(
     if (typeof req.params.id !== 'string') {
         throw new Error('Invalid id, expected string but got array')
     }
-    const externalUserId = parseInt(req.params.id)
+    const externalUserId = req.params.id
     const groupId = getGroupId(res)
     const gammaGroupId = getGammaGroupId(res)
     if (groupId == null || gammaGroupId == null) {

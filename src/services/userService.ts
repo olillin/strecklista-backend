@@ -23,7 +23,7 @@ export interface OfflineGroupUser {
     user: OfflineUser
     group: OfflineGroup
     balance: Decimal
-    externalId?: number
+    externalId?: string
 }
 
 // Groups
@@ -114,7 +114,7 @@ export async function softAddGroupUser(
         }
     }
 
-    return prisma.$transaction<OfflineGroupUser>(async tx => {
+    return await prisma.$transaction<OfflineGroupUser>(async tx => {
         for (let i = 0; i <= maxRetries; i++) {
             try {
                 const groupUser = await tx.groupUser.findFirst({
@@ -153,7 +153,7 @@ export async function softAddGroupUser(
 interface GroupAndUserData {
     user: GroupUserData
     group: OfflineGroup
-    externalId: number | null
+    externalId: string | null
 }
 
 async function _getUserInGroup(
@@ -436,7 +436,7 @@ export async function isUserInGroup(
 }
 
 export async function isExternalUserInGroup(
-    externalUserId: number,
+    externalUserId: string,
     groupId: number
 ): Promise<boolean> {
     return prisma.groupUser
@@ -456,7 +456,7 @@ export async function isExternalUserInGroup(
  * @return The normal user ID, or null if there is no user with the external ID in the group.
  */
 export async function findUserByExternalId(
-    externalUserId: number,
+    externalUserId: string,
     groupId: number
 ): Promise<number | null> {
     return prisma.groupUser

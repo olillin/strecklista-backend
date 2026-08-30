@@ -187,9 +187,9 @@ export function tokenRoute(): RequestHandler {
 
         const grantType = req.body['grant_type'] as GrantType
         if (grantType === 'authorization_code') {
-            authorizationCodeFlow(req, res)
+            await authorizationCodeFlow(req, res)
         } else if (grantType === 'client_credentials') {
-            clientCredentialsFlow(req, res)
+            await clientCredentialsFlow(req, res)
         }
     }
 }
@@ -267,7 +267,7 @@ async function authorizationCodeFlow(req: Request, res: Response) {
         group
     )
 
-    signUserJwt({
+    await signUserJwt({
         user: {
             id: groupUser.user.id,
             gammaId: groupUser.user.gammaId,

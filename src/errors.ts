@@ -1,6 +1,7 @@
-import { Location } from 'express-validator'
-import { ResponseBody } from './responses'
-import { Response } from 'express'
+import type { Location } from 'express-validator'
+import type { ResponseBody } from '@/responses.js'
+import type { Response } from 'express'
+import { acceptedGrantTypes } from '@/routes/oauth2/token.js'
 
 export interface ErrorDefinition {
     code: number
@@ -17,19 +18,29 @@ export enum ApiError {
     InvalidTransactionId,
     TransactionNotExist,
     InvalidUrl,
+    InvalidClientId,
+    ClientNotExist,
+    InvalidExternalId,
+    ExternalIdNotUnique,
 
     // Authorization
     Unauthorized,
+    Forbidden,
+    InsufficientScope,
+    UnsupportedGrantType,
     ExpiredToken,
     InvalidToken,
     BeforeNbf,
     NoPermission,
+    InvalidCredentials,
+    InvalidAuthorizationHeader,
 
     // Gamma
     GammaToken,
     InvalidGammaResponse,
     UnreachableGamma,
-    FailedGetGroups,
+    FailedGetUser,
+    FailedGetGroup,
 
     // Login
     NoAuthorizationCode,
@@ -61,6 +72,9 @@ export enum ApiError {
 
     // List items
     UnknownSortMode,
+
+    // Create client
+    NoScope,
 }
 
 function err(code: number, message: string): ErrorDefinition {
@@ -75,13 +89,31 @@ const errorDefinitions: { [key in ApiError]: ErrorDefinition } = {
     [ApiError.InvalidTransactionId]: err(400, 'Invalid transaction ID'),
     [ApiError.TransactionNotExist]: err(404, 'Transaction does not exist'),
     [ApiError.InvalidUrl]: err(400, 'URL is invalid'),
+    [ApiError.InvalidClientId]: err(400, 'Invalid client ID'),
+    [ApiError.ClientNotExist]: err(404, 'Client does not exist'),
+    [ApiError.InvalidExternalId]: err(
+        400,
+        'Invalid external ID, must be a string which is at most 100 characters long'
+    ),
+    [ApiError.ExternalIdNotUnique]: err(403, 'External ID must be unique'),
 
     // Authorization
     [ApiError.Unauthorized]: err(401, 'Unauthorized'),
+    [ApiError.Forbidden]: err(403, 'Forbidden'),
+    [ApiError.InsufficientScope]: err(401, 'Insufficient scope'),
+    [ApiError.UnsupportedGrantType]: err(
+        403,
+        `Unsupported grant_type, expected ${acceptedGrantTypes.join(', ')}`
+    ),
     [ApiError.ExpiredToken]: err(401, 'Token is expired'),
     [ApiError.InvalidToken]: err(401, 'Token is invalid, generate a new one'),
     [ApiError.BeforeNbf]: err(401, 'Token cannot be used yet'),
     [ApiError.NoPermission]: err(403, 'No permission to access this service'),
+    [ApiError.InvalidCredentials]: err(401, `Invalid credentials`),
+    [ApiError.InvalidAuthorizationHeader]: err(
+        400,
+        `Invalid authorization header`
+    ),
 
     // Gamma
     [ApiError.GammaToken]: err(
@@ -93,7 +125,8 @@ const errorDefinitions: { [key in ApiError]: ErrorDefinition } = {
         'Received an invalid response from Gamma'
     ),
     [ApiError.UnreachableGamma]: err(504, 'Unable to reach Gamma'),
-    [ApiError.FailedGetGroups]: err(502, 'Failed to get groups for user'),
+    [ApiError.FailedGetUser]: err(502, 'Failed to get user from Gamma'),
+    [ApiError.FailedGetGroup]: err(502, 'Failed to get group from Gamma'),
 
     // Login
     [ApiError.NoAuthorizationCode]: err(401, 'No authorization code provided'),
@@ -141,11 +174,14 @@ const errorDefinitions: { [key in ApiError]: ErrorDefinition } = {
     [ApiError.InvalidOffset]: err(400, 'Offset must be a positive integer'),
 
     // Create/modify Item
-    [ApiError.DisplayNameNotUnique]: err(403, 'Display name is not unique'),
+    [ApiError.DisplayNameNotUnique]: err(403, 'Display name must be unique'),
     [ApiError.MissingPrices]: err(400, 'An item must have at least one price'),
 
     // List items
     [ApiError.UnknownSortMode]: err(400, 'Unknown sort order'),
+
+    // Create client
+    [ApiError.NoScope]: err(400, 'Client must have at least one scope'),
 }
 
 export function getErrorDefinition(error: ApiError): ErrorDefinition {
@@ -174,6 +210,12 @@ export function invalidPropertyError(
     location: Location
 ): ErrorDefinition {
     return err(400, `Property '${name}' is invalid in ${location}`)
+}
+
+export function unsupportedScopeError(
+    unsupportedScope: string
+): ErrorDefinition {
+    return err(400, `Unsupported client scope: ${unsupportedScope}`)
 }
 
 export function unexpectedError(details: string) {

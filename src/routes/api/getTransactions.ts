@@ -1,7 +1,9 @@
-import { Request, Response } from 'express'
-import { getGroupId } from '../../middleware/validateToken'
-import { ResponseBody, TransactionsResponse } from '../../responses'
-import * as transactionService from '../../services/transactionService'
+import type { Request, Response } from 'express'
+import { getGroupId } from '@/middleware/validateToken.js'
+import type { ResponseBody, TransactionsResponse } from '@/responses.js'
+import * as transactionService from '@/services/transactionService.js'
+import { ApiError, sendError } from '@/errors.js'
+import { isClientId } from '@/services/clientService.js'
 
 export default async function getTransactions(req: Request, res: Response) {
     const limit = parseInt(req.query.limit as string)
@@ -9,11 +11,29 @@ export default async function getTransactions(req: Request, res: Response) {
     const createdFor = req.query.createdFor
         ? parseInt(req.query.createdFor as string)
         : undefined
-    const createdBy = req.query.createdBy
-        ? parseInt(req.query.createdBy as string)
+    const createdById = req.query.createdBy
+        ? (req.query.createdBy as string)
         : undefined
 
-    const groupId: number = getGroupId(res)
+    let createdBy: transactionService.TransactionCreator | undefined = undefined
+    if (createdById != undefined) {
+        if (isClientId(createdById)) {
+            createdBy = {
+                clientId: createdById,
+            }
+        } else {
+            createdBy = {
+                userId: parseInt(createdById),
+            }
+        }
+    }
+
+    const groupId = getGroupId(res)
+    if (groupId == null) {
+        sendError(res, ApiError.Unauthorized)
+        return
+    }
+
     const options: transactionService.GetTransactionsOptions = {
         createdFor,
         createdBy,

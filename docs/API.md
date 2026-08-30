@@ -20,26 +20,37 @@
    2.10 [Deposit](#deposit)  
    2.11 [StockUpdate](#stockupdate)  
    2.12 [ItemStockUpdate](#itemstockupdate)
+   2.13 [GroupClient](#groupclient)
+   2.14 [ServiceMeta](#servicemeta)
 
 3. [Authorization](#authorization)  
    3.1 [Authorization Flow](#authorization-flow)  
-   3.2 [GET /authorize](#get-authorize)  
-   3.3 [POST /login](#post-login)
+   3.2 [GET /oauth2/authorize](#get-oauth2-authorize)  
+   3.3 [POST /oauth2/token](#post-oauth2-token)
 
 4. [API Endpoints](#api-endpoints)  
    4.1 [GET /user](#get-user)  
    4.2 [GET /group](#get-group)  
-   4.3 [GET /group/transaction](#get-grouptransaction)  
-   4.4 [GET /group/transaction-id](#get-grouptransactionid)  
-   4.5 [PATCH /group/transaction-id](#patch-grouptransactionid)  
-   4.6 [POST /group/purchase](#post-grouppurchase)  
-   4.7 [POST /group/deposit](#post-groupdeposit)  
-   4.8 [POST /group/stock](#post-groupstock)  
-   4.9 [GET /group/item](#get-groupitem)  
-   4.10 [POST /group/item](#post-groupitem)  
-   4.11 [GET /group/item-id](#get-groupitemid)  
-   4.12 [PATCH /group/item-id](#patch-groupitemid)  
-   4.13 [DELETE /group/item-id](#delete-groupitemid)
+   4.3 [GET /group/member/\<id\>](#get-groupmemberid)  
+   4.4 [PUT /group/member/\<id\>](#put-groupmemberid)  
+   4.5 [GET /group/member/by/external/\<external id\>](#get-groupmemberbyexternalid)  
+   4.6 [GET /group/transaction](#get-grouptransaction)  
+   4.7 [GET /group/transaction/\<id\>](#get-grouptransactionid)  
+   4.8 [PATCH /group/transaction/\<id\>](#patch-grouptransactionid)  
+   4.9 [POST /group/purchase](#post-grouppurchase)  
+   4.10 [POST /group/deposit](#post-groupdeposit)  
+   4.11 [POST /group/stock](#post-groupstock)  
+   4.12 [GET /group/item](#get-groupitem)  
+   4.13 [POST /group/item](#post-groupitem)  
+   4.14 [GET /group/item/\<id\>](#get-groupitemid)  
+   4.15 [PATCH /group/item/\<id\>](#patch-groupitemid)  
+   4.16 [DELETE /group/item/\<id\>](#delete-groupitemid)  
+   4.17 [GET /group/item/by/external/\<id\>](#get-groupitembyexternalid)  
+   4.18 [GET /group/client](#get-group-client)  
+   4.19 [POST /group/client](#post-group-client)  
+   4.20 [GET /group/client/client/\<id\>](#get-group-clientid)  
+   4.21 [DELETE /group/client/client/\<id\>](#delete-group-clientid)
+   4.22 [GET /meta](#get-meta)
 
 ## General
 
@@ -103,12 +114,10 @@ UUID of a group in gamma.
 {
   "id": int, // Numeric auto-incrementing user id
   "gammaId": UserId, // Gamma user id
-  "firstName": string
-  "lastName": string
-  "nick": string
-  "avatarUrl": string
-
-  "balance": decimal
+  "firstName": string,
+  "lastName": string,
+  "nick": string,
+  "avatarUrl": string,
 }
 ```
 
@@ -119,7 +128,32 @@ UUID of a group in gamma.
   "id": int, // Numeric auto-incrementing group id
   "gammaId": GroupId, // Gamma group id
   "prettyName": string,
-  "avatarUrl": string
+  "avatarUrl": string,
+}
+```
+
+### GroupUser
+
+```javascript
+{
+  "user": User,
+  "group": Group,
+  "balance": decimal,
+  "externalId": string?,
+}
+```
+
+### GroupMember
+
+```javascript
+{
+  "id": int, // Numeric auto-incrementing user id
+  "gammaId": UserId, // Gamma user id
+  "firstName": string,
+  "lastName": string,
+  "nick": string,
+  "avatarUrl": string,
+  "balance": decimal,
 }
 ```
 
@@ -144,7 +178,8 @@ UUID of a group in gamma.
 ```javascript
 {
   "price": decimal, // Price in SEK
-  "displayName": string
+  "displayName": string,
+  "externalId": string?, // External ID which can be used to purchase the item with this price
 }
 ```
 
@@ -154,10 +189,28 @@ UUID of a group in gamma.
 {
   "type": string,
   "id": int, // Numeric auto-incrementing id
-  "createdBy": int, // Id of the user who created the transaction
+  "createdBy": TransactionCreator,
   "createdTime": int, // Timestamp when this transaction was created in ms
   "removed": boolean, // The transaction is ignored for calculations such as user balances and item stock counts and it may be presented differently on the frontend
   "comment": string? // Optional comment
+}
+```
+
+### TransactionCreator
+
+#### For transactions created by a user
+
+```javascript
+{
+  "userId": int // ID of the user who created the transaction
+}
+```
+
+#### For transactions created by a group client
+
+```javascript
+{
+  "clientId": int // ID of the client who created the transaction
 }
 ```
 
@@ -226,11 +279,33 @@ extends [Transaction](#transaction)
 }
 ```
 
+### GroupClient
+
+```javascript
+{
+  "id": string,
+  "scope": string,
+  "group": Group,
+  "owner": User,
+  "displayName": string,
+  "description": string?
+}
+```
+
+### ServiceMeta
+
+```javascript
+{
+  "version": string, // Semantic version as v*.*.* or other named version
+  "supportedScopes": string[] // List of available group client scopes
+}
+```
+
 ## Authorization
 
 ### Authorization flow
 
-1. User goes to [https://strecklista.chalmers.it/api/authorize](https://strecklista.chalmers.it/api/authorize).
+1. User goes to <https://strecklista.chalmers.it/api/oauth2/authorize>.
 
 2. User is redirected to the Gamma login screen.
 
@@ -238,7 +313,7 @@ extends [Transaction](#transaction)
    `https://strecklista.chalmers.it/callback?code=<gamma code>`
 
 4. The client page sends the `code` from Gamma in a `POST` request to:  
-   `https://strecklista.chalmers.it/api/login`
+   `https://strecklista.chalmers.it/api/oauth2/token`
 
 5. The server validates the code and user and then responds with a JWT token.
 
@@ -247,23 +322,45 @@ extends [Transaction](#transaction)
 7. In future requests the token is sent in the `Authorization` header as a bearer token:  
    `Authorization: Bearer <JWT token>`
 
-### GET /authorize
+### GET /oauth2/authorize
 
 Redirect to Gamma login page. After logging in the user will be redirected to:
 
 `https://strecklista.chalmers.it/callback`
 
-### POST /login
+### POST /oauth2/token
 
-Login using an authorization code from Gamma.
+Get a token using an authorization code from Gamma or client credentials.
 
 #### Request
 
-Provide the **code** in the query like this:
+##### Authorization code flow
 
-`/login?code=<AUTHORIZATION CODE FROM GAMMA REDIRECT>`
+Provide the authorization code in the request body like this:
+
+```json
+{
+    "grant_type": "authorization_code",
+    "code": "<authorization code>"
+}
+```
+
+##### Client Credentials Flow
+
+```json
+{
+    "grant_type": "client_credentials",
+    "client_id": "<your client id>",
+    "client_secret": "<your client secret>"
+}
+```
+
+Client ID and secret may also be sent as a
+[Basic Auth header](https://en.wikipedia.org/wiki/Basic_access_authentication).
 
 #### Response
+
+##### Authorization Code Flow
 
 The generated JWT token and data about the authenticated user and their group.
 
@@ -271,19 +368,60 @@ The generated JWT token and data about the authenticated user and their group.
 {
   "access_token": <JWT token string>,
   "token_type": "Bearer",
-  "expires_in": number, // How many seconds the token is valid for
+  "sub": string, // User id in the strecklista
+  "iss": string, // Issuer of the token (identifier of the Strecklista backend)
+  "iat": number, // Unix timestamp in seconds when token was issued
+  "nbf": number, // Unix timestamp in seconds when token starts being valid
+  "exp": number, // Unix timestamp in seconds when token will expire
+  "jti": string, // Unique identifier of the token
   "user": User,
-  "group": Group
+  "group": Group,
+  "balance": decimal
+}
+```
+
+##### Client Credentials Flow
+
+```javascript
+{
+  "access_token": <JWT token string>,
+  "token_type": "Bearer",
+  "aud": string, // Intended audience (your client id)
+  "iss": string, // Issuer of the token (identifier of the Strecklista backend)
+  "iat": number, // Unix timestamp in seconds when token was issued
+  "nbf": number, // Unix timestamp in seconds when token starts being valid
+  "exp": number, // Unix timestamp in seconds when token will expire
+  "jti": string, // Unique identifier of the token
+  "scope": string, // Authorized client scopes
+  "client": {
+    "clientId": string,
+    "displayName": string
+  },
+  "group": {
+      "id": number,
+      "gammaId": string
+  }
 }
 ```
 
 #### Errors
 
-| Code | Message                                                                |
-| ---- | ---------------------------------------------------------------------- |
-| 404  | Unable to find user in gamma                                           |
-| 500  | Failed to sign JWT: \<details\>                                        |
-| 502  | Failed to get token from Gamma, your authorization code may be invalid |
+##### Authorization Code Flow
+
+| Code | Message                                                                        |
+| ---- | ------------------------------------------------------------------------------ |
+| 403  | Unsupported grant type, expected one of authorization_code, client_credentials |
+| 404  | Unable to find user in gamma                                                   |
+| 500  | Failed to sign JWT: \<details\>                                                |
+| 502  | Failed to get token from Gamma, your authorization code may be invalid         |
+
+##### Client Credentials Flow
+
+| Code | Message                                                                        |
+| ---- | ------------------------------------------------------------------------------ |
+| 401  | Invalid credentials                                                            |
+| 403  | Unsupported grant type, expected one of authorization_code, client_credentials |
+| 500  | Failed to sign JWT: \<details\>                                                |
 
 ## API Endpoints
 
@@ -293,7 +431,7 @@ Get info about the currently authenticated user.
 
 #### Response
 
-Data about the user and their group.
+Data about the user and their group as [GroupUser](#groupuser).
 
 ##### Example
 
@@ -301,20 +439,20 @@ Data about the user and their group.
 {
   "data": {
     "user": {
-      "balance": 0,
       "id": 1,
-      "gammaId": "7ba99a26-9ad3-4ad8-ab7f-5891c2d82a4b",
-      "nick": "Cal",
-      "firstName": "Oliver",
-      "lastName": "Lindell",
-      "avatarUrl": "https://auth.chalmers.it/images/...
+      "gammaId": "2f63a363-af22-480d-be49-531c1831933c",
+      "nick": "Dough",
+      "firstName": "Jane",
+      "lastName": "Doe",
+      "avatarUrl": "https://auth.chalmers.it/images/2f63a363-af22-480d-be49-531c1831933c"
     },
     "group": {
       "id": 1,
       "gammaId": "3cf94646-2412-4896-bba9-5d2410ac0c62",
-      "avatarUrl": "https://auth.chalmers.it/images/...,
+      "avatarUrl": "https://auth.chalmers.it/images/3cf94646-2412-4896-bba9-5d2410ac0c62",
       "prettyName": "P.R.I.T. 25"
-    }
+    },
+    "balance": 0,
   }
 }
 ```
@@ -331,7 +469,7 @@ The group and it's members:
 {
   "data": {
     "group": Group,
-    "members": User[]
+    "members": GroupMember[]
   }
 }
 ```
@@ -351,22 +489,120 @@ The group and it's members:
       {
         "balance": 0,
         "id": 1,
-        "gammaId": "7ba99a26-9ad3-4ad8-ab7f-5891c2d82a4b",
-        "nick": "Cal",
-        "firstName": "Oliver",
-        "lastName": "Lindell",
-        "avatarUrl": "https://auth.chalmers.it/images/user/avatar/7ba99a26-9ad3-4ad8-ab7f-5891c2d82a4b"
+        "gammaId": "2f63a363-af22-480d-be49-531c1831933c",
+        "nick": "Dough",
+        "firstName": "Jane",
+        "lastName": "Doe",
+        "avatarUrl": "https://auth.chalmers.it/images/user/avatar/2f63a363-af22-480d-be49-531c1831933c"
       },
       {
         "balance": 0,
         "id": 1,
-        "gammaId": "b69e01cd-01d1-465e-adc5-99d017b7fd74",
-        "nick": "Göken",
-        "firstName": "Erik",
-        "lastName": "Persson",
-        "avatarUrl": "https://auth.chalmers.it/images/user/avatar/b69e01cd-01d1-465e-adc5-99d017b7fd74"
+        "gammaId": "9acb43d4-42f3-4f9d-9f37-bc156463e1a5",
+        "nick": "Smithed",
+        "firstName": "John",
+        "lastName": "Smith",
+        "avatarUrl": "https://auth.chalmers.it/images/user/avatar/9acb43d4-42f3-4f9d-9f37-bc156463e1a5"
       }
     ]
+  }
+}
+```
+
+### GET /group/member/\<id\>
+
+Get info about a member of the group.
+
+#### Response
+
+Data about the user and their group as [GroupUser](#groupuser).
+
+##### Example
+
+```javascript
+{
+  "data": {
+    "user": {
+      "id": 1,
+      "gammaId": "2f63a363-af22-480d-be49-531c1831933c",
+      "nick": "Dough",
+      "firstName": "Jane",
+      "lastName": "Doe",
+      "avatarUrl": "https://auth.chalmers.it/images/2f63a363-af22-480d-be49-531c1831933c"
+    },
+    "group": {
+      "id": 1,
+      "gammaId": "3cf94646-2412-4896-bba9-5d2410ac0c62",
+      "avatarUrl": "https://auth.chalmers.it/images/3cf94646-2412-4896-bba9-5d2410ac0c62",
+      "prettyName": "P.R.I.T. 25"
+    },
+    "balance": 0,
+  }
+}
+```
+
+### PUT /group/member/\<id\>
+
+Update a member of the group.
+
+#### Response
+
+Data about the user and their group as [GroupUser](#groupuser).
+
+##### Example
+
+```javascript
+{
+  "data": {
+    "user": {
+      "id": 1,
+      "gammaId": "2f63a363-af22-480d-be49-531c1831933c",
+      "nick": "Dough",
+      "firstName": "Jane",
+      "lastName": "Doe",
+      "avatarUrl": "https://auth.chalmers.it/images/2f63a363-af22-480d-be49-531c1831933c"
+    },
+    "group": {
+      "id": 1,
+      "gammaId": "3cf94646-2412-4896-bba9-5d2410ac0c62",
+      "avatarUrl": "https://auth.chalmers.it/images/3cf94646-2412-4896-bba9-5d2410ac0c62",
+      "prettyName": "P.R.I.T. 25"
+    },
+    "balance": 0,
+    "externalId": "978020137962"
+  }
+}
+```
+
+### GET /group/member/by/external/\<id\>
+
+Get info about a member of the group by their external id.
+
+#### Response
+
+Data about the user and their group as [GroupUser](#groupuser).
+
+##### Example
+
+```javascript
+{
+  "data": {
+    "user": {
+      "id": 1,
+      "gammaId": "2f63a363-af22-480d-be49-531c1831933c",
+      "nick": "Dough",
+      "firstName": "Jane",
+      "lastName": "Doe",
+      "avatarUrl": "https://auth.chalmers.it/images/2f63a363-af22-480d-be49-531c1831933c"
+    },
+    "group": {
+      "id": 1,
+      "gammaId": "3cf94646-2412-4896-bba9-5d2410ac0c62",
+      "avatarUrl": "https://auth.chalmers.it/images/3cf94646-2412-4896-bba9-5d2410ac0c62",
+      "prettyName": "P.R.I.T. 25"
+    },
+    "balance": 0,
+    "externalId": "978020137962"
   }
 }
 ```
@@ -541,15 +777,25 @@ The transaction after the update:
 
 ### POST /group/purchase
 
-Add a new purchase to a user. The user making the purchase is saved from auth.
+Add a new purchase to a user. The creator of the purchase is taken from the access token.
 
 #### Body
 
-| Name    | Required | Type                                                      | Description                     |
-| ------- | -------- | --------------------------------------------------------- | ------------------------------- |
-| userId  | Y        | Numeric user id                                           | The user to add the purchase to |
-| items   | Y        | { “id”: int, “quantity”: int “purchasePrice”: Price }\[\] | The items to purchase           |
-| comment | N        | string                                                    | An optional comment             |
+##### Normal
+
+| Name    | Required | Type                                                    | Description                     |
+| ------- | -------- | ------------------------------------------------------- | ------------------------------- |
+| userId  | Y        | Numeric user id                                         | The user to add the purchase to |
+| items   | Y        | `{ “id”: int, “quantity”: int “purchasePrice”: Price }` | The items to purchase           |
+| comment | N        | string                                                  | An optional comment             |
+
+##### With external IDs
+
+| Name           | Required | Type                                        | Description                                        |
+| -------------- | -------- | ------------------------------------------- | -------------------------------------------------- |
+| externalUserId | Y        | Numeric external user id                    | The external ID of the user to add the purchase to |
+| items          | Y        | `{ “externalId”: string, “quantity”: int }` | The items to purchase                              |
+| comment        | N        | string                                      | An optional comment                                |
 
 #### Response
 
@@ -868,3 +1114,274 @@ Delete an item
 | Code | Error               |
 | ---- | ------------------- |
 | 404  | Item does not exist |
+
+### GET /group/item/by/external/\<id\>
+
+Get info about an item by its external ID.
+
+#### Response
+
+```javascript
+{
+  "data": {
+    "item": Item
+  }
+}
+```
+
+##### Example
+
+```javascript
+{
+  "data": {
+    "item": {
+      "id": 3,
+      "createdTime": 1738564532,
+      "icon": "https://example.com/product-images/fanta-exotic.png",
+      "displayName": "Läsk",
+      "prices": [
+        {
+          "displayName": "Internt",
+          "price": 7.0,
+          "externalId": "978020137962"
+        },
+        {
+          "displayName": "Pateter",
+          "price": 10.0
+        }
+      ],
+      "stock": 19,
+      "timesPurchased": 3,
+      "visible": true,
+      "favorite": false
+    }
+  }
+}
+```
+
+### GET /group/client/\<id\>
+
+Get a group client.
+
+#### Errors
+
+| Code | Error                 |
+| ---- | --------------------- |
+| 404  | Client does not exist |
+
+#### Response
+
+The client without the secret.
+
+```javascript
+{
+  "data": {
+    "id": string,
+    "scope": string,
+    "group": Group,
+    "owner": User,
+    "displayName": string,
+    "description": string?
+  }
+}
+```
+
+### GET /group/client
+
+List group clients in the group.
+
+#### Response
+
+```javascript
+{
+  "data": {
+    "clients": GroupClient[]
+  }
+}
+```
+
+##### Example
+
+```javascript
+{
+  "data": {
+    "clients": [
+      {
+        "id": "01KP4C3XYVZNCQRAQ8D9MX21QK",
+        "scope": "items.read transactions.write",
+        "group": {
+          "id": 1,
+          "gammaId": "3cf94646-2412-4896-bba9-5d2410ac0c62",
+          "prettyName": "P.R.I.T. 25",
+          "avatarUrl": "https://auth.chalmers.it/images/group/avatar/3cf94646-2412-4896-bba9-5d2410ac0c62"
+        },
+        "owner": {
+          "id": 1,
+          "gammaId": "2f63a363-af22-480d-be49-531c1831933c",
+          "firstName": "Jane",
+          "lastName": "Doe",
+          "nick": "Dough",
+          "avatarUrl": "https://auth.chalmers.it/images/user/avatar/2f63a363-af22-480d-be49-531c1831933c"
+        },
+        "displayName": "P.R.I.T. Scanner",
+        "description": "Beep beep!!"
+      }
+    ]
+  }
+}
+```
+
+### POST /group/client
+
+Create a new group client.
+
+#### Body
+
+| Name        | Required | Type   | Description                |
+| ----------- | -------- | ------ | -------------------------- |
+| scope       | Y        | string | Scopes separated by spaces |
+| displayName | Y        | string | The client name to display |
+| description | N        | string | An optional description    |
+
+#### Response
+
+Responds with the created client and credentials.
+
+```javascript
+{
+  "data": {
+    "client": {
+      "secret": string,
+      "id": string,
+      "scope": string,
+      "group": Group,
+      "owner": User,
+      "displayName": string,
+      "description": string?
+    }
+  }
+}
+```
+
+##### Example
+
+```javascript
+{
+  "data": {
+    "client": {
+      "secret": "MIR5EUJQ7TOJI2M7BM987A9R9JGLBQML19A8S6S9CIOBRSG2ECCG",
+      "id": "01KP4C3XYVZNCQRAQ8D9MX21QK",
+      "scope": "items.read transactions.write",
+      "group": {
+        "id": 1,
+        "gammaId": "3cf94646-2412-4896-bba9-5d2410ac0c62",
+        "prettyName": "P.R.I.T. 25",
+        "avatarUrl": "https://auth.chalmers.it/images/group/avatar/3cf94646-2412-4896-bba9-5d2410ac0c62"
+      },
+      "owner": {
+        "id": 1,
+        "gammaId": "2f63a363-af22-480d-be49-531c1831933c",
+        "firstName": "Jane",
+        "lastName": "Doe",
+        "nick": "Dough",
+        "avatarUrl": "https://auth.chalmers.it/images/user/avatar/2f63a363-af22-480d-be49-531c1831933c"
+      },
+      "displayName": "P.R.I.T. Scanner",
+      "description": "Beep beep!!"
+    }
+  }
+}
+```
+
+#### Errors
+
+| Code | Error                      |
+| ---- | -------------------------- |
+| 403  | Display name is not unique |
+
+### GET /group/client/\<id\>
+
+Get details about a group client.
+
+#### Response
+
+```javascript
+{
+  "data": {
+    "client": GroupClient
+  }
+}
+```
+
+##### Example
+
+```javascript
+{
+  "data": {
+    "client": {
+      "id": "01KP4C3XYVZNCQRAQ8D9MX21QK",
+      "scope": "items.read transactions.write",
+      "group": {
+        "id": 1,
+        "gammaId": "3cf94646-2412-4896-bba9-5d2410ac0c62",
+        "prettyName": "P.R.I.T. 25",
+        "avatarUrl": "https://auth.chalmers.it/images/group/avatar/3cf94646-2412-4896-bba9-5d2410ac0c62"
+      },
+      "owner": {
+        "id": 1,
+        "gammaId": "2f63a363-af22-480d-be49-531c1831933c",
+        "firstName": "Jane",
+        "lastName": "Doe",
+        "nick": "Dough",
+        "avatarUrl": "https://auth.chalmers.it/images/user/avatar/2f63a363-af22-480d-be49-531c1831933c"
+      },
+      "displayName": "P.R.I.T. Scanner",
+      "description": "Beep beep!!"
+    }
+  }
+}
+```
+
+#### Errors
+
+| Code | Error                 |
+| ---- | --------------------- |
+| 404  | Client does not exist |
+
+### DELETE /group/client/\<id\>
+
+Delete a group client.
+
+#### Errors
+
+| Code | Error                 |
+| ---- | --------------------- |
+| 404  | Client does not exist |
+
+### GET /meta
+
+Get metadata about the running service.
+
+#### Response
+
+Metadata about the service as [ServiceMeta](#servicemeta).
+
+##### Example
+
+```javascript
+{
+  "data": {
+    "version": "v",
+    "supportedScopes": [
+      "transactions.read",
+      "transactions.create",
+      "transactions.update",
+      "items.read",
+      "items.create",
+      "items.update",
+      "items.delete",
+      "group.read"
+    ]
+  }
+}
+```

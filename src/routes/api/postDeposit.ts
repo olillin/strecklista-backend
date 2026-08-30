@@ -1,10 +1,13 @@
-import { Request, Response } from 'express'
-import { CreatedTransactionResponse, ResponseBody } from '../../responses'
-import { getGroupId, getUserId } from '../../middleware/validateToken'
-import { sendError, unexpectedError } from '../../errors'
-import { createDeposit } from '../../services/transactionService'
-import { getUser } from '../../services/userService'
-import { convertToJson } from '../../util/convertToJson'
+import type { Request, Response } from 'express'
+import type { CreatedTransactionResponse, ResponseBody } from '@/responses.js'
+import {
+    getGroupId,
+    getTransactionCreator,
+} from '@/middleware/validateToken.js'
+import { ApiError, sendError, unexpectedError } from '@/errors.js'
+import { createDeposit } from '@/services/transactionService.js'
+import { convertToJson } from '@/util/convertToJson.js'
+import { getOfflineGroupUser } from '@/services/userService.js'
 
 export interface PostDepositBody {
     userId: number
@@ -15,8 +18,12 @@ export interface PostDepositBody {
 export default async function postDeposit(req: Request, res: Response) {
     const { userId: createdFor, total, comment } = req.body as PostDepositBody
 
-    const groupId: number = getGroupId(res)
-    const createdBy: number = getUserId(res)
+    const groupId = getGroupId(res)
+    const createdBy = getTransactionCreator(res)
+    if (groupId == null || createdBy == null) {
+        sendError(res, ApiError.Unauthorized)
+        return
+    }
 
     const deposit = await createDeposit(
         groupId,
@@ -25,8 +32,8 @@ export default async function postDeposit(req: Request, res: Response) {
         comment ?? null,
         total
     )
-    const user = await getUser(createdFor, groupId)
-    if (!user) {
+    const groupUser = await getOfflineGroupUser(createdFor, groupId)
+    if (!groupUser) {
         sendError(
             res,
             unexpectedError(
@@ -35,11 +42,10 @@ export default async function postDeposit(req: Request, res: Response) {
         )
         return
     }
-    const balance = user.balance
     const body: ResponseBody<CreatedTransactionResponse> = {
         data: {
             transaction: convertToJson(deposit),
-            balance: balance.toNumber(),
+            balance: groupUser.balance.toNumber(),
         },
     }
 

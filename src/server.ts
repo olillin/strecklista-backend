@@ -1,14 +1,16 @@
-import express, { NextFunction, Request, Response } from 'express'
+import express, {
+    type NextFunction,
+    type Request,
+    type Response,
+} from 'express'
 import rateLimit from 'express-rate-limit'
-import { authorizationCode } from './config/gamma'
-import env from './config/env'
-import { sendError, unexpectedError } from './errors'
-import createApiRouter from './routers/api'
-import { login as loginRoute } from './routes/login'
-import * as validate from './middleware/validators'
-import validationErrorHandler from './middleware/validationErrorHandler'
-import appendHeader from './middleware/setHeader'
-import cors, { CorsOptions } from 'cors'
+import env from '@/config/env.js'
+import { sendError, unexpectedError } from '@/errors.js'
+import createApiRouter from '@/routers/api.js'
+import appendHeader from '@/middleware/setHeader.js'
+import cors, { type CorsOptions } from 'cors'
+import createOAuth2Router from '@/routers/oauth2.js'
+import createPublicRouter from './routers/public.js'
 
 const exposeCors =
     env.EXPOSE_CORS.toLowerCase() === 'true' || env.EXPOSE_CORS === '1'
@@ -48,16 +50,16 @@ async function main() {
         ])
     )
 
-    app.get('/authorize', (req, res) => {
-        res.redirect(authorizationCode.authorizeUrl())
-    })
+    const oauth2Router = createOAuth2Router()
+    app.use('/oauth2', oauth2Router)
 
-    app.post('/login', validate.login(), validationErrorHandler, loginRoute())
+    const publicRouter = await createPublicRouter()
+    app.use('/', publicRouter)
 
-    const api = await createApiRouter()
-    app.use('/', api)
+    const apiRouter = await createApiRouter()
+    app.use('/', apiRouter)
 
-    app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+    app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
         console.error(err)
         console.trace(err)
         sendError(res, unexpectedError(err.message))

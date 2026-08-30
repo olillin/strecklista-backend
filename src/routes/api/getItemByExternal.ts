@@ -1,18 +1,28 @@
 import type { Request, Response } from 'express'
-import { getUserId } from '@/middleware/validateToken.js'
+import { getGroupId, getUserId } from '@/middleware/validateToken.js'
 import { ApiError, sendError } from '@/errors.js'
 import type { ItemResponse, ResponseBody } from '@/responses.js'
 import * as itemService from '@/services/itemService.js'
 import { convertToJson } from '@/util/convertToJson.js'
 
-export default async function getItem(req: Request, res: Response) {
+export default async function getItemByExternal(req: Request, res: Response) {
     if (typeof req.params.id !== 'string') {
         throw new Error('Invalid id, expected string but got array')
     }
-    const itemId = parseInt(req.params.id)
-    const userId = getUserId(res)
+    const externalItemId = req.params.id
 
-    const item = await itemService.getItem(itemId, userId)
+    const groupId = getGroupId(res)
+    const userId = getUserId(res)
+    if (groupId == null) {
+        sendError(res, ApiError.Unauthorized)
+        return
+    }
+
+    const item = await itemService.getItemByExternal(
+        externalItemId,
+        groupId,
+        userId
+    )
 
     if (item === null) {
         sendError(res, ApiError.ItemNotExist)

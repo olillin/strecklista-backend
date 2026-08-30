@@ -1,10 +1,10 @@
-import { Request, Response } from 'express'
-import { TransactionResponse, ResponseBody } from '../../responses'
+import type { Request, Response } from 'express'
+import type { TransactionResponse, ResponseBody } from '@/responses.js'
 import {
-    TransactionPatch,
+    type TransactionPatch,
     updateTransaction,
-} from '../../services/transactionService'
-import { convertToJson } from '../../util/convertToJson'
+} from '@/services/transactionService.js'
+import { convertToJson } from '@/util/convertToJson.js'
 
 export interface PatchTransactionBody {
     removed?: boolean

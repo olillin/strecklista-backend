@@ -1,5 +1,5 @@
 import { AuthorizationCode, ClientApi } from 'gammait'
-import env from './env'
+import env from '@/config/env.js'
 
 // Gamma Authorization Code Flow
 export const authorizationCode = new AuthorizationCode({

@@ -18,6 +18,8 @@ model Group {
   users        GroupUser[]
   items        Item[]
   transactions Transaction[]
+
+  apiClients    ApiClient[]
 }
 
 model User {
@@ -26,21 +28,25 @@ model User {
 
   groups GroupUser[]
 
-  createdTransactions Transaction[] @relation("CreatedByTransactions")
+  createdTransactions Transaction[] @relation("CreatedByUserTransactions")
   receivedPurchases   Purchase[]    @relation("ReceivedPurchases")
   receivedDeposits    Deposit[]     @relation("ReceivedDeposits")
 
   favoriteItems FavoriteItem[]
+
+  apiClients    ApiClient[]
 }
 
 model GroupUser {
   groupId Int
   group   Group @relation(fields: [groupId], references: [id])
+  userId  Int
+  user    User @relation(fields: [userId], references: [id])
 
-  userId Int
-  user   User @relation(fields: [userId], references: [id])
+  externalId String? @db.VarChar(100)
 
   @@id([groupId, userId])
+  @@unique([groupId, externalId])
 }
 
 model Item {
@@ -68,6 +74,8 @@ model Price {
   displayName String  @db.VarChar(30)
   price       Decimal @db.Decimal(7, 2)
 
+  externalId String? @db.VarChar(100)
+
   @@id([itemId, displayName])
 }
 
@@ -84,8 +92,10 @@ model Transaction {
 
   type TransactionType
 
-  createdById Int
-  createdBy   User @relation("CreatedByTransactions", fields: [createdById], references: [id])
+  createdByUserId   Int?
+  createdByUser     User? @relation("CreatedByUserTransactions", fields: [createdByUserId], references: [id])
+  createdByClientId String? @db.VarChar(26)
+  createdByClient   ApiClient? @relation("CreatedByClientTransactions", fields: [createdByClientId], references: [id])
   createdTime DateTime @default(now()) @db.Timestamptz
 
   removed     Boolean  @default(false) @db.Boolean
@@ -165,4 +175,21 @@ model FavoriteItem {
   item   Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
   @@id([userId, itemId])
+}
+
+model ApiClient {
+  id      String @db.VarChar(26) @id @default(ulid())
+  salt    String @db.VarChar(31)
+  secret  String @db.VarChar(255)
+  scope   String @db.VarChar(255)
+
+  groupId Int
+  group   Group @relation(fields: [groupId], references: [id])
+  ownerId Int
+  owner   User @relation(fields: [ownerId], references: [id])
+
+  displayName String @db.VarChar(50)
+  description String? @db.VarChar(255)
+
+  createdTransactions Transaction[] @relation("CreatedByClientTransactions")
 }

@@ -1,10 +1,11 @@
-import { Request, Response } from 'express'
-import { ItemResponse, ResponseBody } from '../../responses'
-import { getGroupId } from '../../middleware/validateToken'
-import { createItem, Item, Price } from '../../services/itemService'
-import { JsonPrice } from './postPurchase'
+import type { Request, Response } from 'express'
+import type { ItemResponse, ResponseBody } from '@/responses.js'
+import { getGroupId, getUserId } from '@/middleware/validateToken.js'
+import { createItem, type Item, type Price } from '@/services/itemService.js'
+import type { JsonPrice } from '@/routes/api/postPurchase.js'
 import { Decimal } from '@prisma/client/runtime/client'
-import { convertToJson } from '../../util/convertToJson'
+import { convertToJson } from '@/util/convertToJson.js'
+import { ApiError, sendError } from '@/errors.js'
 
 export interface PostItemBody {
     displayName: string
@@ -14,16 +15,28 @@ export interface PostItemBody {
 
 export default async function postItem(req: Request, res: Response) {
     const { displayName, prices: jsonPrices, icon } = req.body as PostItemBody
-    const groupId: number = getGroupId(res)
+    const userId = getUserId(res)
+    const groupId = getGroupId(res)
+    if (groupId == null) {
+        sendError(res, ApiError.Unauthorized)
+        return
+    }
 
     const prices = jsonPrices.map(
         price =>
             ({
                 displayName: price.displayName,
                 price: new Decimal(price.price),
+                externalId: price.externalId,
             }) satisfies Price
     )
-    const item: Item = await createItem(groupId, displayName, prices, icon) //
+    const item: Item = await createItem(
+        groupId,
+        displayName,
+        prices,
+        icon,
+        userId
+    )
 
     const body: ResponseBody<ItemResponse> = {
         data: { item: convertToJson(item) },

@@ -1,28 +1,11 @@
 # DO NOT USE IN PRODUCTION, THIS CONFIGURATION IS INTENTIONALLY INSECURE
 
-# This compose file builds and runs the backend locally for development.
+# This compose file runs the database for development.
 # Copy .env.example and fill out your Gamma Client credentials to get started.
 
 name: strecklista-backend-dev
 
 services:
-    server:
-        build:
-            context: .
-        container_name: strecklista-backend-dev-server
-        restart: unless-stopped
-        environment:
-            NODE_ENV: development
-            DATABASE_URL: postgresql://postgres:secret-dev-password@db:5432/strecklista
-            JWT_SECRET: jwt-secret
-        env_file: '.env'
-
-        ports:
-            - '8080:8080'
-
-        depends_on:
-            db:
-                condition: service_healthy
     db:
         image: postgres:18
         container_name: strecklista-backend-dev-db

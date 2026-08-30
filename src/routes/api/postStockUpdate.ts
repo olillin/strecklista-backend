@@ -1,7 +1,11 @@
-import { Request, Response } from 'express'
-import { ResponseBody, TransactionResponse } from '../../responses'
-import { getGroupId, getUserId } from '../../middleware/validateToken'
-import { createStockUpdate } from '../../services/transactionService'
+import type { Request, Response } from 'express'
+import type { ResponseBody, TransactionResponse } from '@/responses.js'
+import {
+    getGroupId,
+    getTransactionCreator,
+} from '@/middleware/validateToken.js'
+import { createStockUpdate } from '@/services/transactionService.js'
+import { ApiError, sendError } from '@/errors.js'
 
 export interface PostStockUpdateBody {
     items: PostItemStockUpdate[]
@@ -17,8 +21,12 @@ export interface PostItemStockUpdate {
 export default async function postStockUpdate(req: Request, res: Response) {
     const { items, comment } = req.body as PostStockUpdateBody
 
-    const groupId: number = getGroupId(res)
-    const createdBy: number = getUserId(res)
+    const groupId = getGroupId(res)
+    const createdBy = getTransactionCreator(res)
+    if (groupId == null || createdBy == null) {
+        sendError(res, ApiError.Unauthorized)
+        return
+    }
 
     const stockUpdate = await createStockUpdate(
         groupId,

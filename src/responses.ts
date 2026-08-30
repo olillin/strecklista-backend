@@ -1,20 +1,22 @@
-import { JWT } from './routes/login'
-import {
+import type { JwtWithToken } from '@/routes/oauth2/token.js'
+import type {
     User,
     Group,
-    completeUser,
-    completeGroup,
-    GammaUser,
-} from './services/gammaService'
-import { Item } from './services/itemService'
-import {
+    GroupUser,
+    GroupMember,
+} from '@/services/gammaService.js'
+import type { Item } from '@/services/itemService.js'
+import type {
     AnyTransaction,
     Transaction,
     TransactionType,
-} from './services/transactionService'
-import { OfflineGroupUser } from './services/userService'
-import * as gamma from 'gammait'
-import { ToJSON } from './util/convertToJson'
+} from '@/services/transactionService.js'
+import type {
+    Scope,
+    GroupClient,
+    GroupClientWithSecret,
+} from '@/services/clientService.js'
+import type { ToJSON } from '@/util/convertToJson.js'
 
 export type ResponseBody<T> = [T] extends [never]
     ? { error: ResponseError }
@@ -25,19 +27,24 @@ export interface ResponseError {
     message: string
 }
 
-export type UserResponse = ToJSON<{
+export type ServiceMetaResponse = {
+    version: string
+    supportedScopes: Scope[] | readonly Scope[]
+}
+
+export type GroupUserResponse = ToJSON<{
     user: User
     group: Group
+    balance: number
+    externalId?: string
 }>
 
 export type GroupResponse = ToJSON<{
     group: Group
-    members: User[]
+    members: GroupMember[]
 }>
 
-export interface LoginResponse extends UserResponse, JWT {
-    token_type: string
-}
+export type LoginResponse = JwtWithToken & GroupUserResponse
 
 export type ItemsResponse = ToJSON<{
     items: Item[]
@@ -65,31 +72,33 @@ export type TransactionsResponse = PaginatedResponse &
         transactions: Transaction<TransactionType>[]
     }>
 
-export function toUserResponse(
-    groupUser: OfflineGroupUser,
-    gammaUser: GammaUser,
-    gammaGroup: gamma.Group
-): UserResponse {
-    const user = completeUser(groupUser.user, gammaUser)
+export interface GroupClientResponse {
+    client: GroupClient
+}
+
+export interface GroupClientsResponse {
+    clients: GroupClient[]
+}
+
+export interface NewGroupClientResponse {
+    client: GroupClientWithSecret
+}
+
+export function toGroupUserResponse(groupUser: GroupUser): GroupUserResponse {
     return {
-        user: {
-            ...user,
-            balance: user.balance.toNumber(),
-        },
-        group: completeGroup(groupUser.group, gammaGroup),
+        user: groupUser.user,
+        group: groupUser.group,
+        balance: groupUser.balance.toNumber(),
+        externalId: groupUser.externalId,
     }
 }
 
 export function toLoginResponse(
-    groupUser: OfflineGroupUser,
-    gammaUser: GammaUser,
-    gammaGroup: gamma.Group,
-    token: JWT
+    groupUser: GroupUser,
+    token: JwtWithToken
 ): LoginResponse {
     return {
-        access_token: token.access_token,
-        token_type: 'Bearer',
-        expires_in: token.expires_in,
-        ...toUserResponse(groupUser, gammaUser, gammaGroup),
+        ...token,
+        ...toGroupUserResponse(groupUser),
     }
 }

@@ -1,21 +1,14 @@
-import { Request, Response, NextFunction } from 'express'
-import { ApiError, sendError } from '../errors'
-import jwt, { JwtPayload } from 'jsonwebtoken'
-import env from '../config/env'
-import { GroupId, UserId } from 'gammait'
-import { isLoggedInUser, LoggedInUser } from '../routes/login'
-
-export type LocalJwt = JwtPayload & LoggedInUser
-
-export function isLocalJwt(value: unknown): value is LocalJwt {
-    if (!isLoggedInUser(value)) {
-        return false
-    }
-
-    const obj = value as object as Record<string, unknown>
-
-    return typeof obj.iss === 'string' && typeof obj.exp === 'number'
-}
+import type { Request, Response, NextFunction } from 'express'
+import { ApiError, sendError } from '@/errors.js'
+import jwt, { type JwtPayload } from 'jsonwebtoken'
+import env from '@/config/env.js'
+import * as gamma from 'gammait'
+import { isGroupClientJwt, isUserJwt } from '@/routes/oauth2/token.js'
+import type { Scope } from '@/services/clientService.js'
+import {
+    createTransactionCreator,
+    type TransactionCreator,
+} from '@/services/transactionService.js'
 
 function validateToken(req: Request, res: Response, next: NextFunction) {
     console.log(`${req.method} to API: ${req.path}`)
@@ -25,7 +18,13 @@ function validateToken(req: Request, res: Response, next: NextFunction) {
         sendError(res, ApiError.Unauthorized)
         return
     }
-    const token = auth.split(' ')[1]
+
+    const [tokenType, token] = auth.split(' ')
+    if (tokenType !== 'Bearer') {
+        sendError(res, ApiError.Unauthorized)
+        return
+    }
+
     try {
         const verifiedToken = verifyToken(token)
 
@@ -44,13 +43,10 @@ function validateToken(req: Request, res: Response, next: NextFunction) {
             }
         }
 
-        if (!verifiedToken.userId || !verifiedToken.groupId) {
+        if (!isUserJwt(verifiedToken) && !isGroupClientJwt(verifiedToken)) {
             sendError(res, ApiError.InvalidToken)
             return
         }
-
-        console.log('Verified token:')
-        console.log(verifiedToken)
 
         // Store token
         res.locals.jwt = verifiedToken
@@ -61,45 +57,91 @@ function validateToken(req: Request, res: Response, next: NextFunction) {
 }
 export default validateToken
 
-export function verifyToken(token: string): LocalJwt {
+export function verifyToken(token: string): JwtPayload {
     const verifiedToken = jwt.verify(token, env.JWT_SECRET, {
         algorithms: ['HS256'],
         issuer: env.JWT_ISSUER,
     })
-    if (!isLocalJwt(verifiedToken)) {
-        throw new Error('Verified token has invalid shape')
+    if (typeof verifiedToken === 'string') {
+        throw new Error('Failed to verify token, got string payload')
     }
     return verifiedToken
 }
 
-export function getUserId(res: Response): number {
-    const jwt = res.locals.jwt
-    if (!isLocalJwt(jwt)) {
-        throw new Error('Token has invalid shape')
-    }
-    return jwt.userId
+export function getUserId(res: Response): number | null
+export function getUserId(jwt: JwtPayload): number | null
+export function getUserId(resOrJwt: Response | JwtPayload): number | null {
+    const jwt: unknown = Object.hasOwn(resOrJwt, 'locals')
+        ? resOrJwt.locals.jwt
+        : resOrJwt
+    if (isUserJwt(jwt)) return jwt.user.id
+    return null
 }
 
-export function getGammaUserId(res: Response): UserId {
-    const jwt = res.locals.jwt
-    if (!isLocalJwt(jwt)) {
-        throw new Error('Token has invalid shape')
-    }
-    return jwt.gammaUserId
+export function getGammaUserId(res: Response): gamma.UserId | null
+export function getGammaUserId(jwt: JwtPayload): gamma.UserId | null
+export function getGammaUserId(
+    resOrJwt: Response | JwtPayload
+): gamma.UserId | null {
+    const jwt: unknown = Object.hasOwn(resOrJwt, 'locals')
+        ? resOrJwt.locals.jwt
+        : resOrJwt
+    if (isUserJwt(jwt)) return jwt.user.gammaId
+    return null
 }
 
-export function getGroupId(res: Response): number {
-    const jwt = res.locals.jwt
-    if (!isLocalJwt(jwt)) {
-        throw new Error('Token has invalid shape')
-    }
-    return jwt.groupId
+export function getGroupId(res: Response): number | null
+export function getGroupId(jwt: JwtPayload): number | null
+export function getGroupId(resOrJwt: Response | JwtPayload): number | null {
+    const jwt: unknown = Object.hasOwn(resOrJwt, 'locals')
+        ? resOrJwt.locals.jwt
+        : resOrJwt
+    if (isUserJwt(jwt)) return jwt.group.id
+    if (isGroupClientJwt(jwt)) return jwt.group.id
+    return null
 }
 
-export function getGammaGroupId(res: Response): GroupId {
-    const jwt = res.locals.jwt
-    if (!isLocalJwt(jwt)) {
-        throw new Error('Token has invalid shape')
-    }
-    return jwt.gammaGroupId
+export function getGammaGroupId(res: Response): gamma.GroupId | null
+export function getGammaGroupId(jwt: JwtPayload): gamma.GroupId | null
+export function getGammaGroupId(
+    resOrJwt: Response | JwtPayload
+): gamma.GroupId | null {
+    const jwt: unknown = Object.hasOwn(resOrJwt, 'locals')
+        ? resOrJwt.locals.jwt
+        : resOrJwt
+    if (isUserJwt(jwt)) return jwt.group.gammaId
+    if (isGroupClientJwt(jwt)) return jwt.group.gammaId
+    return null
+}
+
+export function getClientId(res: Response): string | null
+export function getClientId(jwt: JwtPayload): string | null
+export function getClientId(resOrJwt: Response | JwtPayload): string | null {
+    const jwt: unknown = Object.hasOwn(resOrJwt, 'locals')
+        ? resOrJwt.locals.jwt
+        : resOrJwt
+    if (isGroupClientJwt(jwt)) return jwt.client.id
+    return null
+}
+
+export function hasScope(res: Response, scope: Scope): boolean
+export function hasScope(jwt: JwtPayload, scope: Scope): boolean
+export function hasScope(
+    resOrJwt: Response | JwtPayload,
+    scope: Scope
+): boolean {
+    const jwt: unknown = Object.hasOwn(resOrJwt, 'locals')
+        ? resOrJwt.locals.jwt
+        : resOrJwt
+    if (isUserJwt(jwt)) return true
+    if (isGroupClientJwt(jwt)) return jwt.scope.split(' ').includes(scope)
+    return false
+}
+
+export function getTransactionCreator(
+    res: Response
+): TransactionCreator | null {
+    const userId = getUserId(res)
+    const clientId = getClientId(res)
+    return createTransactionCreator(userId, clientId)
 }

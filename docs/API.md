@@ -852,6 +852,9 @@ The newly created transaction:
 | 400  | Item count must be greater than 0               |
 | 400  | Must purchase at least one item                 |
 | 400  | Comment must not be longer than 1000 characters |
+| 400  | Item cannot have externalId and purchasePrice   |
+| 400  | Item cannot have id and externalId              |
+| 400  | Cannot purchase with userId and externalUserId  |
 | 403  | Cannot purchase a non-visible item              |
 | 404  | User does not exist                             |
 | 404  | Item does not exist                             |

@@ -51,6 +51,9 @@ export enum ApiError {
     PurchaseNothing,
     PurchaseInvisible,
     InvalidComment,
+    PurchaseExternalWithPrice,
+    PurchaseDoubleItemId,
+    PurchaseDoubleUserId,
 
     // Create deposit
     InvalidTotal,
@@ -148,6 +151,18 @@ const errorDefinitions: { [key in ApiError]: ErrorDefinition } = {
     [ApiError.InvalidComment]: err(
         400,
         'Comment must not be longer than 1000 characters'
+    ),
+    [ApiError.PurchaseExternalWithPrice]: err(
+        400,
+        'Item cannot have externalId and purchasePrice'
+    ),
+    [ApiError.PurchaseDoubleItemId]: err(
+        400,
+        'Item cannot have id and externalId'
+    ),
+    [ApiError.PurchaseDoubleUserId]: err(
+        400,
+        'Cannot purchase with userId and externalUserId'
     ),
 
     // Create deposit

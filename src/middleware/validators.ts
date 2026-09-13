@@ -261,6 +261,7 @@ export const token = () => [
                 body('client_id')
                     .exists()
                     .isString()
+                    .withMessage(ApiError.InvalidClientId)
                     .isLength({ min: CLIENT_ID_LENGTH, max: CLIENT_ID_LENGTH })
                     .withMessage(ApiError.InvalidClientId),
                 body('client_secret').exists().isString(),
@@ -292,6 +293,7 @@ export const putGroupMember = () => [
     body('externalId')
         .optional()
         .isString()
+        .withMessage(ApiError.InvalidExternalId)
         .isLength({ max: 100 })
         .withMessage(ApiError.InvalidExternalId)
         .bail()
@@ -311,20 +313,32 @@ export const getTransactions = () => [
     query('limit')
         .default(50)
         .isInt({ min: 1, max: 100 })
+        .withMessage(ApiError.InvalidLimit)
+        .not()
+        .isString()
         .withMessage(ApiError.InvalidLimit),
     query('offset')
         .default(0)
         .isInt({ min: 0 })
+        .withMessage(ApiError.InvalidOffset)
+        .not()
+        .isString()
         .withMessage(ApiError.InvalidOffset),
     query('createdBy')
         .optional()
         .isInt({ min: 1 })
+        .withMessage(ApiError.InvalidUserId)
+        .not()
+        .isString()
         .withMessage(ApiError.InvalidUserId)
         .bail()
         .custom(checkUserExistsInGroup),
     query('createdFor')
         .optional()
         .isInt({ min: 1 })
+        .withMessage(ApiError.InvalidUserId)
+        .not()
+        .isString()
         .withMessage(ApiError.InvalidUserId)
         .bail()
         .custom(checkUserExistsInGroup),
@@ -357,19 +371,29 @@ export const postPurchase = () => [
     body('comment')
         .optional()
         .isString()
+        .withMessage(ApiError.InvalidComment)
         .trim()
         .isLength({ max: 1000 })
         .withMessage(ApiError.InvalidComment),
     oneOf([body('userId').exists(), body('externalUserId').exists()]),
-    body('userId')
-        .if(body('userId').exists())
-        .isInt({ min: 1 })
-        .withMessage(ApiError.InvalidUserId)
-        .bail()
-        .custom(checkUserExistsInGroup),
+    ...when(body('userId').exists(), ({ body }) => [
+        body('externalUserId')
+            .not()
+            .exists()
+            .withMessage(ApiError.PurchaseDoubleUserId),
+        body('userId')
+            .isInt({ min: 1 })
+            .withMessage(ApiError.InvalidUserId)
+            .not()
+            .isString()
+            .withMessage(ApiError.InvalidUserId)
+            .bail()
+            .custom(checkUserExistsInGroup),
+    ]),
     body('externalUserId')
         .if(body('externalUserId').exists())
         .isString()
+        .withMessage(ApiError.InvalidExternalId)
         .isLength({ max: 100 })
         .withMessage(ApiError.InvalidExternalId)
         .bail()
@@ -377,11 +401,21 @@ export const postPurchase = () => [
     body('items.*.quantity')
         .exists()
         .isInt({ min: 1 })
+        .withMessage(ApiError.PurchaseItemCount)
+        .not()
+        .isString()
         .withMessage(ApiError.PurchaseItemCount),
     oneOf([body('items.*.id').exists(), body('items.*.externalId').exists()]),
     ...when(body('items.*.id').exists(), ({ body }) => [
+        body('items.*.externalId')
+            .not()
+            .exists()
+            .withMessage(ApiError.PurchaseDoubleItemId),
         body('items.*.id')
             .isInt({ min: 1 })
+            .withMessage(ApiError.InvalidItemId)
+            .not()
+            .isString()
             .withMessage(ApiError.InvalidItemId)
             .bail()
             .custom(checkItemExistsInGroup)
@@ -392,16 +426,22 @@ export const postPurchase = () => [
         body('items.*.purchasePrice.price').exists().isDecimal(),
         body('items.*.purchasePrice.displayName').exists().isString().trim(),
     ]),
-    body('items.*.externalId')
-        .if(body('items.*.externalId').exists())
-        .isString()
-        .isLength({ max: 100 })
-        .withMessage(ApiError.InvalidExternalId)
-        .bail()
-        .custom(checkExternalItemExistsInGroup)
-        .bail()
-        .custom(checkExternalItemVisible)
-        .withMessage(ApiError.PurchaseInvisible),
+    ...when(body('items.*.externalId').exists(), ({ body }) => [
+        body('items.*.externalId')
+            .isString()
+            .withMessage(ApiError.InvalidExternalId)
+            .isLength({ max: 100 })
+            .withMessage(ApiError.InvalidExternalId)
+            .bail()
+            .custom(checkExternalItemExistsInGroup)
+            .bail()
+            .custom(checkExternalItemVisible)
+            .withMessage(ApiError.PurchaseInvisible),
+        body('items.*.purchasePrice')
+            .not()
+            .exists()
+            .withMessage(ApiError.PurchaseExternalWithPrice),
+    ]),
 ]
 
 export const postDeposit = () => [
@@ -409,12 +449,16 @@ export const postDeposit = () => [
         .exists()
         .isInt({ min: 1 })
         .withMessage(ApiError.InvalidUserId)
+        .not()
+        .isString()
+        .withMessage(ApiError.InvalidUserId)
         .bail()
         .custom(checkUserExistsInGroup),
     body('total').exists().isDecimal().withMessage(ApiError.InvalidTotal),
     body('comment')
         .optional()
         .isString()
+        .withMessage(ApiError.InvalidComment)
         .trim()
         .isLength({ max: 1000 })
         .withMessage(ApiError.InvalidComment),
@@ -429,16 +473,23 @@ export const postStockUpdate = () => [
         .exists()
         .isInt({ min: 1 })
         .withMessage(ApiError.InvalidItemId)
+        .not()
+        .isString()
+        .withMessage(ApiError.InvalidItemId)
         .bail()
         .custom(checkItemExistsInGroup),
     body('items.*.quantity')
         .exists()
         .isInt()
+        .withMessage(ApiError.StockItemCount)
+        .not()
+        .isString()
         .withMessage(ApiError.StockItemCount),
     body('items.*.absolute').optional().isBoolean(),
     body('comment')
         .optional()
         .isString()
+        .withMessage(ApiError.InvalidComment)
         .trim()
         .isLength({ max: 1000 })
         .withMessage(ApiError.InvalidComment),
@@ -485,6 +536,7 @@ export const postItem = () => [
     body('prices.*.externalId')
         .optional()
         .isString()
+        .withMessage(ApiError.InvalidExternalId)
         .isLength({ max: 100 })
         .withMessage(ApiError.InvalidExternalId)
         .custom(checkPriceExternalIdUnique),
@@ -532,6 +584,7 @@ export const patchItem = () => [
     body('prices.*.externalId')
         .optional()
         .isString()
+        .withMessage(ApiError.InvalidExternalId)
         .isLength({ max: 100 })
         .withMessage(ApiError.InvalidExternalId)
         .custom(checkPriceExternalIdUnique),
@@ -560,6 +613,7 @@ export const getGroupClient = () => [
     param('id')
         .exists()
         .isString()
+        .withMessage(ApiError.InvalidClientId)
         .isLength({ min: CLIENT_ID_LENGTH, max: CLIENT_ID_LENGTH })
         .withMessage(ApiError.InvalidClientId)
         .bail()
@@ -571,6 +625,7 @@ export const getGroupClients = () => []
 export const postGroupClient = () => [
     body('scope')
         .exists()
+        .withMessage(ApiError.NoScope)
         .isString()
         .bail()
         .trim()
@@ -596,6 +651,7 @@ export const deleteGroupClient = () => [
     param('id')
         .exists()
         .isString()
+        .withMessage(ApiError.InvalidClientId)
         .isLength({ min: CLIENT_ID_LENGTH, max: CLIENT_ID_LENGTH })
         .withMessage(ApiError.InvalidClientId)
         .bail()

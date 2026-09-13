@@ -22,6 +22,7 @@
    2.12 [ItemStockUpdate](#itemstockupdate)
    2.13 [GroupClient](#groupclient)
    2.14 [ServiceMeta](#servicemeta)
+   2.15 [ServiceHealthy](#servicehealthy)
 
 3. [Authorization](#authorization)  
    3.1 [Authorization Flow](#authorization-flow)  
@@ -51,6 +52,7 @@
    4.20 [GET /group/client/client/\<id\>](#get-group-clientid)  
    4.21 [DELETE /group/client/client/\<id\>](#delete-group-clientid)
    4.22 [GET /meta](#get-meta)
+   4.22 [GET /health](#get-health)
 
 ## General
 
@@ -298,6 +300,15 @@ extends [Transaction](#transaction)
 {
   "version": string, // Semantic version as v*.*.* or other named version
   "supportedScopes": string[] // List of available group client scopes
+}
+```
+
+### ServiceHealthy
+
+```javascript
+{
+  "code": 200,
+  "message": string
 }
 ```
 
@@ -1385,3 +1396,31 @@ Metadata about the service as [ServiceMeta](#servicemeta).
   }
 }
 ```
+
+### GET /health
+
+Check the health of the running service.
+
+#### Response
+
+A [ServiceHealthy](#servicehealthy) response if the service is healthy, or an
+appropriate error.
+
+##### Example
+
+```javascript
+{
+  "data": {
+    "code": 200,
+    "message": "Service healthy"
+  }
+}
+```
+
+#### Errors
+
+| Code | Error                                   |
+| ---- | --------------------------------------- |
+| 502  | Received an invalid response from Gamma |
+| 503  | Database unavailable, <error code>      |
+| 504  | Unable to reach Gamma                   |

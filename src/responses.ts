@@ -32,6 +32,11 @@ export type ServiceMetaResponse = {
     supportedScopes: Scope[] | readonly Scope[]
 }
 
+export type ServiceHealthyResponse = {
+    code: 200
+    message: string
+}
+
 export type GroupUserResponse = ToJSON<{
     user: User
     group: Group

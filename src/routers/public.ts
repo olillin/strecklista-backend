@@ -14,6 +14,7 @@ export default async function createPublicRouter(): Promise<Router> {
      */
     const routes: [string, HandlerName | ErrorResolvable][] = [
         ['/meta', 'getMeta'],
+        ['/health', 'getHealth'],
     ]
 
     for (const [path, name] of routes) {

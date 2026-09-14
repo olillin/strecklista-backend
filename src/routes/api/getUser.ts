@@ -1,62 +1,74 @@
-import { Request, Response } from 'express'
-import { clientApi } from '../../config/gamma'
+import type { Request, Response } from 'express'
+import { clientApi } from '@/config/gamma.js'
 import {
+    getGammaGroupId,
     getGammaUserId,
     getGroupId,
     getUserId,
-} from '../../middleware/validateToken'
-import { ApiError, sendError } from '../../errors'
-import { ResponseBody, toUserResponse, UserResponse } from '../../responses'
-import { UserId } from 'gammait'
-import { getAuthorizedGroup } from '../../util/helpers'
-import * as userService from '../../services/userService'
+} from '@/middleware/validateToken.js'
+import { ApiError, sendError } from '@/errors.js'
+import {
+    type ResponseBody,
+    type GroupUserResponse,
+    toGroupUserResponse,
+} from '@/responses.js'
+import * as userService from '@/services/userService.js'
+import { completeGroupUser, getGammaGroup } from '@/services/gammaService.js'
 
-export default async function getUser(req: Request, res: Response) {
-    const userId: number = getUserId(res)
-    const groupId: number = getGroupId(res)
-    const gammaUserId: UserId = getGammaUserId(res)
-    console.log(`Getting user info for: ${userId}`)
+export default async function getUser(_req: Request, res: Response) {
+    const userId = getUserId(res)
+    const groupId = getGroupId(res)
+    const gammaUserId = getGammaUserId(res)
+    const gammaGroupId = getGammaGroupId(res)
+    if (
+        userId == null ||
+        groupId == null ||
+        gammaUserId == null ||
+        gammaGroupId == null
+    ) {
+        sendError(res, ApiError.Unauthorized)
+        return
+    }
 
     // Get requests
-    const offlineGroupUserPromise = userService.getUserInGroup(userId, groupId)
+    const offlineGroupUserPromise = userService.getOfflineGroupUser(
+        userId,
+        groupId
+    )
     const gammaUserPromise = clientApi.getUser(gammaUserId).catch(reason => {
         if (!res.headersSent) {
             console.log(reason)
             sendError(res, ApiError.UserNotExist)
         }
     })
-    const groupsPromise = clientApi.getGroupsFor(gammaUserId).catch(reason => {
+    const groupPromise = getGammaGroup(gammaGroupId).catch(reason => {
         if (!res.headersSent) {
             console.log(reason)
-            sendError(res, ApiError.FailedGetGroups)
+            sendError(res, ApiError.FailedGetGroup)
         }
     })
 
     // Await promises
     const offlineGroupUser = await offlineGroupUserPromise
     if (!offlineGroupUser) {
-        sendError(res, 404, 'User does not exist')
+        sendError(res, ApiError.UserNotExist)
         return
     }
     const gammaUser = await gammaUserPromise
     if (!gammaUser) {
-        sendError(res, 502, 'Failed to get user from gamma')
+        sendError(res, ApiError.FailedGetUser)
         return
     }
-    const groups = await groupsPromise
-    if (!groups) {
-        sendError(res, 502, 'Failed to get groups from gamma')
-        return
-    }
-
-    const group = getAuthorizedGroup(groups)
+    const group = await groupPromise
     if (!group) {
-        sendError(res, ApiError.NoPermission)
+        sendError(res, ApiError.FailedGetGroup)
         return
     }
 
-    const body: ResponseBody<UserResponse> = {
-        data: toUserResponse(offlineGroupUser, gammaUser, group),
+    const groupUser = completeGroupUser(offlineGroupUser, gammaUser, group)
+
+    const body: ResponseBody<GroupUserResponse> = {
+        data: toGroupUserResponse(groupUser),
     }
     res.json(body)
 }

@@ -1,28 +1,37 @@
-import { isValidComment } from '../util/helpers'
-import { prisma } from '../lib/prisma'
-import { getBareItem, getItem, type Price } from './itemService'
+import { isValidComment } from '@/util/helpers.js'
+import { prisma } from '@/lib/prisma.js'
+import {
+    getBareItem,
+    getExternalCreatePurchasedItem,
+    getItem,
+    type Price,
+} from '@/services/itemService.js'
 import { Decimal } from '@prisma/client/runtime/client'
-import type { TransactionType as PrismaTransactionType } from '../generated/prisma/enums'
+import type { TransactionType as PrismaTransactionType } from '@/generated/prisma/enums.js'
 import {
     type PurchasedItem as PrismaPurchasedItem,
     type ItemStockUpdate as PrismaItemStockUpdate,
     Prisma,
-} from '../generated/prisma/client'
-import { PurchaseItem } from '../routes/api/postPurchase'
+} from '@/generated/prisma/client.js'
 import {
-    ItemStockUpdateCreateManyStockUpdateInput,
-    PurchasedItemUncheckedCreateWithoutPurchaseInput,
+    isPurchaseExternalItem,
+    type PurchaseExternalItem,
+    type PurchaseItem,
+} from '@/routes/api/postPurchase.js'
+import type { PostItemStockUpdate } from '@/routes/api/postStockUpdate.js'
+import type {
     TransactionSelect,
     TransactionUpdateInput,
-} from '../generated/prisma/models'
-import { PostItemStockUpdate } from '../routes/api/postStockUpdate'
+} from '@/generated/prisma/models/Transaction.js'
+import type { PurchasedItemUncheckedCreateWithoutPurchaseInput } from '@/generated/prisma/models/PurchasedItem.js'
+import type { ItemStockUpdateCreateManyStockUpdateInput } from '@/generated/prisma/models/ItemStockUpdate.js'
 
 export type TransactionType = 'purchase' | 'deposit' | 'stockUpdate'
 export interface Transaction<T extends TransactionType> {
     type: T
     id: number
 
-    createdBy: number
+    createdBy: TransactionCreator
     createdTime: Date
 
     removed: boolean
@@ -46,6 +55,9 @@ export interface PurchasedItem {
     purchasePrice: Price
 }
 
+export type CreatePurchasedItem =
+    PurchasedItemUncheckedCreateWithoutPurchaseInput
+
 export interface Deposit extends Transaction<'deposit'> {
     createdFor: number
     total: Decimal
@@ -56,9 +68,11 @@ export interface StockUpdate extends Transaction<'stockUpdate'> {
 }
 
 export interface ItemStockUpdate {
-    itemId: number
+    itemId?: number
     before: number
     after: number
+    displayName: string
+    iconUrl?: string
 }
 
 export interface TransactionPatch {
@@ -66,10 +80,37 @@ export interface TransactionPatch {
 }
 
 // Transactions
+export type TransactionCreator =
+    | {
+          userId: number
+          clientId?: never
+      }
+    | {
+          userId?: never
+          clientId: string
+      }
+
+export function createTransactionCreator(
+    userId: number | null,
+    clientId: string | null
+): TransactionCreator | null {
+    if (userId != null)
+        return {
+            userId: userId,
+        }
+    if (clientId != null)
+        return {
+            clientId: clientId,
+        }
+
+    return null
+}
+
 interface TransactionData {
     id: number
     type: PrismaTransactionType
-    createdById: number
+    createdByUserId: number | null
+    createdByClientId: string | null
     createdTime: Date
     removed: boolean
     comment: string | null
@@ -93,7 +134,8 @@ const selectTransactionData = {
     id: true,
     type: true,
     groupId: true,
-    createdById: true,
+    createdByUserId: true,
+    createdByClientId: true,
     createdTime: true,
     removed: true,
     comment: true,
@@ -112,10 +154,17 @@ const selectTransactionData = {
 } satisfies TransactionSelect
 
 function parseTransaction(transaction: TransactionData): AnyTransaction {
+    const creator = createTransactionCreator(
+        transaction.createdByUserId,
+        transaction.createdByClientId
+    )
+    if (creator == null)
+        throw new Error('Invalid transaction data, has no creator')
+
     const basicTransaction: Transaction<'purchase'> = {
         type: 'purchase',
         id: transaction.id,
-        createdBy: transaction.createdById,
+        createdBy: creator,
         createdTime: transaction.createdTime,
         removed: transaction.removed,
         comment: transaction.comment ?? undefined,
@@ -153,7 +202,14 @@ function parseTransaction(transaction: TransactionData): AnyTransaction {
             return {
                 ...basicTransaction,
                 type: 'stockUpdate',
-                items: transaction.stockUpdate!.items,
+                items: transaction.stockUpdate!.items.map(item => ({
+                    id: item.id,
+                    itemId: item.itemId ?? undefined,
+                    before: item.before,
+                    after: item.after,
+                    displayName: item.displayName,
+                    iconUrl: item.iconUrl ?? undefined,
+                })),
             } satisfies StockUpdate
         }
     }
@@ -201,7 +257,7 @@ export async function countTransactionsInGroup(
 }
 
 export interface GetTransactionsOptions {
-    createdBy?: number
+    createdBy?: TransactionCreator
     createdFor?: number
 }
 
@@ -214,7 +270,8 @@ export async function getTransactionsInGroup(
     const transactions = await prisma.transaction.findMany({
         where: {
             groupId: groupId,
-            createdById: options.createdBy ?? Prisma.skip,
+            createdByUserId: options.createdBy?.userId ?? Prisma.skip,
+            createdByClientId: options.createdBy?.clientId ?? Prisma.skip,
             ...(options.createdFor == undefined
                 ? {}
                 : {
@@ -267,7 +324,7 @@ export async function updateTransaction(
 // Deposit
 export async function createDeposit(
     groupId: number,
-    createdBy: number,
+    createdBy: TransactionCreator,
     createdFor: number,
     comment: string | null,
     total: number
@@ -280,7 +337,8 @@ export async function createDeposit(
         data: {
             type: 'DEPOSIT',
             groupId: groupId,
-            createdById: createdBy,
+            createdByUserId: createdBy.userId ?? Prisma.skip,
+            createdByClientId: createdBy.clientId ?? Prisma.skip,
             comment: comment,
             deposit: {
                 create: {
@@ -298,10 +356,10 @@ export async function createDeposit(
 // Purchases
 export async function createPurchase(
     groupId: number,
-    createdBy: number,
+    createdBy: TransactionCreator,
     createdFor: number,
     comment: string | null,
-    items: PurchaseItem[]
+    items: PurchaseItem[] | PurchaseExternalItem[]
 ): Promise<Purchase> {
     if (!isValidComment(comment)) {
         comment = null
@@ -309,7 +367,18 @@ export async function createPurchase(
 
     // Map items
     const purchasedItems = await Promise.all(
-        items.map(async item => {
+        items.map<Promise<CreatePurchasedItem>>(async item => {
+            if (isPurchaseExternalItem(item)) {
+                const createPurchasedItem =
+                    await getExternalCreatePurchasedItem(item, groupId)
+                if (!createPurchasedItem) {
+                    throw new Error(
+                        `Item with external id ${item.externalId} does not exist`
+                    )
+                }
+                return createPurchasedItem
+            }
+
             const dbItem = await getBareItem(item.id)
             if (!dbItem) {
                 throw new Error(`Item with id ${item.id} does not exist`)
@@ -322,7 +391,7 @@ export async function createPurchase(
                 quantity: item.quantity,
                 purchasePrice: new Decimal(item.purchasePrice.price),
                 purchasePriceName: item.purchasePrice.displayName,
-            } satisfies PurchasedItemUncheckedCreateWithoutPurchaseInput
+            }
         })
     )
 
@@ -330,7 +399,8 @@ export async function createPurchase(
         data: {
             type: 'PURCHASE',
             groupId: groupId,
-            createdById: createdBy,
+            createdByUserId: createdBy.userId ?? Prisma.skip,
+            createdByClientId: createdBy.clientId ?? Prisma.skip,
             comment: comment,
             purchase: {
                 create: {
@@ -352,7 +422,7 @@ export async function createPurchase(
 // Stock updates
 export async function createStockUpdate(
     groupId: number,
-    createdBy: number,
+    createdBy: TransactionCreator,
     comment: string | null | null,
     items: PostItemStockUpdate[]
 ): Promise<StockUpdate> {
@@ -363,12 +433,11 @@ export async function createStockUpdate(
     // Map items
     const stockedItems = await Promise.all(
         items.map(async item => {
-            const currentStock = await getItem(item.id, 0).then(
-                dbItem => dbItem?.stock
-            )
-            if (currentStock === undefined) {
+            const dbItem = await getItem(item.id, 0)
+            if (dbItem == null) {
                 throw new Error(`Item with id ${item.id} does not exist`)
             }
+            const currentStock = dbItem.stock
 
             const newStock = item.absolute
                 ? item.quantity
@@ -378,6 +447,8 @@ export async function createStockUpdate(
                 itemId: item.id,
                 before: currentStock,
                 after: newStock,
+                displayName: dbItem.displayName,
+                iconUrl: dbItem.icon ?? Prisma.skip,
             } satisfies ItemStockUpdateCreateManyStockUpdateInput
         })
     )
@@ -386,7 +457,8 @@ export async function createStockUpdate(
         data: {
             type: 'STOCK_UPDATE',
             groupId: groupId,
-            createdById: createdBy,
+            createdByUserId: createdBy.userId ?? Prisma.skip,
+            createdByClientId: createdBy.clientId ?? Prisma.skip,
             comment: comment,
             stockUpdate: {
                 create: {

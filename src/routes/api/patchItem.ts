@@ -1,10 +1,15 @@
-import { Request, Response } from 'express'
-import { getUserId } from '../../middleware/validateToken'
-import { ItemResponse, ResponseBody } from '../../responses'
-import { updateItem, Price, ItemPatch } from '../../services/itemService'
-import { JsonPrice } from './postPurchase'
+import type { Request, Response } from 'express'
+import { getUserId, getGroupId } from '@/middleware/validateToken.js'
+import type { ItemResponse, ResponseBody } from '@/responses.js'
+import {
+    updateItem,
+    type Price,
+    type ItemPatch,
+} from '@/services/itemService.js'
+import type { JsonPrice } from '@/routes/api/postPurchase.js'
 import { Decimal } from '@prisma/client/runtime/client'
-import { convertToJson } from '../../util/convertToJson'
+import { ApiError, sendError } from '@/errors.js'
+import { convertToJson } from '@/util/convertToJson.js'
 
 export interface PatchItemBody {
     icon?: string
@@ -18,11 +23,18 @@ export default async function patchItem(req: Request, res: Response) {
     if (typeof req.params.id !== 'string') {
         throw new Error('Invalid id, expected string but got array')
     }
-    const userId: number = getUserId(res)
-    const itemId = parseInt(req.params.id)
 
+    const itemId = parseInt(req.params.id)
     const patch = createItemPatch(req.body as PatchItemBody)
-    const newItem = await updateItem(itemId, userId, patch)
+
+    const userId = getUserId(res)
+    const groupId = getGroupId(res)
+    if (groupId == null) {
+        sendError(res, ApiError.Unauthorized)
+        return
+    }
+
+    const newItem = await updateItem(groupId, itemId, patch, userId)
 
     const body: ResponseBody<ItemResponse> = {
         data: { item: convertToJson(newItem) },
@@ -37,6 +49,7 @@ function createItemPatch(body: PatchItemBody): ItemPatch {
             ({
                 displayName: price.displayName,
                 price: new Decimal(price.price),
+                externalId: price.externalId,
             }) satisfies Price
     )
     return {

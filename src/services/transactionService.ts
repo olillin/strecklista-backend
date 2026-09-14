@@ -68,9 +68,11 @@ export interface StockUpdate extends Transaction<'stockUpdate'> {
 }
 
 export interface ItemStockUpdate {
-    itemId: number
+    itemId?: number
     before: number
     after: number
+    displayName: string
+    iconUrl?: string
 }
 
 export interface TransactionPatch {
@@ -200,7 +202,14 @@ function parseTransaction(transaction: TransactionData): AnyTransaction {
             return {
                 ...basicTransaction,
                 type: 'stockUpdate',
-                items: transaction.stockUpdate!.items,
+                items: transaction.stockUpdate!.items.map(item => ({
+                    id: item.id,
+                    itemId: item.itemId ?? undefined,
+                    before: item.before,
+                    after: item.after,
+                    displayName: item.displayName,
+                    iconUrl: item.iconUrl ?? undefined,
+                })),
             } satisfies StockUpdate
         }
     }
@@ -424,12 +433,11 @@ export async function createStockUpdate(
     // Map items
     const stockedItems = await Promise.all(
         items.map(async item => {
-            const currentStock = await getItem(item.id, 0).then(
-                dbItem => dbItem?.stock
-            )
-            if (currentStock === undefined) {
+            const dbItem = await getItem(item.id, 0)
+            if (dbItem == null) {
                 throw new Error(`Item with id ${item.id} does not exist`)
             }
+            const currentStock = dbItem.stock
 
             const newStock = item.absolute
                 ? item.quantity
@@ -439,6 +447,8 @@ export async function createStockUpdate(
                 itemId: item.id,
                 before: currentStock,
                 after: newStock,
+                displayName: dbItem.displayName,
+                iconUrl: dbItem.icon ?? Prisma.skip,
             } satisfies ItemStockUpdateCreateManyStockUpdateInput
         })
     )

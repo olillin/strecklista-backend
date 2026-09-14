@@ -275,9 +275,11 @@ extends [Transaction](#transaction)
 
 ```javascript
 {
-  "id": int,       // The item id
+  "id": int?, // The item id
   "quantity": int, // How much to change the stock by
-  "absolute": bool // Set stock to 'quantity' instead of adding it. Defaults to false
+  "absolute": bool, // Set stock to 'quantity' instead of adding it. Defaults to false
+  "displayName": string, // The display name of the item at the time of stock update
+  "iconUrl": string? // The icon of the item at the time of stock update
 }
 ```
 

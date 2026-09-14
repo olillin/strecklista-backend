@@ -158,8 +158,10 @@ model ItemStockUpdate {
   stockUpdateId Int
   stockUpdate   StockUpdate @relation(fields: [stockUpdateId], references: [id])
 
-  itemId Int
-  item   Item @relation(fields: [itemId], references: [id])
+  itemId      Int?
+  item        Item?   @relation(fields: [itemId], references: [id], onDelete: SetNull)
+  displayName String  @db.VarChar(100)
+  iconUrl     String? @db.VarChar(500)
 
   before Int
   after  Int

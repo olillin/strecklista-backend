@@ -68,11 +68,12 @@ export interface StockUpdate extends Transaction<'stockUpdate'> {
 }
 
 export interface ItemStockUpdate {
+    id: number
     itemId?: number
     before: number
     after: number
     displayName: string
-    iconUrl?: string
+    icon?: string
 }
 
 export interface TransactionPatch {
@@ -202,14 +203,16 @@ function parseTransaction(transaction: TransactionData): AnyTransaction {
             return {
                 ...basicTransaction,
                 type: 'stockUpdate',
-                items: transaction.stockUpdate!.items.map(item => ({
-                    id: item.id,
-                    itemId: item.itemId ?? undefined,
-                    before: item.before,
-                    after: item.after,
-                    displayName: item.displayName,
-                    iconUrl: item.iconUrl ?? undefined,
-                })),
+                items: transaction.stockUpdate!.items.map<ItemStockUpdate>(
+                    item => ({
+                        id: item.id,
+                        itemId: item.itemId ?? undefined,
+                        before: item.before,
+                        after: item.after,
+                        displayName: item.displayName,
+                        icon: item.iconUrl ?? undefined,
+                    })
+                ),
             } satisfies StockUpdate
         }
     }

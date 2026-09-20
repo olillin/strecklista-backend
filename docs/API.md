@@ -266,7 +266,9 @@ extends [Transaction](#transaction)
     {
       "id": int,
       "before": int,
-      "after": int
+      "after": int,
+      "displayName": string, // The display name of the item at the time of stock update
+      "icon": string? // The icon of the item at the time of stock update
     }
   ]
 }
@@ -278,9 +280,7 @@ extends [Transaction](#transaction)
 {
   "id": int?, // The item id
   "quantity": int, // How much to change the stock by
-  "absolute": bool, // Set stock to 'quantity' instead of adding it. Defaults to false
-  "displayName": string, // The display name of the item at the time of stock update
-  "iconUrl": string? // The icon of the item at the time of stock update
+  "absolute": bool // Set stock to 'quantity' instead of adding it. Defaults to false
 }
 ```
 

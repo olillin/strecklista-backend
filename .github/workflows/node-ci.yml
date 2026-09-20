@@ -1,0 +1,74 @@
+# This workflow builds, tests, lints and checks formatting using Node.js and pnpm
+
+name: Node.js CI
+
+on:
+    push:
+        pr:
+        branches:
+            - '**'
+
+env:
+    NODE_VERSION: 24
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+            - name: Install pnpm
+              uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+            - name: Install Node.js ${{ env.NODE_VERSION }}
+              uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: pnpm
+            - name: Install pnpm dependencies
+              run: pnpm ci
+            - run: pnpm typecheck
+            - run: pnpm build
+    # test:
+    #     runs-on: ubuntu-latest
+    #     needs: build
+    #     steps:
+    #         - uses: actions/checkout@v7
+    #         - name: Install pnpm
+    #           uses: pnpm/action-setup@v4
+    #         - name: Install Node.js ${{ env.NODE_VERSION }}
+    #           uses: actions/setup-node@v4
+    #           with:
+    #               node-version: ${{ env.NODE_VERSION }}
+    #               cache: pnpm
+    #         - name: Install pnpm dependencies
+    #           run: pnpm ci
+    #         - run: pnpm test:ci
+    lint:
+        runs-on: ubuntu-latest
+        needs: build
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+            - name: Install pnpm
+              uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+            - name: Install Node.js ${{ env.NODE_VERSION }}
+              uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: pnpm
+            - name: Install pnpm dependencies
+              run: pnpm ci
+            - run: pnpm lint
+    check-format:
+        runs-on: ubuntu-latest
+        needs: build
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+            - name: Install pnpm
+              uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+            - name: Install Node.js ${{ env.NODE_VERSION }}
+              uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: pnpm
+            - name: Install pnpm dependencies
+              run: pnpm ci
+            - run: pnpm format:check

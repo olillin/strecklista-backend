@@ -51,7 +51,7 @@ To be able to setup and run the server you will need the following:
 3. Generate the Prisma client:
 
     ```shell
-    pnpm prisma:generate
+    pnpm prisma generate
     ```
 
 ### Starting the server

@@ -1,7 +1,7 @@
-import { Request, Response } from 'express'
-import { ResponseBody, TransactionResponse } from '../../responses'
-import * as transactionService from '../../services/transactionService'
-import { convertToJson } from '../../util/convertToJson'
+import type { Request, Response } from 'express'
+import type { ResponseBody, TransactionResponse } from '@/responses.js'
+import * as transactionService from '@/services/transactionService.js'
+import { convertToJson } from '@/util/convertToJson.js'
 
 export default async function getTransaction(req: Request, res: Response) {
     if (typeof req.params.id !== 'string') {

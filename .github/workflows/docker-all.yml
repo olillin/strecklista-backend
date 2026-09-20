@@ -1,0 +1,25 @@
+name: Build and push Docker image to all platforms
+
+on:
+    push:
+        branches:
+            - main
+            - dev
+        tags:
+            - 'v*.*.*'
+
+jobs:
+    linux-amd64:
+        name: 'Build and Push linux/amd64'
+        uses: ./.github/workflows/docker-platform.yml
+        with:
+            runner: ubuntu-latest
+            platform: linux/amd64
+
+    linux-arm64:
+        name: 'Build and Push linux/arm64'
+        uses: ./.github/workflows/docker-platform.yml
+        with:
+            runner: ubuntu-latest-arm
+            platform: linux/arm64
+            suffix: -arm

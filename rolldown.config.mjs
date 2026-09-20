@@ -6,12 +6,10 @@ export default defineConfig({
     output: {
         dir: 'bundle',
         format: 'esm',
-        transform: {
-            typescript: {
-                onlyRemoveTypeImports: true,
-            },
-        },
         comments: false,
+    },
+    transform: {
+        typescript: {},
     },
     tsconfig: true,
 })

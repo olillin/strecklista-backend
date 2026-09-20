@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express'
-import { getGammaGroupId, getGroupId } from '@/middleware/validateToken.js'
+import { getGroupId } from '@/middleware/validateToken.js'
 import { ApiError, sendError } from '@/errors.js'
 import {
     type ResponseBody,
@@ -14,8 +14,7 @@ export default async function getGroupMember(req: Request, res: Response) {
     }
     const userId = parseInt(req.params.id)
     const groupId = getGroupId(res)
-    const gammaGroupId = getGammaGroupId(res)
-    if (groupId == null || gammaGroupId == null) {
+    if (groupId == null) {
         sendError(res, ApiError.Unauthorized)
         return
     }

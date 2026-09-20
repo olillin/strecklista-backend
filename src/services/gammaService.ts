@@ -131,11 +131,11 @@ export function completeUser(
 
 export function completeGroupUser(
     offlineGroupUser: OfflineGroupUser,
-    gammaUser: GammaUser | null,
-    gammaGroup: gamma.Group | null
+    gammaUser: GammaUser | null | undefined,
+    gammaGroup: gamma.Group | null | undefined
 ): GroupUser {
     const names =
-        gammaUser === null
+        gammaUser == null
             ? {
                   nick: NOT_AVAILABLE,
                   firstName: NOT_AVAILABLE,
@@ -181,15 +181,12 @@ export async function getGroupUser(
     const gammaUser = await clientApi
         .getUser(offlineGroupUser.user.gammaId)
         .catch(() => null)
-    if (gammaUser == null) return null
-
     const gammaGroup = await clientApi
         .getGroupsFor(offlineGroupUser.user.gammaId)
         .then(groups =>
             groups.find(group => group.id === offlineGroupUser.group.gammaId)
         )
         .catch(() => null)
-    if (gammaGroup == null) return null
 
     return completeGroupUser(offlineGroupUser, gammaUser, gammaGroup)
 }

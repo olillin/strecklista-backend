@@ -49,8 +49,8 @@
    4.17 [GET /group/item/by/external/\<id\>](#get-groupitembyexternalid)  
    4.18 [GET /group/client](#get-group-client)  
    4.19 [POST /group/client](#post-group-client)  
-   4.20 [GET /group/client/client/\<id\>](#get-group-clientid)  
-   4.21 [DELETE /group/client/client/\<id\>](#delete-group-clientid)
+   4.20 [GET /group/client/\<id\>](#get-group-clientid)  
+   4.21 [DELETE /group/client/\<id\>](#delete-group-clientid)
    4.22 [GET /meta](#get-meta)
    4.22 [GET /health](#get-health)
 

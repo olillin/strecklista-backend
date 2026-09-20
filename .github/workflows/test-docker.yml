@@ -3,7 +3,10 @@ name: Test build Docker Image
 on:
     push:
         pr:
-        branches: '**'
+        branches:
+            - '**'
+            - '!main'
+            - '!dev'
 
 jobs:
     build:

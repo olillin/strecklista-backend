@@ -13,6 +13,7 @@
         "format:check": "oxfmt --check",
         "lint": "oxlint",
         "lint:fix": "oxlint --fix",
+        "typecheck": "tsc --noEmit",
         "prisma:generate": "prisma generate",
         "prisma:seed": "prisma db seed",
         "test": "echo \"Error: no test specified\" && exit 1"

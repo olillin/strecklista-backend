@@ -63,7 +63,7 @@ async function createApiRouter(): Promise<Router> {
         ['delete', '/group/item/:id', 'deleteItem', 'items.delete'],
         [
             'get',
-            '/group/item/by/external/:id',
+            '/group/item/by/external/:externalId',
             'getItemByExternal',
             'items.read',
         ],

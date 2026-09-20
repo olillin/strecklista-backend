@@ -6,10 +6,10 @@ import * as itemService from '@/services/itemService.js'
 import { convertToJson } from '@/util/convertToJson.js'
 
 export default async function getItemByExternal(req: Request, res: Response) {
-    if (typeof req.params.id !== 'string') {
+    if (typeof req.params.externalId !== 'string') {
         throw new Error('Invalid id, expected string but got array')
     }
-    const externalItemId = req.params.id
+    const externalItemId = req.params.externalId
 
     const groupId = getGroupId(res)
     const userId = getUserId(res)

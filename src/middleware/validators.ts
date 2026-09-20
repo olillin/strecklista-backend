@@ -9,8 +9,15 @@ import {
     type ContextRunner,
 } from 'express-validator'
 import { getGroupId, verifyToken } from '@/middleware/validateToken.js'
-import { ApiError, unsupportedScopeError } from '@/errors.js'
+import {
+    ApiError,
+    invalidPropertyError,
+    sendError,
+    unsupportedScopeError,
+    type ErrorResolvable,
+} from '@/errors.js'
 import { isExternalUserInGroup, isUserInGroup } from '@/services/userService.js'
+import * as userService from '@/services/userService.js'
 import {
     externalItemExistsInGroup,
     isExternalItemVisible,
@@ -18,6 +25,7 @@ import {
     itemExistsInGroup,
     itemNameExistsInGroup,
 } from '@/services/itemService.js'
+import * as itemService from '@/services/itemService.js'
 import { transactionExistsInGroup } from '@/services/transactionService.js'
 import {
     CLIENT_ID_LENGTH,
@@ -26,7 +34,11 @@ import {
     isScope,
 } from '@/services/clientService.js'
 import { acceptedGrantTypes, type GrantType } from '@/routes/oauth2/token.js'
-import type { CustomValidator, Middleware } from 'express-validator/lib/base.js'
+import type {
+    CustomValidator,
+    Middleware,
+    Request,
+} from 'express-validator/lib/base.js'
 
 function requireGroupId(meta: Meta): number {
     const auth = meta.req.headers?.authorization
@@ -86,8 +98,29 @@ export async function checkExternalUserUniqueInGroup(
     value: string,
     meta: Meta
 ): Promise<void> {
-    // Check if user exists
     const groupId = requireGroupId(meta)
+
+    // Check if the user already has the external id
+    const userId = meta.req.params?.id as unknown
+    if (typeof userId === 'string') {
+        let parsedUserId: number
+        try {
+            parsedUserId = parseInt(userId)
+        } catch {
+            throw ApiError.InvalidUserId
+        }
+        const user = await userService.getOfflineGroupUser(
+            parsedUserId,
+            groupId
+        )
+
+        if (user && user.externalId != undefined && user.externalId === value) {
+            // User already has the external id
+            return
+        }
+    }
+
+    // Check if other user exists with the external id
     const exists = await isExternalUserInGroup(value, groupId)
     if (exists) {
         throw ApiError.ExternalIdNotUnique
@@ -139,10 +172,64 @@ export async function checkPriceExternalIdUnique(
     meta: Meta
 ): Promise<void> {
     const groupId = requireGroupId(meta)
+
+    // Allow if external id refers to this item
+    const itemId = meta.req.params?.id as unknown
+    if (typeof itemId === 'string') {
+        let parsedItemId: number
+        try {
+            parsedItemId = parseInt(itemId)
+        } catch {
+            throw ApiError.InvalidItemId
+        }
+        const item = await itemService.getItem(parsedItemId)
+        const hasPrice =
+            item !== undefined &&
+            item?.prices.find(
+                price =>
+                    price.externalId != undefined && price.externalId === value
+            ) !== undefined
+        if (hasPrice) {
+            // Skip validator
+            return
+        }
+    }
+
     const exists = await externalItemExistsInGroup(value, groupId)
     if (exists) {
         throw ApiError.ExternalIdNotUnique
     }
+}
+
+export function checkPricesExternalIdsInternallyUnique(): Middleware {
+    const run = (req: Request): void => {
+        const prices = req.body.prices
+        if (!Array.isArray(prices)) throw invalidPropertyError('prices', 'body')
+
+        const externalIds = prices
+            .map(price => {
+                const externalId = price.externalId as unknown
+                if (externalId != undefined && typeof externalId !== 'string') {
+                    throw ApiError.InvalidExternalId
+                }
+                return externalId
+            })
+            .filter(externalId => externalId != undefined)
+
+        if (new Set(externalIds).size !== externalIds.length) {
+            throw ApiError.ExternalIdNotUnique
+        }
+    }
+
+    const middleware: Middleware = (req, res, next) => {
+        try {
+            run(req)
+            next()
+        } catch (error: unknown) {
+            sendError(res, error as ErrorResolvable)
+        }
+    }
+    return middleware
 }
 
 export async function checkTransactionExistsInGroup(
@@ -177,6 +264,24 @@ export async function checkItemDisplayNameUniqueInGroup(
     meta: Meta
 ): Promise<void> {
     const groupId = requireGroupId(meta)
+
+    // Check if item already has the display name
+    const itemId = meta.req.params?.id as unknown
+    if (typeof itemId === 'string') {
+        let parsedItemId: number
+        try {
+            parsedItemId = parseInt(itemId)
+        } catch {
+            throw ApiError.InvalidItemId
+        }
+        const item = await itemService.getItem(parsedItemId)
+
+        if (item && item.displayName === value) {
+            // Item already has the display name
+            return
+        }
+    }
+
     const nameExists = await itemNameExistsInGroup(value, groupId)
     if (nameExists) {
         throw ApiError.DisplayNameNotUnique
@@ -301,9 +406,11 @@ export const putGroupMember = () => [
 ]
 
 export const getGroupMemberByExternal = () => [
-    param('id')
+    param('externalId')
         .exists()
-        .isInt()
+        .isString()
+        .withMessage(ApiError.InvalidExternalId)
+        .isLength({ max: 100 })
         .withMessage(ApiError.InvalidExternalId)
         .bail()
         .custom(checkExternalUserExistsInGroup),
@@ -527,8 +634,10 @@ export const postItem = () => [
         .withMessage(ApiError.InvalidExternalId)
         .isLength({ max: 100 })
         .withMessage(ApiError.InvalidExternalId)
+        .bail()
         .custom(checkPriceExternalIdUnique),
     body('icon').optional().isURL(),
+    checkPricesExternalIdsInternallyUnique(),
 ]
 
 export const getItem = () => [
@@ -562,6 +671,7 @@ export const patchItem = () => [
         .isString()
         .trim()
         .notEmpty()
+        .bail()
         .custom(checkItemDisplayNameUniqueInGroup),
     body('prices')
         .optional()
@@ -575,8 +685,10 @@ export const patchItem = () => [
         .withMessage(ApiError.InvalidExternalId)
         .isLength({ max: 100 })
         .withMessage(ApiError.InvalidExternalId)
+        .bail()
         .custom(checkPriceExternalIdUnique),
     body('visible').optional().isBoolean(),
+    checkPricesExternalIdsInternallyUnique(),
 ]
 
 export const deleteItem = () => [
@@ -589,9 +701,11 @@ export const deleteItem = () => [
 ]
 
 export const getItemByExternal = () => [
-    param('id')
+    param('externalId')
         .exists()
-        .isInt()
+        .isString()
+        .withMessage(ApiError.InvalidExternalId)
+        .isLength({ max: 100 })
         .withMessage(ApiError.InvalidExternalId)
         .bail()
         .custom(checkExternalItemExistsInGroup),
@@ -619,6 +733,7 @@ export const postGroupClient = () => [
         .trim()
         .notEmpty()
         .withMessage(ApiError.NoScope)
+        .bail()
         .custom(checkValidScope),
     body('displayName')
         .exists()

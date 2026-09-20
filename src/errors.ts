@@ -103,7 +103,7 @@ const errorDefinitions: { [key in ApiError]: ErrorDefinition } = {
     // Authorization
     [ApiError.Unauthorized]: err(401, 'Unauthorized'),
     [ApiError.Forbidden]: err(403, 'Forbidden'),
-    [ApiError.InsufficientScope]: err(401, 'Insufficient scope'),
+    [ApiError.InsufficientScope]: err(403, 'Insufficient scope'),
     [ApiError.UnsupportedGrantType]: err(
         403,
         `Unsupported grant_type, expected ${acceptedGrantTypes.join(', ')}`

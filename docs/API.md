@@ -96,6 +96,7 @@ However if an error occurs the request will not contain a data object and instea
 | 400  | Property '\<name\>' is invalid in \<location\>                                       |
 | 401  | Unauthorized                                                                         |
 | 403  | User does not have permission to access this service                                 |
+| 403  | Insufficient scope                                                                   |
 | 500  | An unexpected error occurred. Please create an issue on GitHub. Details: \<details\> |
 | 502  | Received invalid response from gamma                                                 |
 | 504  | Unable to reach gamma                                                                |
@@ -695,7 +696,7 @@ Unless at the end of the list a _next_ url is provided to get the next page of t
       {
         "type": "deposit",
         "id": 4,
-        "createdTime": 1738583085,
+        "createdTime": 1738583085578,
         "createdBy": 1,
         "createdFor": 1,
         "total": 488.90,
@@ -766,7 +767,7 @@ The transaction after the update:
     "transaction": {
       "type": "purchase",
       "id": 7,
-      "createdTime": 1738594127,
+      "createdTime": 1738594127602,
       "createdBy": 1,
       "createdFor": 1,
       "items": [
@@ -806,7 +807,7 @@ Add a new purchase to a user. The creator of the purchase is taken from the acce
 
 | Name           | Required | Type                                        | Description                                        |
 | -------------- | -------- | ------------------------------------------- | -------------------------------------------------- |
-| externalUserId | Y        | Numeric external user id                    | The external ID of the user to add the purchase to |
+| externalUserId | Y        | string                                      | The external ID of the user to add the purchase to |
 | items          | Y        | `{ “externalId”: string, “quantity”: int }` | The items to purchase                              |
 | comment        | N        | string                                      | An optional comment                                |
 
@@ -831,7 +832,7 @@ The newly created transaction:
     "transaction": {
       "type": "purchase",
       "id": 7,
-      "createdTime": 1738594127,
+      "createdTime": 1738594127834,
       "createdBy": 1,
       "createdFor": 1,
       "items": [
@@ -984,7 +985,7 @@ A list of items sorted depending on the sort parameter.
     "items": [
       {
         "id": 3,
-        "createdTime": 1738564532,
+        "createdTime": 1738564532102,
         "displayName": "Läsk",
         "prices": [
           {
@@ -999,7 +1000,7 @@ A list of items sorted depending on the sort parameter.
       },
       {
         "id": 4,
-        "createdTime": 1738584035,
+        "createdTime": 1738584035506,
         "icon": "https://example.com/product-images/cider.png",
         "displayName": "Cider",
         "prices": [
@@ -1068,7 +1069,7 @@ Get info about an item.
   "data": {
     "item": {
       "id": 3,
-      "createdTime": 1738564532,
+      "createdTime": 1738564532410,
       "icon": "https://example.com/product-images/fanta-exotic.png",
       "displayName": "Läsk",
       "prices": [
@@ -1152,7 +1153,7 @@ Get info about an item by its external ID.
   "data": {
     "item": {
       "id": 3,
-      "createdTime": 1738564532,
+      "createdTime": 1738564532410,
       "icon": "https://example.com/product-images/fanta-exotic.png",
       "displayName": "Läsk",
       "prices": [

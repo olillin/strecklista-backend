@@ -25,6 +25,8 @@ See the [API docs][api] for specifics on how to use the new and updated endpoint
     - `GET /group/item/by/external/\<id\>` which fetches an item using one of its prices' external IDs.
     - `GET /meta`, publically returning service metadata.
     - `GET /health`, publically returning service health. (#71)
+- Node CI workflow.
+- Docker build workflow on pull request.
 
 ### Changed
 

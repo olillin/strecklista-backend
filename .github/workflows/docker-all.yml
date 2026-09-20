@@ -10,7 +10,7 @@ on:
 
 jobs:
     linux-amd64:
-        name: 'Build and Push linux/amd64'
+        name: 'Build and push linux/amd64'
         permissions:
             packages: write
         uses: ./.github/workflows/docker-platform.yml
@@ -19,7 +19,8 @@ jobs:
             platform: linux/amd64
 
     linux-arm64:
-        name: 'Build and Push linux/arm64'
+        name: 'Build and push linux/arm64'
+        if: false
         permissions:
             packages: write
         uses: ./.github/workflows/docker-platform.yml

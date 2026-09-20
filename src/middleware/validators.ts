@@ -40,6 +40,12 @@ import type {
     Request,
 } from 'express-validator/lib/base.js'
 
+/**
+ * Get the group of a request.
+ * @param meta The metadata about the request.
+ * @throws If the metadata does not contain a group id.
+ * @returns The group id as a number.
+ */
 function requireGroupId(meta: Meta): number {
     const auth = meta.req.headers?.authorization
     const token = auth.split(' ')[1]
@@ -53,6 +59,12 @@ function requireGroupId(meta: Meta): number {
 /**
  * Checks that there exists a user with the id in `value` in the same group as
  * the user making the request.
+ *
+ * @param value The value to check.
+ * @param meta Metadata about the request.
+ * @throws If such a user does not exist.
+ * @throws If the user id is invalid.
+ * @throws If the metadata does not contain a group id.
  */
 export async function checkUserExistsInGroup(
     value: string,
@@ -76,7 +88,12 @@ export async function checkUserExistsInGroup(
 
 /**
  * Checks that there exists a user with the external id in `value` in the same
- * group as the user making the request.
+ * the group of requester.
+ *
+ * @param value The value to check.
+ * @param meta Metadata about the request.
+ * @throws If such a user does not exist.
+ * @throws If the metadata does not contain a group id.
  */
 export async function checkExternalUserExistsInGroup(
     value: string,
@@ -92,7 +109,12 @@ export async function checkExternalUserExistsInGroup(
 
 /**
  * Checks that there does not exist a user with the external id in `value` in
- * the same group as the user making the request.
+ * the group of requester.
+ *
+ * @param value The value to check.
+ * @param meta Metadata about the request.
+ * @throws If such a user exists.
+ * @throws If the metadata does not contain a group id.
  */
 export async function checkExternalUserUniqueInGroup(
     value: string,
@@ -127,6 +149,15 @@ export async function checkExternalUserUniqueInGroup(
     }
 }
 
+/**
+ * Checks that there exists an item with the id in `value` in
+ * the group of the requester.
+ *
+ * @param value The value to check.
+ * @param meta Metadata about the request.
+ * @throws If such an item does not exist.
+ * @throws If the metadata does not contain a group id.
+ */
 export async function checkItemExistsInGroup(
     value: string,
     meta: Meta
@@ -144,6 +175,15 @@ export async function checkItemExistsInGroup(
     }
 }
 
+/**
+ * Checks that there exists an item with the external id in `value` in the same
+ * the group of requester.
+ *
+ * @param value The value to check.
+ * @param meta Metadata about the request.
+ * @throws If such an item does not exist.
+ * @throws If the metadata does not contain a group id.
+ */
 export async function checkExternalItemExistsInGroup(
     value: string,
     meta: Meta
@@ -155,6 +195,15 @@ export async function checkExternalItemExistsInGroup(
     }
 }
 
+/**
+ * Checks that there exists a visible item with the external id in `value` in
+ * the same the group of requester.
+ *
+ * @param value The value to check.
+ * @param meta Metadata about the request.
+ * @throws If such an item does not exist.
+ * @throws If the metadata does not contain a group id.
+ */
 export async function checkExternalItemVisible(
     value: string,
     meta: Meta
@@ -167,6 +216,19 @@ export async function checkExternalItemVisible(
     }
 }
 
+/**
+ * Checks that there does not exist a price with the external id in `value` in
+ * the group of requester.
+ *
+ * Conflicts within the same item are ignored, to accomplish this the 'id' param
+ * is read.
+ *
+ * @param value The value to check.
+ * @param meta Metadata about the request.
+ * @throws If such a price exists.
+ * @throws If the metadata contains an invalid item 'id' param.
+ * @throws If the metadata does not contain a group id.
+ */
 export async function checkPriceExternalIdUnique(
     value: string,
     meta: Meta
@@ -201,6 +263,10 @@ export async function checkPriceExternalIdUnique(
     }
 }
 
+/**
+ * Checks that the external price IDs are unique within the request body.
+ * @returns A middleware which sends an error if there exists duplicate external IDs or if any external ID is invalid.
+ */
 export function checkPricesExternalIdsInternallyUnique(): Middleware {
     const run = (req: Request): void => {
         const prices = req.body.prices as unknown
@@ -233,6 +299,15 @@ export function checkPricesExternalIdsInternallyUnique(): Middleware {
     return middleware
 }
 
+/**
+ * Checks that there exists a transaction with the id in `value` in
+ * the group of requester.
+ *
+ * @param value The value to check.
+ * @param meta Metadata about the request.
+ * @throws If such a transaction does not exist.
+ * @throws If the metadata does not contain a group id.
+ */
 export async function checkTransactionExistsInGroup(
     value: string,
     meta: Meta
@@ -244,6 +319,16 @@ export async function checkTransactionExistsInGroup(
     }
 }
 
+/**
+ * Checks that there exists a visible item with the id in `value` in the same
+ * the group of requester.
+ *
+ * @param value The value to check.
+ * @param meta Metadata about the request.
+ * @throws If value is an invalid item id.
+ * @throws If such an item does not exist.
+ * @throws If the metadata does not contain a group id.
+ */
 export async function checkItemVisible(value: string): Promise<void> {
     // Get id
     let id: number
@@ -260,6 +345,16 @@ export async function checkItemVisible(value: string): Promise<void> {
     }
 }
 
+/**
+ * Checks that there does not exist an item with the display name in `value` in
+ * the group of requester.
+ *
+ * @param value The value to check.
+ * @param meta Metadata about the request.
+ * @throws If value is an invalid item id.
+ * @throws If such an item exists.
+ * @throws If the metadata does not contain a group id.
+ */
 export async function checkItemDisplayNameUniqueInGroup(
     value: string,
     meta: Meta
@@ -289,6 +384,15 @@ export async function checkItemDisplayNameUniqueInGroup(
     }
 }
 
+/**
+ * Checks that there exists a group client with the id in `value` in the group
+ * of requester.
+ *
+ * @param value The value to check.
+ * @param meta Metadata about the request.
+ * @throws If such a group client does not exist.
+ * @throws If the metadata does not contain a group id.
+ */
 export async function checkClientExistsInGroup(
     value: string,
     meta: Meta
@@ -300,6 +404,13 @@ export async function checkClientExistsInGroup(
     }
 }
 
+/**
+ * Checks that the value is in the list of supported scopes.
+ *
+ * @param value The value to check.
+ * @param meta Metadata about the request.
+ * @throws If the scope is unsupported.
+ */
 export async function checkValidScope(value: string): Promise<void> {
     const scopes = value.split(' ')
     const unsupportedScopes = scopes.filter(scope => !isScope(scope))
@@ -309,6 +420,15 @@ export async function checkValidScope(value: string): Promise<void> {
     }
 }
 
+/**
+ * Checks that there does not exist a group client with the display name in
+ * `value` in the group of requester.
+ *
+ * @param value The value to check.
+ * @param meta Metadata about the request.
+ * @throws If such a group client exists.
+ * @throws If the metadata does not contain a group id.
+ */
 export async function checkClientDisplayNameUniqueInGroup(
     value: string,
     meta: Meta
@@ -320,6 +440,13 @@ export async function checkClientDisplayNameUniqueInGroup(
     }
 }
 
+/**
+ * Checks that the value is in the list of supported grant types.
+ *
+ * @param value The value to check.
+ * @param meta Metadata about the request.
+ * @throws If the grant type is unsupported.
+ */
 export async function checkSupportedGrantType(value: string): Promise<void> {
     if (!(acceptedGrantTypes as readonly string[]).includes(value)) {
         throw ApiError.UnsupportedGrantType

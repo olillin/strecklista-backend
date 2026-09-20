@@ -50,7 +50,7 @@ export async function createGroup(
  * @param gammaGroupId group id from Gamma
  * @param gammaUserId user id from Gamma
  * @param maxRetries Max amount of times to retry on fail caused by contention.
- * @return the full information of the user with `gammaUserId` in the group with `gammaGroupId`
+ * @returns the full information of the user with `gammaUserId` in the group with `gammaGroupId`
  */
 export async function softAddGroupUser(
     gammaGroupId: gamma.GroupId,
@@ -127,18 +127,20 @@ export async function softAddGroupUser(
                         },
                     },
                 })
-                if (groupUser != null) {
-                    const offlineGroupUser = await _getUserInGroup(
-                        groupUser.userId,
-                        groupUser.groupId,
-                        tx
-                    )
-                    if (offlineGroupUser == null) {
-                        throw new Error('Group user is suddenly null')
-                    }
-                    return offlineGroupUser
+                if (groupUser == null) {
+                    return createGroupUser(gammaGroupId, gammaUserId, tx)
                 }
-                return createGroupUser(gammaGroupId, gammaUserId, tx)
+
+                const offlineGroupUser = await _getUserInGroup(
+                    groupUser.userId,
+                    groupUser.groupId,
+                    tx
+                )
+                if (offlineGroupUser == null) {
+                    throw new Error('Group user is suddenly null')
+                }
+
+                return offlineGroupUser
             } catch (error) {
                 if (error instanceof PrismaClientKnownRequestError) {
                     continue
@@ -453,7 +455,7 @@ export async function isExternalUserInGroup(
  * Get the normal user ID from an external ID.
  * @param externalUserId The external user ID.
  * @param groupId The group to look in.
- * @return The normal user ID, or null if there is no user with the external ID in the group.
+ * @returns The normal user ID, or null if there is no user with the external ID in the group.
  */
 export async function findUserByExternalId(
     externalUserId: string,

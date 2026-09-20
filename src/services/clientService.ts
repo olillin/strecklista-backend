@@ -104,6 +104,7 @@ export function parseScope(scope: string): Scope[] {
 
 /**
  * Generate a random secret of a set length of bytes.
+ * @param length The length of the secret to generate in bytes.
  * @returns The generated secret.
  */
 function randomSecret(length: number): string {
@@ -137,7 +138,11 @@ async function hashSecret(
 }
 
 /**
- *
+ * Compare the secret to the hashed value.
+ * @param secret The unhashed secret.
+ * @param secretHash The hashed secret.
+ * @param salt The salt the secret was hashed with.
+ * @returns If the secret is the same.
  */
 export async function checkClientSecret(
     secret: string,

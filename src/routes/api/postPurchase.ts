@@ -32,7 +32,7 @@ export interface PurchaseExternalItem {
 export function isPurchaseExternalItem(
     item: PurchaseItem | PurchaseExternalItem
 ): item is PurchaseExternalItem {
-    return item.hasOwnProperty('externalId')
+    return Object.hasOwn(item, 'externalId')
 }
 
 export type PostPurchaseBody = (

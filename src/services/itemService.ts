@@ -368,7 +368,7 @@ export async function updateItem(
 
     const updateData: ItemUpdateInput = {}
 
-    const queuedChanges: (() => Promise<any>)[] = []
+    const queuedChanges: (() => Promise<unknown>)[] = []
 
     const updatePrices = (prices: Price[]) => {
         queuedChanges.push(() =>

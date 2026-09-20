@@ -24,6 +24,6 @@ jobs:
             packages: write
         uses: ./.github/workflows/docker-platform.yml
         with:
-            runner: ubuntu-latest-arm
+            runner: ubuntu-24.04-arm
             platform: linux/arm64
             suffix: -arm

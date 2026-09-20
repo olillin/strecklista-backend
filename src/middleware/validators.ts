@@ -7,6 +7,8 @@ import {
     query,
     type ValidationChain,
     type ContextRunner,
+    checkExact,
+    check,
 } from 'express-validator'
 import { getGroupId, verifyToken } from '@/middleware/validateToken.js'
 import {
@@ -523,14 +525,16 @@ export const putGroupMember = () => [
         .withMessage(ApiError.InvalidUserId)
         .bail()
         .custom(checkUserExistsInGroup),
-    body('externalId')
-        .optional()
-        .isString()
-        .withMessage(ApiError.InvalidExternalId)
-        .isLength({ max: 100 })
-        .withMessage(ApiError.InvalidExternalId)
-        .bail()
-        .custom(checkExternalUserUniqueInGroup),
+    checkExact([
+        body('externalId')
+            .optional()
+            .isString()
+            .withMessage(ApiError.InvalidExternalId)
+            .isLength({ max: 100 })
+            .withMessage(ApiError.InvalidExternalId)
+            .bail()
+            .custom(checkExternalUserUniqueInGroup),
+    ]),
 ]
 
 export const getGroupMemberByExternal = () => [
@@ -545,26 +549,28 @@ export const getGroupMemberByExternal = () => [
 ]
 
 export const getTransactions = () => [
-    query('limit')
-        .default(50)
-        .isInt({ min: 1, max: 100 })
-        .withMessage(ApiError.InvalidLimit),
-    query('offset')
-        .default(0)
-        .isInt({ min: 0 })
-        .withMessage(ApiError.InvalidOffset),
-    query('createdBy')
-        .optional()
-        .isInt({ min: 1 })
-        .withMessage(ApiError.InvalidUserId)
-        .bail()
-        .custom(checkUserExistsInGroup),
-    query('createdFor')
-        .optional()
-        .isInt({ min: 1 })
-        .withMessage(ApiError.InvalidUserId)
-        .bail()
-        .custom(checkUserExistsInGroup),
+    checkExact([
+        query('limit')
+            .default(50)
+            .isInt({ min: 1, max: 100 })
+            .withMessage(ApiError.InvalidLimit),
+        query('offset')
+            .default(0)
+            .isInt({ min: 0 })
+            .withMessage(ApiError.InvalidOffset),
+        query('createdBy')
+            .optional()
+            .isInt({ min: 1 })
+            .withMessage(ApiError.InvalidUserId)
+            .bail()
+            .custom(checkUserExistsInGroup),
+        query('createdFor')
+            .optional()
+            .isInt({ min: 1 })
+            .withMessage(ApiError.InvalidUserId)
+            .bail()
+            .custom(checkUserExistsInGroup),
+    ]),
 ]
 
 export const getTransaction = () => [
@@ -583,7 +589,7 @@ export const patchTransaction = () => [
         .withMessage(ApiError.InvalidTransactionId)
         .bail()
         .custom(checkTransactionExistsInGroup),
-    body('removed').optional().isBoolean({ strict: true }),
+    checkExact([body('removed').optional().isBoolean({ strict: true })]),
 ]
 
 export const postPurchase = () => [
@@ -668,54 +674,58 @@ export const postPurchase = () => [
 ]
 
 export const postDeposit = () => [
-    body('userId')
-        .exists()
-        .isInt({ min: 1 })
-        .withMessage(ApiError.InvalidUserId)
-        .not()
-        .isString()
-        .withMessage(ApiError.InvalidUserId)
-        .bail()
-        .custom(checkUserExistsInGroup),
-    body('total').exists().isDecimal().withMessage(ApiError.InvalidTotal),
-    body('comment')
-        .optional()
-        .isString()
-        .withMessage(ApiError.InvalidComment)
-        .trim()
-        .isLength({ max: 1000 })
-        .withMessage(ApiError.InvalidComment),
+    checkExact([
+        body('userId')
+            .exists()
+            .isInt({ min: 1 })
+            .withMessage(ApiError.InvalidUserId)
+            .not()
+            .isString()
+            .withMessage(ApiError.InvalidUserId)
+            .bail()
+            .custom(checkUserExistsInGroup),
+        body('total').exists().isDecimal().withMessage(ApiError.InvalidTotal),
+        body('comment')
+            .optional()
+            .isString()
+            .withMessage(ApiError.InvalidComment)
+            .trim()
+            .isLength({ max: 1000 })
+            .withMessage(ApiError.InvalidComment),
+    ]),
 ]
 
 export const postStockUpdate = () => [
-    body('items')
-        .exists()
-        .isArray({ min: 1 })
-        .withMessage(ApiError.StockNothing),
-    body('items.*.id')
-        .exists()
-        .isInt({ min: 1 })
-        .withMessage(ApiError.InvalidItemId)
-        .not()
-        .isString()
-        .withMessage(ApiError.InvalidItemId)
-        .bail()
-        .custom(checkItemExistsInGroup),
-    body('items.*.quantity')
-        .exists()
-        .isInt()
-        .withMessage(ApiError.StockItemCount)
-        .not()
-        .isString()
-        .withMessage(ApiError.StockItemCount),
-    body('items.*.absolute').optional().isBoolean(),
-    body('comment')
-        .optional()
-        .isString()
-        .withMessage(ApiError.InvalidComment)
-        .trim()
-        .isLength({ max: 1000 })
-        .withMessage(ApiError.InvalidComment),
+    checkExact([
+        body('items')
+            .exists()
+            .isArray({ min: 1 })
+            .withMessage(ApiError.StockNothing),
+        body('items.*.id')
+            .exists()
+            .isInt({ min: 1 })
+            .withMessage(ApiError.InvalidItemId)
+            .not()
+            .isString()
+            .withMessage(ApiError.InvalidItemId)
+            .bail()
+            .custom(checkItemExistsInGroup),
+        body('items.*.quantity')
+            .exists()
+            .isInt()
+            .withMessage(ApiError.StockItemCount)
+            .not()
+            .isString()
+            .withMessage(ApiError.StockItemCount),
+        body('items.*.absolute').optional().isBoolean(),
+        body('comment')
+            .optional()
+            .isString()
+            .withMessage(ApiError.InvalidComment)
+            .trim()
+            .isLength({ max: 1000 })
+            .withMessage(ApiError.InvalidComment),
+    ]),
 ]
 
 export const itemSortModes = [
@@ -732,49 +742,60 @@ export const itemSortModes = [
 export type ItemSortMode = (typeof itemSortModes)[number]
 
 export const getItems = () => [
-    query('sort')
-        .default('popular')
-        .isString()
-        .trim()
-        .isIn(itemSortModes)
-        .withMessage(ApiError.UnknownSortMode),
-    query('visibleOnly').default(true).isBoolean(),
+    checkExact([
+        query('sort')
+            .default('popular')
+            .isString()
+            .trim()
+            .isIn(itemSortModes)
+            .withMessage(ApiError.UnknownSortMode),
+        query('visibleOnly').default(true).isBoolean(),
+    ]),
 ]
 
 export const postItem = () => [
-    body('displayName')
-        .exists()
-        .isString()
-        .bail()
-        .trim()
-        .notEmpty()
-        .bail()
-        .custom(checkItemDisplayNameUniqueInGroup),
-    body('prices')
-        .exists()
-        .isArray({ min: 1 })
-        .withMessage(ApiError.MissingPrices),
-    body('prices.*.price').exists().isDecimal(),
-    body('prices.*.displayName').exists().isString().bail().trim().notEmpty(),
-    body('prices.*.externalId')
-        .optional()
-        .isString()
-        .withMessage(ApiError.InvalidExternalId)
-        .isLength({ max: 100 })
-        .withMessage(ApiError.InvalidExternalId)
-        .bail()
-        .custom(checkPriceExternalIdUnique),
-    body('icon').optional().isURL(),
+    checkExact([
+        body('displayName')
+            .exists()
+            .isString()
+            .bail()
+            .trim()
+            .notEmpty()
+            .bail()
+            .custom(checkItemDisplayNameUniqueInGroup),
+        body('prices')
+            .exists()
+            .isArray({ min: 1 })
+            .withMessage(ApiError.MissingPrices),
+        body('prices.*.price').exists().isDecimal(),
+        body('prices.*.displayName')
+            .exists()
+            .isString()
+            .bail()
+            .trim()
+            .notEmpty(),
+        body('prices.*.externalId')
+            .optional()
+            .isString()
+            .withMessage(ApiError.InvalidExternalId)
+            .isLength({ max: 100 })
+            .withMessage(ApiError.InvalidExternalId)
+            .bail()
+            .custom(checkPriceExternalIdUnique),
+        body('icon').optional().isURL(),
+    ]),
     checkPricesExternalIdsInternallyUnique(),
 ]
 
 export const getItem = () => [
-    param('id')
-        .exists()
-        .isInt({ min: 1 })
-        .withMessage(ApiError.InvalidItemId)
-        .bail()
-        .custom(checkItemExistsInGroup),
+    checkExact([
+        param('id')
+            .exists()
+            .isInt({ min: 1 })
+            .withMessage(ApiError.InvalidItemId)
+            .bail()
+            .custom(checkItemExistsInGroup),
+    ]),
 ]
 
 export const patchItem = () => [
@@ -794,99 +815,112 @@ export const patchItem = () => [
             .withMessage(ApiError.InvalidUrl),
         body('icon').not().exists(),
     ]),
-    body('displayName')
-        .optional()
-        .isString()
-        .trim()
-        .notEmpty()
-        .bail()
-        .custom(checkItemDisplayNameUniqueInGroup),
-    body('prices')
-        .optional()
-        .isArray({ min: 1 })
-        .withMessage(ApiError.MissingPrices),
-    body('prices.*.price').isDecimal(),
-    body('prices.*.displayName').isString().trim().notEmpty(),
-    body('prices.*.externalId')
-        .optional()
-        .isString()
-        .withMessage(ApiError.InvalidExternalId)
-        .isLength({ max: 100 })
-        .withMessage(ApiError.InvalidExternalId)
-        .bail()
-        .custom(checkPriceExternalIdUnique),
-    body('visible').optional().isBoolean(),
+    checkExact([
+        check('icon'),
+        body('displayName')
+            .optional()
+            .isString()
+            .trim()
+            .notEmpty()
+            .bail()
+            .custom(checkItemDisplayNameUniqueInGroup),
+        body('prices')
+            .optional()
+            .isArray({ min: 1 })
+            .withMessage(ApiError.MissingPrices),
+        body('prices.*.price').isDecimal(),
+        body('prices.*.displayName').isString().trim().notEmpty(),
+        body('prices.*.externalId')
+            .optional()
+            .isString()
+            .withMessage(ApiError.InvalidExternalId)
+            .isLength({ max: 100 })
+            .withMessage(ApiError.InvalidExternalId)
+            .bail()
+            .custom(checkPriceExternalIdUnique),
+        body('visible').optional().isBoolean(),
+    ]),
     checkPricesExternalIdsInternallyUnique(),
 ]
 
 export const deleteItem = () => [
-    param('id')
-        .exists()
-        .isInt({ min: 1 })
-        .withMessage(ApiError.InvalidItemId)
-        .bail()
-        .custom(checkItemExistsInGroup),
+    checkExact([
+        param('id')
+            .exists()
+            .isInt({ min: 1 })
+            .withMessage(ApiError.InvalidItemId)
+            .bail()
+            .custom(checkItemExistsInGroup),
+    ]),
 ]
 
 export const getItemByExternal = () => [
-    param('externalId')
-        .exists()
-        .isString()
-        .withMessage(ApiError.InvalidExternalId)
-        .isLength({ max: 100 })
-        .withMessage(ApiError.InvalidExternalId)
-        .bail()
-        .custom(checkExternalItemExistsInGroup),
+    checkExact([
+        param('externalId')
+            .exists()
+            .isString()
+            .withMessage(ApiError.InvalidExternalId)
+            .isLength({ max: 100 })
+            .withMessage(ApiError.InvalidExternalId)
+            .bail()
+            .custom(checkExternalItemExistsInGroup),
+    ]),
 ]
 
 export const getGroupClient = () => [
-    param('id')
-        .exists()
-        .isString()
-        .withMessage(ApiError.InvalidClientId)
-        .isLength({ min: CLIENT_ID_LENGTH, max: CLIENT_ID_LENGTH })
-        .withMessage(ApiError.InvalidClientId)
-        .bail()
-        .custom(checkClientExistsInGroup),
+    checkExact([
+        param('id')
+            .exists()
+            .isString()
+            .withMessage(ApiError.InvalidClientId)
+            .isLength({ min: CLIENT_ID_LENGTH, max: CLIENT_ID_LENGTH })
+            .withMessage(ApiError.InvalidClientId)
+            .bail()
+            .custom(checkClientExistsInGroup),
+    ]),
 ]
 
 export const getGroupClients = () => []
 
 export const postGroupClient = () => [
-    body('scope')
-        .exists()
-        .withMessage(ApiError.NoScope)
-        .isString()
-        .bail()
-        .trim()
-        .notEmpty()
-        .withMessage(ApiError.NoScope)
-        .bail()
-        .custom(checkValidScope),
-    body('displayName')
-        .exists()
-        .isString()
-        .trim()
-        .isLength({
-            min: 1,
-            max: 50,
-        })
-        .bail()
-        .custom(checkClientDisplayNameUniqueInGroup),
-    body('description').optional().isString().trim().isLength({
-        max: 255,
-    }),
+    checkExact([
+        body('scope')
+            .exists()
+            .withMessage(ApiError.NoScope)
+            .isString()
+            .bail()
+            .trim()
+            .notEmpty()
+            .withMessage(ApiError.NoScope)
+            .bail()
+            .custom(checkValidScope),
+        body('displayName')
+            .exists()
+            .isString()
+            .trim()
+            .isLength({
+                min: 1,
+                max: 50,
+            })
+            .bail()
+            .custom(checkClientDisplayNameUniqueInGroup),
+        body('description').optional().isString().trim().isLength({
+            max: 255,
+        }),
+    ]),
 ]
 
 export const deleteGroupClient = () => [
-    param('id')
-        .exists()
-        .isString()
-        .withMessage(ApiError.InvalidClientId)
-        .isLength({ min: CLIENT_ID_LENGTH, max: CLIENT_ID_LENGTH })
-        .withMessage(ApiError.InvalidClientId)
-        .bail()
-        .custom(checkClientExistsInGroup),
+    checkExact([
+        param('id')
+            .exists()
+            .isString()
+            .withMessage(ApiError.InvalidClientId)
+            .isLength({ min: CLIENT_ID_LENGTH, max: CLIENT_ID_LENGTH })
+            .withMessage(ApiError.InvalidClientId)
+            .bail()
+            .custom(checkClientExistsInGroup),
+    ]),
 ]
 
 export const getMeta = () => []

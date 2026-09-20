@@ -227,6 +227,13 @@ export function invalidPropertyError(
     return err(400, `Property '${name}' is invalid in ${location}`)
 }
 
+export function unknownPropertyError(
+    name: string,
+    location: Location
+): ErrorDefinition {
+    return err(400, `Unknown property '${name}' is not allowed in ${location}`)
+}
+
 export function unsupportedScopeError(
     unsupportedScope: string
 ): ErrorDefinition {

@@ -203,7 +203,8 @@ export async function checkPriceExternalIdUnique(
 
 export function checkPricesExternalIdsInternallyUnique(): Middleware {
     const run = (req: Request): void => {
-        const prices = req.body.prices
+        const prices = req.body.prices as unknown
+        if (prices === undefined) return
         if (!Array.isArray(prices)) throw invalidPropertyError('prices', 'body')
 
         const externalIds = prices

@@ -50,3 +50,4 @@ jobs:
                   tags: ${{ steps.meta.outputs.tags }}
                   labels: ${{ steps.meta.outputs.labels }}
                   build-args: VERSION=${{ steps.meta.outputs.version }}
+                  platforms: linux/amd64,linux/arm64

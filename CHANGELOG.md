@@ -53,5 +53,5 @@ See the [API docs][api] for specifics on how to use the new and updated endpoint
 - Supplying numeric strings are no longer accepted by int validators causing the server to crash.
 
 [api]: ./docs/API.md
-[unreleased]: https://github.com/olillin/iamcal/compare/v0.6.0...dev
-[v0.6.0]: https://github.com/olillin/iamcal/compare/v0.5.2...v0.6.0
+[unreleased]: https://github.com/olillin/strecklista-backend/compare/v0.6.0...dev
+[v0.6.0]: https://github.com/olillin/strecklista-backend/compare/v0.5.2...v0.6.0

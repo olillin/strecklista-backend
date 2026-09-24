@@ -408,12 +408,12 @@ The generated JWT token and data about the authenticated user and their group.
   "jti": string, // Unique identifier of the token
   "scope": string, // Authorized client scopes
   "client": {
-    "clientId": string,
+    "id": string,
     "displayName": string
   },
   "group": {
-      "id": number,
-      "gammaId": string
+    "id": number,
+    "gammaId": string
   }
 }
 ```

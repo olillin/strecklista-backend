@@ -1,14 +1,20 @@
-import { Request, Response } from 'express'
-import { CreatedTransactionResponse, ResponseBody } from '../../responses'
-import { getGroupId, getUserId } from '../../middleware/validateToken'
-import { sendError, unexpectedError } from '../../errors'
-import { createPurchase } from '../../services/transactionService'
-import { getUser } from '../../services/userService'
-import { convertDecimalToNumber } from '../../util/decimalToNumber'
+import type { Request, Response } from 'express'
+import {
+    createResponseBody,
+    type CreatedTransactionResponse,
+} from '@/lib/responses.js'
+import { getGroupId, getTransactionCreator } from '@/lib/token.js'
+import { ApiError, sendError, unexpectedError } from '@/lib/errors.js'
+import { createPurchase } from '@/services/transactionService.js'
+import {
+    findUserByExternalId,
+    getOfflineGroupUser,
+} from '@/services/userService.js'
 
 export interface JsonPrice {
     price: number
     displayName: string
+    externalId?: string
 }
 
 export interface PurchaseItem {
@@ -17,17 +23,49 @@ export interface PurchaseItem {
     purchasePrice: JsonPrice
 }
 
-export interface PostPurchaseBody {
-    userId: number
-    items: PurchaseItem[]
+export interface PurchaseExternalItem {
+    externalId: string
+    quantity: number
+}
+
+export function isPurchaseExternalItem(
+    item: PurchaseItem | PurchaseExternalItem
+): item is PurchaseExternalItem {
+    return Object.hasOwn(item, 'externalId')
+}
+
+export type PostPurchaseBody = (
+    | {
+          userId: number
+          externalUserId: undefined
+      }
+    | {
+          userId: undefined
+          externalUserId: string
+      }
+) & {
+    items: PurchaseItem[] | PurchaseExternalItem[]
     comment?: string
 }
 
-export default async function postPurchase(req: Request, res: Response) {
-    const { userId: createdFor, items, comment } = req.body as PostPurchaseBody
+export default async function routeHandler(req: Request, res: Response) {
+    const { userId, externalUserId, items, comment } =
+        req.body as PostPurchaseBody
 
-    const groupId: number = getGroupId(res)
-    const createdBy: number = getUserId(res)
+    const groupId = getGroupId(res)
+    const createdBy = getTransactionCreator(res)
+    if (groupId == null || createdBy == null) {
+        sendError(res, ApiError.Unauthorized)
+        return
+    }
+
+    // Resolve user ID from external ID
+    const createdFor =
+        userId ?? (await findUserByExternalId(externalUserId, groupId))
+    if (createdFor == null) {
+        sendError(res, ApiError.UserNotExist)
+        return
+    }
 
     const purchase = await createPurchase(
         groupId,
@@ -36,8 +74,8 @@ export default async function postPurchase(req: Request, res: Response) {
         comment ?? null,
         items
     )
-    const user = await getUser(createdFor, groupId)
-    if (!user) {
+    const groupUser = await getOfflineGroupUser(createdFor, groupId)
+    if (!groupUser) {
         sendError(
             res,
             unexpectedError(
@@ -46,14 +84,10 @@ export default async function postPurchase(req: Request, res: Response) {
         )
         return
     }
-    const balance = user.balance
-    const body: ResponseBody<CreatedTransactionResponse> = {
-        data: {
-            transaction: convertDecimalToNumber(purchase),
-            balance: balance.toNumber(),
-        },
-    }
-
+    const body = createResponseBody<CreatedTransactionResponse>({
+        transaction: purchase,
+        balance: groupUser.balance.toNumber(),
+    })
     const resourceUri = req.baseUrl + `/group/transaction/${purchase.id}`
     res.status(201).set('Location', resourceUri).json(body)
 }

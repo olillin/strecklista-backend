@@ -8,7 +8,6 @@ Including both initial setup and further configuration.
 To be able to setup and run the server you will need the following:
 
 - A [Gamma](https://auth.chalmers.it) account
-- [Git](https://git-scm.com/downloads)
 - [Docker Compose](https://docs.docker.com/compose/install/)
 - A text editor
 - A terminal
@@ -22,26 +21,13 @@ To be able to setup and run the server you will need the following:
 
 ### Creating a Gamma client
 
-The backend requires a Gamma client to authenticate users and provide access to
-profile and group information.
-
-1. Go to the Gamma _Your clients_ page at
-   <https://auth.chalmers.it/my-clients> and press
-   _Create client_, or go to <https://auth.chalmers.it/my-clients/create>.
-
-    ![Gamma "Your clients" menu](./images/gamma-0.png)
-
-2. Fill in your client details. Make sure that _Generate api key_ is
-   selected. _Redirect url_ is where your users will be redirected after
-   logging in with Gamma so make sure to set this to the callback URL for your
-   frontend.
-
-    ![Creating a new client](./images/gamma-1.png)
-
-3. Fill in the rest of the `.env` file with your newly generated credentials
-   according to the labels in the image below:
-
-    ![Client created](./images/gamma-2.png)
+The backend requires a Gamma client to authenticate users and provide access
+to profile and group information. Follow the instructions in the
+[Gamma docs](https://gamma-docs.olillin.com/website/#creating-a-user-client).
+Make sure that _Generate api key_ is selected and _Redirect url_ is set to the
+callback URL for your frontend. If you are using the
+[frontend by Göken](https://github.com/erikpersson0884/strecklista) the
+redirect url should be `<HOST>/callback`.
 
 ### Preparing the server
 
@@ -69,7 +55,7 @@ docker compose up -d
 
 It may take a while the first time the server starts as the
 [images](https://docs.docker.com/get-started/docker-concepts/the-basics/what-is-an-image)
-are being created.
+are being pulled.
 
 ### Initializing the database
 
@@ -123,19 +109,6 @@ the `.env` you created earlier. See the list of available settings below.
 | ------------ | ------ | ------- | -------------------------------------------------- |
 | DATABASE_URL | string |         | The URL Prisma will use to connect to the databsae |
 
-> [!WARNING]
-> If using Docker Compose the connection to PostgreSQL is already configured and
-> should require no additional setup. If you need to configure these variables
-> you are likely doing something wrong or already know what you are doing.
-
-The server uses [pg](https://www.npmjs.com/package/pg) to communicate with
-PostgreSQL and the same environment variables are used. They can be found at:
-<https://www.postgresql.org/docs/current/libpq-envars.html>.
-
-> [!NOTE]
-> [docker-compose.yaml](../docker-compose.yaml) defines `PGPASSWORD` and
-> `POSTGRES_PASSWORD`. `PGPASSWORD` is the password the backend uses when
-> connecting to the database while `POSTGRES_PASSWORD` is the password the
-> database is created with. These should be the same and are set to the file
-> `secrets/password.txt` by default using the `_FILE` scheme described
-> [above](#file-tip).
+> [!IMPORTANT]
+> When using Docker Compose in production make sure that the password in
+> `DATABASE_URL` matches the `POSTGRES_PASSWORD` of the `db` service.

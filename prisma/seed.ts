@@ -1,6 +1,9 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { PrismaClient } from '../src/generated/prisma/client'
 
-const prisma = new PrismaClient()
+const connectionString = process.env.DATABASE_URL!
+const adapter = new PrismaPg({ connectionString })
+const prisma = new PrismaClient({ adapter })
 
 console.log('Adding example data')
 
@@ -33,7 +36,7 @@ async function main() {
                     {
                         displayName: 'Fanta',
                         prices: {
-                            create: [{ displayName: 'P.R.I.T.', price: 7 }],
+                            create: [{ displayName: 'Internt', price: 7 }],
                         },
                     },
                     {
@@ -42,9 +45,9 @@ async function main() {
                             'https://product-cdn.systembolaget.se/productimages/507795/507795_400.png',
                         prices: {
                             create: [
-                                { displayName: 'P.R.I.T.', price: 10 },
+                                { displayName: 'Internt', price: 10 },
                                 { displayName: 'Pateter', price: 12 },
-                                { displayName: 'Extern', price: 15 },
+                                { displayName: 'Externt', price: 15 },
                             ],
                         },
                     },
@@ -80,7 +83,7 @@ async function main() {
         data: {
             groupId: group1.id,
             type: 'PURCHASE',
-            createdById: goken!.id,
+            createdByUserId: goken!.id,
             purchase: {
                 create: {
                     createdForId: goken!.id,
@@ -90,7 +93,7 @@ async function main() {
                                 itemId: fanta!.id,
                                 displayName: 'Fanta Orange',
                                 purchasePrice: 7,
-                                purchasePriceName: 'P.R.I.T.',
+                                purchasePriceName: 'Internt',
                                 quantity: 2,
                             },
                         ],
@@ -104,7 +107,7 @@ async function main() {
         data: {
             groupId: group1.id,
             type: 'PURCHASE',
-            createdById: goken!.id,
+            createdByUserId: goken!.id,
             purchase: {
                 create: {
                     createdForId: cal!.id,
@@ -114,14 +117,14 @@ async function main() {
                                 itemId: cocaCola!.id,
                                 displayName: 'Coca-Cola',
                                 purchasePrice: 10,
-                                purchasePriceName: 'P.R.I.T.',
+                                purchasePriceName: 'Internt',
                                 quantity: 3,
                             },
                             {
                                 itemId: fanta!.id,
                                 displayName: 'Fanta Orange',
                                 purchasePrice: 7,
-                                purchasePriceName: 'P.R.I.T.',
+                                purchasePriceName: 'Internt',
                                 quantity: 1,
                             },
                         ],
@@ -135,7 +138,7 @@ async function main() {
         data: {
             groupId: group1.id,
             type: 'DEPOSIT',
-            createdById: goken!.id,
+            createdByUserId: goken!.id,
             deposit: {
                 create: {
                     createdForId: goken!.id,
@@ -208,7 +211,7 @@ async function main() {
         data: {
             groupId: group2.id,
             type: 'PURCHASE',
-            createdById: frogg!.id,
+            createdByUserId: frogg!.id,
             purchase: {
                 create: {
                     createdForId: fredag!.id,
@@ -218,7 +221,7 @@ async function main() {
                                 itemId: fredagDrink!.id,
                                 displayName: "Fredag's läskiga dryck",
                                 purchasePrice: 16,
-                                purchasePriceName: 'De som vågar',
+                                purchasePriceName: 'Internt',
                                 quantity: 1,
                             },
                         ],
@@ -232,12 +235,17 @@ async function main() {
         data: {
             groupId: group2.id,
             type: 'STOCK_UPDATE',
-            createdById: fredag!.id,
+            createdByUserId: fredag!.id,
             stockUpdate: {
                 create: {
                     items: {
                         create: [
-                            { itemId: fredagDrink!.id, before: 0, after: 5 },
+                            {
+                                itemId: fredagDrink!.id,
+                                displayName: fredagDrink!.displayName,
+                                before: 0,
+                                after: 5,
+                            },
                         ],
                     },
                 },
@@ -249,13 +257,18 @@ async function main() {
         data: {
             groupId: group2.id,
             type: 'STOCK_UPDATE',
-            createdById: frogg!.id,
+            createdByUserId: frogg!.id,
             comment: 'Fredag gjorde mer dryck',
             stockUpdate: {
                 create: {
                     items: {
                         create: [
-                            { itemId: fredagDrink!.id, before: 5, after: 10 },
+                            {
+                                itemId: fredagDrink!.id,
+                                displayName: fredagDrink!.displayName,
+                                before: 5,
+                                after: 10,
+                            },
                         ],
                     },
                 },
@@ -267,7 +280,7 @@ async function main() {
         data: {
             groupId: group2.id,
             type: 'PURCHASE',
-            createdById: frogg!.id,
+            createdByUserId: frogg!.id,
             purchase: {
                 create: {
                     createdForId: frogg!.id,
@@ -276,7 +289,7 @@ async function main() {
                             itemId: fredagDrink!.id,
                             displayName: "Fredag's läskiga dryck",
                             purchasePrice: 16,
-                            purchasePriceName: 'De som vågar',
+                            purchasePriceName: 'Internt',
                             quantity: 2,
                         },
                     },

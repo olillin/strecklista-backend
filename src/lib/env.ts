@@ -20,6 +20,8 @@ export interface EnvironmentVariables {
     JWT_EXPIRES_IN?: string
 
     TRUST_PROXY: string
+
+    CURRENT_VERSION: string
 }
 
 // Remove 'optional' attributes from a type's properties
@@ -36,6 +38,8 @@ export const DEFAULT_ENVIRONMENT = {
     JWT_EXPIRES_IN: '43200',
 
     TRUST_PROXY: 'false',
+
+    CURRENT_VERSION: 'UNKNOWN',
 } as const satisfies Partial<Concrete<EnvironmentVariables>>
 
 export function withDefaults(

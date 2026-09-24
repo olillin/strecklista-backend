@@ -1,9 +1,13 @@
-import { Request, Response } from 'express'
-import { ItemsResponse, ResponseBody } from '../../responses'
-import { getGroupId, getUserId } from '../../middleware/validateToken'
-import { getItemsInGroup, getTopPrice, Item } from '../../services/itemService'
-import { ItemSortMode } from '../../middleware/validators'
-import { convertDecimalToNumber } from '../../util/decimalToNumber'
+import type { Request, Response } from 'express'
+import { createResponseBody, type ItemListResponse } from '@/lib/responses.js'
+import { getGroupId, getUserId } from '@/lib/token.js'
+import {
+    getItemsInGroup,
+    getTopPrice,
+    type Item,
+} from '@/services/itemService.js'
+import type { ItemSortMode } from '@/middleware/validators.js'
+import { ApiError, sendError } from '@/lib/errors.js'
 
 type ItemCompareFunction = (a: Item, b: Item) => number
 const COMPARE = {
@@ -20,13 +24,17 @@ const COMPARE = {
     STOCK_DESC: (a, b) => b.stock - a.stock,
 } satisfies { [_: string]: ItemCompareFunction }
 
-export default async function getItems(req: Request, res: Response) {
+export default async function routeHandler(req: Request, res: Response) {
     const sort: ItemSortMode = req.query.sort as ItemSortMode
     const visibleOnly: boolean =
         req.query.visibleOnly === '1' || req.query.visibleOnly === 'true'
 
-    const userId: number = getUserId(res)
-    const groupId: number = getGroupId(res)
+    const userId = getUserId(res)
+    const groupId = getGroupId(res)
+    if (groupId == null) {
+        sendError(res, ApiError.Unauthorized)
+        return
+    }
 
     const items: Item[] = await getItemsInGroup(groupId, userId, visibleOnly)
 
@@ -47,8 +55,6 @@ export default async function getItems(req: Request, res: Response) {
         items.sort(compare)
     }
 
-    const body: ResponseBody<ItemsResponse> = {
-        data: { items: convertDecimalToNumber(items) },
-    }
+    const body = createResponseBody<ItemListResponse>({ items })
     res.json(body)
 }

@@ -1,10 +1,12 @@
-import { Request, Response } from 'express'
-import { CreatedTransactionResponse, ResponseBody } from '../../responses'
-import { getGroupId, getUserId } from '../../middleware/validateToken'
-import { sendError, unexpectedError } from '../../errors'
-import { createDeposit } from '../../services/transactionService'
-import { getUser } from '../../services/userService'
-import { convertDecimalToNumber } from '../../util/decimalToNumber'
+import type { Request, Response } from 'express'
+import {
+    createResponseBody,
+    type CreatedTransactionResponse,
+} from '@/lib/responses.js'
+import { getGroupId, getTransactionCreator } from '@/lib/token.js'
+import { ApiError, sendError, unexpectedError } from '@/lib/errors.js'
+import { createDeposit } from '@/services/transactionService.js'
+import { getOfflineGroupUser } from '@/services/userService.js'
 
 export interface PostDepositBody {
     userId: number
@@ -12,11 +14,15 @@ export interface PostDepositBody {
     comment?: string
 }
 
-export default async function postDeposit(req: Request, res: Response) {
+export default async function routeHandler(req: Request, res: Response) {
     const { userId: createdFor, total, comment } = req.body as PostDepositBody
 
-    const groupId: number = getGroupId(res)
-    const createdBy: number = getUserId(res)
+    const groupId = getGroupId(res)
+    const createdBy = getTransactionCreator(res)
+    if (groupId == null || createdBy == null) {
+        sendError(res, ApiError.Unauthorized)
+        return
+    }
 
     const deposit = await createDeposit(
         groupId,
@@ -25,8 +31,8 @@ export default async function postDeposit(req: Request, res: Response) {
         comment ?? null,
         total
     )
-    const user = await getUser(createdFor, groupId)
-    if (!user) {
+    const groupUser = await getOfflineGroupUser(createdFor, groupId)
+    if (!groupUser) {
         sendError(
             res,
             unexpectedError(
@@ -35,13 +41,10 @@ export default async function postDeposit(req: Request, res: Response) {
         )
         return
     }
-    const balance = user.balance
-    const body: ResponseBody<CreatedTransactionResponse> = {
-        data: {
-            transaction: convertDecimalToNumber(deposit),
-            balance: balance.toNumber(),
-        },
-    }
+    const body = createResponseBody<CreatedTransactionResponse>({
+        transaction: deposit,
+        balance: groupUser.balance.toNumber(),
+    })
 
     const resourceUri = req.baseUrl + `/group/transaction/${deposit.id}`
     res.status(201).set('Location', resourceUri).json(body)

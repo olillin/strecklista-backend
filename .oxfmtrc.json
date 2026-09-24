@@ -1,4 +1,5 @@
 {
+    "$schema": "./node_modules/oxfmt/configuration_schema.json",
     "arrowParens": "avoid",
     "endOfLine": "lf",
     "insertPragma": false,
@@ -11,5 +12,14 @@
     "singleQuote": true,
     "tabWidth": 4,
     "trailingComma": "es5",
-    "useTabs": false
+    "useTabs": false,
+    "sortPackageJson": false,
+    "ignorePatterns": [
+        "out",
+        "bundle",
+        "coverage",
+        "package-lock.json",
+        "pnpm-lock.yaml",
+        "pnpm-workspace.yaml"
+    ]
 }

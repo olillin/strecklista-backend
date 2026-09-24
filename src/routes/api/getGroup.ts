@@ -1,63 +1,58 @@
-import { NextFunction, Request, Response } from 'express'
-import { clientApi } from '../../config/gamma'
-import { GroupId, UserId } from 'gammait'
+import type { Request, Response, NextFunction } from 'express'
+import { clientApi } from '@/lib/gamma.js'
+import { getGammaGroupId, getGroupId } from '@/lib/token.js'
+import { ApiError, sendError } from '@/lib/errors.js'
+import { createResponseBody, type GroupResponse } from '@/lib/responses.js'
 import {
-    getGammaGroupId,
-    getGammaUserId,
-    getGroupId,
-} from '../../middleware/validateToken'
-import { ApiError, sendError } from '../../errors'
-import { GroupResponse, ResponseBody } from '../../responses'
-import { getAuthorizedGroup } from '../../util/helpers'
-import { getUsersInGroup, OfflineGroup } from '../../services/userService'
-import { User, completeUser, completeGroup } from '../../services/gammaService'
-import { DecimalToNumber } from '../../util/decimalToNumber'
+    getOfflineUsersInGroup,
+    type OfflineGroup,
+} from '@/services/userService.js'
+import {
+    completeUser,
+    completeGroup,
+    getGammaGroup,
+    type GroupMember,
+} from '@/services/gammaService.js'
 
-export default async function getGroup(
-    req: Request,
+export default async function routeHandler(
+    _req: Request,
     res: Response,
     next: NextFunction
 ) {
     try {
-        const gammaUserId: UserId = getGammaUserId(res)
-        const gammaGroupId: GroupId = getGammaGroupId(res)
         const groupId = getGroupId(res)
-
-        // Get group
-        const gammaGroups = await clientApi
-            .getGroupsFor(gammaUserId)
-            .catch(reason => {
-                console.log(reason)
-                return null
-            })
-        if (!gammaGroups) {
-            sendError(res, ApiError.FailedGetGroups)
+        const gammaGroupId = getGammaGroupId(res)
+        if (groupId == null || gammaGroupId == null) {
+            sendError(res, ApiError.Unauthorized)
             return
         }
-        const gammaGroup = getAuthorizedGroup(gammaGroups)
+
+        // Get group
+        const gammaGroup = await getGammaGroup(gammaGroupId)
         if (!gammaGroup) {
-            sendError(res, ApiError.NoPermission)
+            sendError(res, ApiError.FailedGetGroup)
             return
         }
 
         // Get members
-        const offlineUsers = await getUsersInGroup(groupId)
-        let members: DecimalToNumber<User[]>
+        const offlineGroupUsers = await getOfflineUsersInGroup(groupId)
+        let members: GroupMember[]
         try {
             members = await Promise.all(
-                offlineUsers.map(async offlineUser => {
+                offlineGroupUsers.map(async offlineGroupUser => {
                     const gammaUser = await clientApi
-                        .getUser(offlineUser.gammaId)
+                        .getUser(offlineGroupUser.user.gammaId)
                         .catch(() => null)
                     if (gammaUser === null) {
                         console.warn(
-                            `Failed to get user ${offlineUser.gammaId} in group ${gammaGroup.id} from Gamma`
+                            `Failed to get user ${offlineGroupUser.user.gammaId} in group ${gammaGroup.id} from Gamma`
                         )
                     }
-                    const user = completeUser(offlineUser, gammaUser)
+                    const user = completeUser(offlineGroupUser.user, gammaUser)
                     return {
                         ...user,
-                        balance: user.balance.toNumber(),
+                        balance: offlineGroupUser.balance,
+                        externalId: offlineGroupUser.externalId,
                     }
                 })
             )
@@ -74,7 +69,7 @@ export default async function getGroup(
         }
         const group = completeGroup(offlineGroup, gammaGroup)
 
-        const body: ResponseBody<GroupResponse> = { data: { group, members } }
+        const body = createResponseBody<GroupResponse>({ group, members })
         res.json(body)
     } catch (error) {
         next(error)

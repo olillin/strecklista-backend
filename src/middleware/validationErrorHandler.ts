@@ -1,12 +1,17 @@
-import { NextFunction, Request, Response } from 'express'
-import { FieldValidationError, validationResult } from 'express-validator'
+import type { Request, Response, NextFunction } from 'express'
+import {
+    type FieldValidationError,
+    validationResult,
+    type ValidationError,
+} from 'express-validator'
 import {
     ApiError,
     invalidPropertyError,
     missingRequiredPropertyError,
     sendError,
     unexpectedError,
-} from '../errors'
+    unknownPropertyError,
+} from '@/lib/errors.js'
 
 async function validationErrorHandler(
     req: Request,
@@ -28,10 +33,18 @@ async function validationErrorHandler(
         fieldError = validationError.nestedErrors[0][0]
     } else if (validationError.type === 'alternative') {
         fieldError = validationError.nestedErrors[0]
+    } else if (validationError.type === 'unknown_fields') {
+        const unknownInstance = validationError.fields[0]
+        sendError(
+            res,
+            unknownPropertyError(unknownInstance.path, unknownInstance.location)
+        )
+        return
     } else {
         // Invalid type
+        const error = validationError as ValidationError
         const message = `Illegal validation error type '${
-            validationError.type
+            error.type
         }': ${JSON.stringify(validationError)}`
         console.error(message)
         sendError(res, unexpectedError(message))

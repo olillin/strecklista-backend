@@ -1,0 +1,30 @@
+name: Build and push Docker image
+
+on:
+    push:
+        branches:
+            - main
+            - dev
+        tags:
+            - 'v*.*.*'
+
+jobs:
+    linux-amd64:
+        name: 'Build and push linux/amd64'
+        permissions:
+            packages: write
+        uses: ./.github/workflows/docker-platform.yml
+        with:
+            runner: ubuntu-latest
+            platform: linux/amd64
+
+    linux-arm64:
+        name: 'Build and push linux/arm64'
+        if: false
+        permissions:
+            packages: write
+        uses: ./.github/workflows/docker-platform.yml
+        with:
+            runner: ubuntu-24.04-arm
+            platform: linux/arm64
+            suffix: -arm

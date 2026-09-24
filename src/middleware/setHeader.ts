@@ -1,4 +1,4 @@
-import { NextFunction, Request, RequestHandler, Response } from 'express'
+import type { NextFunction, Request, RequestHandler, Response } from 'express'
 
 function setHeader(key: string, value: string): RequestHandler
 function setHeader(key: string, values: Iterable<string>): RequestHandler

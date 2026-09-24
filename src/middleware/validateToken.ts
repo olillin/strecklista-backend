@@ -1,12 +1,13 @@
 import type { Request, Response, NextFunction } from 'express'
 import { ApiError, sendError } from '@/lib/errors.js'
 import { isGroupClientJwt, isUserJwt, verifyToken } from '@/lib/token.js'
+import { clientExistsInGroup } from '@/services/clientService.js'
 
-export default function validateToken(
+export default async function validateToken(
     req: Request,
     res: Response,
     next: NextFunction
-) {
+): Promise<void> {
     console.log(`${req.method} to API: ${req.path}`)
 
     const auth = req.headers.authorization
@@ -39,7 +40,17 @@ export default function validateToken(
             }
         }
 
-        if (!isUserJwt(verifiedToken) && !isGroupClientJwt(verifiedToken)) {
+        if (isGroupClientJwt(verifiedToken)) {
+            const exists = await clientExistsInGroup(
+                verifiedToken.client.id,
+                verifiedToken.group.id
+            )
+            if (!exists) {
+                // Client has been deleted
+                sendError(res, ApiError.RevokedToken)
+                return
+            }
+        } else if (!isUserJwt(verifiedToken)) {
             sendError(res, ApiError.InvalidToken)
             return
         }

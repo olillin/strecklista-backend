@@ -14,7 +14,7 @@ See the [API docs][api] for specifics on how to use the new and updated endpoint
 
 ### Added
 
-- Group clients and related endpoints. (#66)
+- Group clients and related endpoints. ([#66](https://github.com/olillin/strecklista-backend/issues/66))
     - Many endpoints can now be accessed by group clients, limited by scopes.
 - External IDs for item prices and group members.
     - The IDs are a unique string within the group, can for example be used for bar codes.
@@ -26,7 +26,7 @@ See the [API docs][api] for specifics on how to use the new and updated endpoint
     - `GET /group/member/by/external/\<id\>` which fetches info about a member of the group using their external ID.
     - `GET /group/item/by/external/\<id\>` which fetches an item using one of its prices' external IDs.
     - `GET /meta`, publically returning service metadata.
-    - `GET /health`, publically returning service health. (#71)
+    - `GET /health`, publically returning service health. ([#71](https://github.com/olillin/strecklista-backend/issues/71))
 - Stock updates now contain item display names and icons from when they were created.
 - Node CI workflow.
 - Docker build workflow on pull request.
@@ -49,7 +49,7 @@ See the [API docs][api] for specifics on how to use the new and updated endpoint
 
 ### Fixed
 
-- Add error for supplying extra parameters (#58)
+- Add error for supplying extra parameters ([#58](https://github.com/olillin/strecklista-backend/issues/58))
 - Supplying numeric strings are no longer accepted by int validators causing the server to crash.
 
 [api]: ./docs/API.md

@@ -192,7 +192,7 @@ UUID of a group in gamma.
 {
   "type": string,
   "id": int, // Numeric auto-incrementing id
-  "createdBy": TransactionCreator,
+  "createdBy": TransactionCreator?,
   "createdTime": int, // Timestamp when this transaction was created in ms
   "removed": boolean, // The transaction is ignored for calculations such as user balances and item stock counts and it may be presented differently on the frontend
   "comment": string? // Optional comment
@@ -678,7 +678,6 @@ Unless at the end of the list a _next_ url is provided to get the next page of t
         "type": "purchase",
         "id": 5,
         "purchaseTime": 1738594001,
-        "createdBy": 1,
         "createdFor": 2,
         "items": [
           {

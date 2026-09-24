@@ -37,7 +37,7 @@ See the [API docs][api] for specifics on how to use the new and updated endpoint
     - `GET /user`: `balance` has been moved out of `user` in the response.
     - `POST /login` has been replaced with `POST /oauth2/token` with grant type `authorization_code`.
     - `POST /authorize` has been moved to `POST /oauth2/authorize`.
-    - Transactions have a new format for `createdBy` to allow users and clients to create transactions.
+    - Transactions have a new format for `createdBy` to allow users and clients to create transactions. It can also be missing if the creator has been deleted.
 - Improved separation of users and group users with new interfaces.
 - `POST /group/purchase` now supports external item price and user IDs.
 - Updated development tooling:

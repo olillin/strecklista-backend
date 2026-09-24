@@ -31,7 +31,7 @@ export interface Transaction<T extends TransactionType> {
     type: T
     id: number
 
-    createdBy: TransactionCreator
+    createdBy?: TransactionCreator
     createdTime: Date
 
     removed: boolean
@@ -159,13 +159,11 @@ function parseTransaction(transaction: TransactionData): AnyTransaction {
         transaction.createdByUserId,
         transaction.createdByClientId
     )
-    if (creator == null)
-        throw new Error('Invalid transaction data, has no creator')
 
     const basicTransaction: Transaction<'purchase'> = {
         type: 'purchase',
         id: transaction.id,
-        createdBy: creator,
+        createdBy: creator ?? undefined,
         createdTime: transaction.createdTime,
         removed: transaction.removed,
         comment: transaction.comment ?? undefined,

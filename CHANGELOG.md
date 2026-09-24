@@ -8,6 +8,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [v0.6.0] - 2026-09-24
+
 See the [API docs][api] for specifics on how to use the new and updated endpoints.
 
 ### Added
@@ -43,9 +45,13 @@ See the [API docs][api] for specifics on how to use the new and updated endpoint
     - eslint -> oxlint
     - rollup -> rolldown
     - Added nodemon for live devserver
+- Updated Express to v5
 
 ### Fixed
 
+- Add error for supplying extra parameters (#58)
 - Supplying numeric strings are no longer accepted by int validators causing the server to crash.
 
 [api]: ./docs/API.md
+[unreleased]: https://github.com/olillin/iamcal/compare/v0.6.0...dev
+[v0.6.0]: https://github.com/olillin/iamcal/compare/v0.5.2...v0.6.0

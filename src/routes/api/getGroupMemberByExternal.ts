@@ -1,18 +1,11 @@
 import type { Request, Response } from 'express'
-import { getGammaGroupId, getGroupId } from '@/middleware/validateToken.js'
-import { ApiError, sendError } from '@/errors.js'
-import {
-    type ResponseBody,
-    type GroupUserResponse,
-    toGroupUserResponse,
-} from '@/responses.js'
-import { getGroupUser } from '@/services/gammaService.js'
+import { getGammaGroupId, getGroupId } from '@/lib/token.js'
+import { ApiError, sendError } from '@/lib/errors.js'
+import { createResponseBody } from '@/lib/responses.js'
+import { getGroupUser, type GroupUser } from '@/services/gammaService.js'
 import { findUserByExternalId } from '@/services/userService.js'
 
-export default async function getGroupMemberByExternal(
-    req: Request,
-    res: Response
-) {
+export default async function routeHandler(req: Request, res: Response) {
     if (typeof req.params.externalId !== 'string') {
         throw new Error('Invalid id, expected string but got array')
     }
@@ -37,8 +30,6 @@ export default async function getGroupMemberByExternal(
         return
     }
 
-    const body: ResponseBody<GroupUserResponse> = {
-        data: toGroupUserResponse(groupUser),
-    }
+    const body = createResponseBody<GroupUser>(groupUser)
     res.json(body)
 }

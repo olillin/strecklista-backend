@@ -1,5 +1,5 @@
 import * as gamma from 'gammait'
-import environment from '@/config/env.js'
+import environment from '@/lib/env.js'
 
 export function getAuthorizedGroup(
     groups: gamma.GroupWithPost[]

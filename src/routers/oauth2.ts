@@ -2,8 +2,7 @@ import { Router } from 'express'
 import validationErrorHandler from '@/middleware/validationErrorHandler.js'
 import * as validators from '@/middleware/validators.js'
 import setHeader from '@/middleware/setHeader.js'
-import { tokenRoute } from '@/routes/oauth2/token.js'
-import { authorizationCode } from '@/config/gamma.js'
+import { postToken, getAuthorize } from '@/routes/oauth2/index.js'
 
 function createOAuth2Router(): Router {
     const router = Router()
@@ -13,12 +12,9 @@ function createOAuth2Router(): Router {
         setHeader('Allow', 'post'),
         ...validators.token(),
         validationErrorHandler,
-        tokenRoute()
+        postToken
     )
-
-    router.get('/authorize', (_req, res) => {
-        res.redirect(authorizationCode.authorizeUrl())
-    })
+    router.get('/authorize', setHeader('Allow', 'get'), getAuthorize)
 
     return router
 }

@@ -1,13 +1,13 @@
 import { Router, type Request, type Response, type NextFunction } from 'express'
-import validateToken, { hasScope } from '@/middleware/validateToken.js'
+import validateToken from '@/middleware/validateToken.js'
 import validationErrorHandler from '@/middleware/validationErrorHandler.js'
 import * as validators from '@/middleware/validators.js'
 import * as apiRoutes from '@/routes/api/index.js'
 import setHeader from '@/middleware/setHeader.js'
-import { ApiError, sendError } from '@/errors.js'
-import type { ErrorResolvable } from '@/errors.js'
+import { ApiError, sendError } from '@/lib/errors.js'
+import type { ErrorResolvable } from '@/lib/errors.js'
 import type { Scope } from '@/services/clientService.js'
-import { isGroupClientJwt, isUserJwt } from '@/routes/oauth2/token.js'
+import { isGroupClientJwt, isUserJwt, hasScope } from '@/lib/token.js'
 
 async function createApiRouter(): Promise<Router> {
     const api = Router()
@@ -39,7 +39,12 @@ async function createApiRouter(): Promise<Router> {
             'getGroupMemberByExternal',
             'group.read',
         ],
-        ['get', '/group/transaction', 'getTransactions', 'transactions.read'],
+        [
+            'get',
+            '/group/transaction',
+            'getTransactionList',
+            'transactions.read',
+        ],
         [
             'get',
             '/group/transaction/:id',
@@ -56,7 +61,7 @@ async function createApiRouter(): Promise<Router> {
         ['post', '/group/purchase', 'postPurchase', 'transactions.create'],
         ['post', '/group/deposit', 'postDeposit', 'transactions.create'],
         ['post', '/group/stock', 'postStockUpdate', 'transactions.create'],
-        ['get', '/group/item', 'getItems', 'items.read'],
+        ['get', '/group/item', 'getItemList', 'items.read'],
         ['get', '/group/item/:id', 'getItem', 'items.read'],
         ['post', '/group/item', 'postItem', 'items.create'],
         ['patch', '/group/item/:id', 'patchItem', 'items.update'],
@@ -67,7 +72,7 @@ async function createApiRouter(): Promise<Router> {
             'getItemByExternal',
             'items.read',
         ],
-        ['get', '/group/client', 'getGroupClients'],
+        ['get', '/group/client', 'getGroupClientList'],
         ['get', '/group/client/:id', 'getGroupClient'],
         ['post', '/group/client', 'postGroupClient'],
         // ['post', '/group/client/:id', 'updateClient'],

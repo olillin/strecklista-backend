@@ -10,14 +10,14 @@ import {
     checkExact,
     check,
 } from 'express-validator'
-import { getGroupId, verifyToken } from '@/middleware/validateToken.js'
+import { getGroupId, verifyToken } from '@/lib/token.js'
 import {
     ApiError,
     invalidPropertyError,
     sendError,
     unsupportedScopeError,
     type ErrorResolvable,
-} from '@/errors.js'
+} from '@/lib/errors.js'
 import { isExternalUserInGroup, isUserInGroup } from '@/services/userService.js'
 import * as userService from '@/services/userService.js'
 import {
@@ -35,7 +35,7 @@ import {
     isGroupClientNameTaken,
     isScope,
 } from '@/services/clientService.js'
-import { acceptedGrantTypes, type GrantType } from '@/routes/oauth2/token.js'
+import { acceptedGrantTypes, type GrantType } from '@/lib/token.js'
 import type {
     CustomValidator,
     Middleware,
@@ -548,7 +548,7 @@ export const getGroupMemberByExternal = () => [
         .custom(checkExternalUserExistsInGroup),
 ]
 
-export const getTransactions = () => [
+export const getTransactionList = () => [
     checkExact([
         query('limit')
             .default(50)
@@ -741,7 +741,7 @@ export const itemSortModes = [
 ] as const
 export type ItemSortMode = (typeof itemSortModes)[number]
 
-export const getItems = () => [
+export const getItemList = () => [
     checkExact([
         query('sort')
             .default('popular')
@@ -880,7 +880,7 @@ export const getGroupClient = () => [
     ]),
 ]
 
-export const getGroupClients = () => []
+export const getGroupClientList = () => []
 
 export const postGroupClient = () => [
     checkExact([

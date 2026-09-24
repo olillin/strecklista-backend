@@ -11,7 +11,7 @@ import {
     sendError,
     unexpectedError,
     unknownPropertyError,
-} from '@/errors.js'
+} from '@/lib/errors.js'
 
 async function validationErrorHandler(
     req: Request,

@@ -4,8 +4,8 @@ import express, {
     type Response,
 } from 'express'
 import rateLimit from 'express-rate-limit'
-import env from '@/config/env.js'
-import { sendError, unexpectedError } from '@/errors.js'
+import env from '@/lib/env.js'
+import { sendError, unexpectedError } from '@/lib/errors.js'
 import createApiRouter from '@/routers/api.js'
 import appendHeader from '@/middleware/setHeader.js'
 import cors, { type CorsOptions } from 'cors'

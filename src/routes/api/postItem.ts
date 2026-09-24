@@ -1,11 +1,10 @@
 import type { Request, Response } from 'express'
-import type { ItemResponse, ResponseBody } from '@/responses.js'
-import { getGroupId, getUserId } from '@/middleware/validateToken.js'
+import { createResponseBody, type ItemResponse } from '@/lib/responses.js'
+import { getGroupId, getUserId } from '@/lib/token.js'
 import { createItem, type Item, type Price } from '@/services/itemService.js'
 import type { JsonPrice } from '@/routes/api/postPurchase.js'
 import { Decimal } from '@prisma/client/runtime/client'
-import { convertToJson } from '@/util/convertToJson.js'
-import { ApiError, sendError } from '@/errors.js'
+import { ApiError, sendError } from '@/lib/errors.js'
 
 export interface PostItemBody {
     displayName: string
@@ -13,7 +12,7 @@ export interface PostItemBody {
     icon?: string
 }
 
-export default async function postItem(req: Request, res: Response) {
+export default async function routeHandler(req: Request, res: Response) {
     const { displayName, prices: jsonPrices, icon } = req.body as PostItemBody
     const userId = getUserId(res)
     const groupId = getGroupId(res)
@@ -38,9 +37,7 @@ export default async function postItem(req: Request, res: Response) {
         userId
     )
 
-    const body: ResponseBody<ItemResponse> = {
-        data: { item: convertToJson(item) },
-    }
+    const body = createResponseBody<ItemResponse>({ item })
     const resourceUri = req.baseUrl + `/group/item/${item.id}`
     res.status(201).set('Location', resourceUri).json(body)
 }

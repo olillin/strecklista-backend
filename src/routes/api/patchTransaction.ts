@@ -1,16 +1,18 @@
 import type { Request, Response } from 'express'
-import type { TransactionResponse, ResponseBody } from '@/responses.js'
+import {
+    type TransactionResponse,
+    createResponseBody,
+} from '@/lib/responses.js'
 import {
     type TransactionPatch,
     updateTransaction,
 } from '@/services/transactionService.js'
-import { convertToJson } from '@/util/convertToJson.js'
 
 export interface PatchTransactionBody {
     removed?: boolean
 }
 
-export default async function patchTransaction(req: Request, res: Response) {
+export default async function routeHandler(req: Request, res: Response) {
     if (typeof req.params.id !== 'string') {
         throw new Error('Invalid id, expected string but got array')
     }
@@ -24,10 +26,8 @@ export default async function patchTransaction(req: Request, res: Response) {
     // Update transactions table
     const newTransaction = await updateTransaction(transactionId, patch)
 
-    const data: TransactionResponse = {
-        transaction: convertToJson(newTransaction),
-    }
-    const body: ResponseBody<TransactionResponse> = { data }
-
+    const body = createResponseBody<TransactionResponse>({
+        transaction: newTransaction,
+    })
     res.json(body)
 }

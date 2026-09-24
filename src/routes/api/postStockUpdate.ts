@@ -1,11 +1,11 @@
 import type { Request, Response } from 'express'
-import type { ResponseBody, TransactionResponse } from '@/responses.js'
 import {
-    getGroupId,
-    getTransactionCreator,
-} from '@/middleware/validateToken.js'
+    createResponseBody,
+    type TransactionResponse,
+} from '@/lib/responses.js'
+import { getGroupId, getTransactionCreator } from '@/lib/token.js'
 import { createStockUpdate } from '@/services/transactionService.js'
-import { ApiError, sendError } from '@/errors.js'
+import { ApiError, sendError } from '@/lib/errors.js'
 
 export interface PostStockUpdateBody {
     items: PostItemStockUpdate[]
@@ -18,7 +18,7 @@ export interface PostItemStockUpdate {
     absolute?: boolean
 }
 
-export default async function postStockUpdate(req: Request, res: Response) {
+export default async function routeHandler(req: Request, res: Response) {
     const { items, comment } = req.body as PostStockUpdateBody
 
     const groupId = getGroupId(res)
@@ -34,10 +34,9 @@ export default async function postStockUpdate(req: Request, res: Response) {
         comment ?? null,
         items
     )
-    const body: ResponseBody<TransactionResponse> = {
-        data: { transaction: stockUpdate },
-    }
-
+    const body = createResponseBody<TransactionResponse>({
+        transaction: stockUpdate,
+    })
     const resourceUri = req.baseUrl + `/group/transaction/${stockUpdate.id}`
     res.status(201).set('Location', resourceUri).json(body)
 }

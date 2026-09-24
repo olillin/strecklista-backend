@@ -1,21 +1,21 @@
 import type { Request, Response } from 'express'
-import { clientApi } from '@/config/gamma.js'
+import { clientApi } from '@/lib/gamma.js'
 import {
     getGammaGroupId,
     getGammaUserId,
     getGroupId,
     getUserId,
-} from '@/middleware/validateToken.js'
-import { ApiError, sendError } from '@/errors.js'
-import {
-    type ResponseBody,
-    type GroupUserResponse,
-    toGroupUserResponse,
-} from '@/responses.js'
+} from '@/lib/token.js'
+import { ApiError, sendError } from '@/lib/errors.js'
+import { createResponseBody } from '@/lib/responses.js'
 import * as userService from '@/services/userService.js'
-import { completeGroupUser, getGammaGroup } from '@/services/gammaService.js'
+import {
+    completeGroupUser,
+    getGammaGroup,
+    type GroupUser,
+} from '@/services/gammaService.js'
 
-export default async function getUser(_req: Request, res: Response) {
+export default async function routeHandler(_req: Request, res: Response) {
     const userId = getUserId(res)
     const groupId = getGroupId(res)
     const gammaUserId = getGammaUserId(res)
@@ -67,8 +67,6 @@ export default async function getUser(_req: Request, res: Response) {
 
     const groupUser = completeGroupUser(offlineGroupUser, gammaUser, group)
 
-    const body: ResponseBody<GroupUserResponse> = {
-        data: toGroupUserResponse(groupUser),
-    }
+    const body = createResponseBody<GroupUser>(groupUser)
     res.json(body)
 }

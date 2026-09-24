@@ -1,14 +1,13 @@
 import type { Request, Response } from 'express'
-import type { ItemsResponse, ResponseBody } from '@/responses.js'
-import { getGroupId, getUserId } from '@/middleware/validateToken.js'
+import { createResponseBody, type ItemListResponse } from '@/lib/responses.js'
+import { getGroupId, getUserId } from '@/lib/token.js'
 import {
     getItemsInGroup,
     getTopPrice,
     type Item,
 } from '@/services/itemService.js'
 import type { ItemSortMode } from '@/middleware/validators.js'
-import { convertToJson } from '@/util/convertToJson.js'
-import { ApiError, sendError } from '@/errors.js'
+import { ApiError, sendError } from '@/lib/errors.js'
 
 type ItemCompareFunction = (a: Item, b: Item) => number
 const COMPARE = {
@@ -25,7 +24,7 @@ const COMPARE = {
     STOCK_DESC: (a, b) => b.stock - a.stock,
 } satisfies { [_: string]: ItemCompareFunction }
 
-export default async function getItems(req: Request, res: Response) {
+export default async function routeHandler(req: Request, res: Response) {
     const sort: ItemSortMode = req.query.sort as ItemSortMode
     const visibleOnly: boolean =
         req.query.visibleOnly === '1' || req.query.visibleOnly === 'true'
@@ -56,8 +55,6 @@ export default async function getItems(req: Request, res: Response) {
         items.sort(compare)
     }
 
-    const body: ResponseBody<ItemsResponse> = {
-        data: { items: convertToJson(items) },
-    }
+    const body = createResponseBody<ItemListResponse>({ items })
     res.json(body)
 }

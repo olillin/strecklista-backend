@@ -1,8 +1,11 @@
 import type { Request, Response } from 'express'
-import type { NewGroupClientResponse, ResponseBody } from '@/responses.js'
-import { getGroupId, getUserId } from '@/middleware/validateToken.js'
+import {
+    createResponseBody,
+    type NewGroupClientResponse,
+} from '@/lib/responses.js'
+import { getGroupId, getUserId } from '@/lib/token.js'
 import { createGroupClient, parseScope } from '@/services/clientService.js'
-import { ApiError, sendError } from '@/errors.js'
+import { ApiError, sendError } from '@/lib/errors.js'
 
 export interface PostClientBody {
     scope: string
@@ -10,7 +13,7 @@ export interface PostClientBody {
     description?: string
 }
 
-export default async function postClient(req: Request, res: Response) {
+export default async function routeHandler(req: Request, res: Response) {
     const { scope, displayName, description } = req.body as PostClientBody
     const userId = getUserId(res)
     const groupId = getGroupId(res)
@@ -28,11 +31,7 @@ export default async function postClient(req: Request, res: Response) {
         description
     )
 
-    const body: ResponseBody<NewGroupClientResponse> = {
-        data: {
-            client: client,
-        },
-    }
+    const body = createResponseBody<NewGroupClientResponse>({ client })
     const resourceUri = req.baseUrl + `/group/client/${client.id}`
     res.status(201).set('Location', resourceUri).json(body)
 }

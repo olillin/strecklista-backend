@@ -1,11 +1,10 @@
 import type { Request, Response } from 'express'
-import { getUserId } from '@/middleware/validateToken.js'
-import { ApiError, sendError } from '@/errors.js'
-import type { ItemResponse, ResponseBody } from '@/responses.js'
+import { getUserId } from '@/lib/token.js'
+import { ApiError, sendError } from '@/lib/errors.js'
+import { createResponseBody, type ItemResponse } from '@/lib/responses.js'
 import * as itemService from '@/services/itemService.js'
-import { convertToJson } from '@/util/convertToJson.js'
 
-export default async function getItem(req: Request, res: Response) {
+export default async function routeHandler(req: Request, res: Response) {
     if (typeof req.params.id !== 'string') {
         throw new Error('Invalid id, expected string but got array')
     }
@@ -19,8 +18,6 @@ export default async function getItem(req: Request, res: Response) {
         return
     }
 
-    const body: ResponseBody<ItemResponse> = {
-        data: { item: convertToJson(item) },
-    }
+    const body = createResponseBody<ItemResponse>({ item })
     res.json(body)
 }

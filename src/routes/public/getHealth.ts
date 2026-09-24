@@ -1,9 +1,12 @@
 import type { Request, Response } from 'express'
-import type { ResponseBody, ServiceHealthyResponse } from '@/responses.js'
+import {
+    createResponseBody,
+    type ServiceHealthyResponse,
+} from '@/lib/responses.js'
 import { prisma } from '@/lib/prisma.js'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client'
-import { ApiError, sendError, type ErrorResolvable } from '@/errors.js'
-import { clientApi } from '@/config/gamma.js'
+import { ApiError, sendError, type ErrorResolvable } from '@/lib/errors.js'
+import { clientApi } from '@/lib/gamma.js'
 
 export default async function getHealth(_req: Request, res: Response) {
     // Check database status
@@ -53,12 +56,9 @@ export default async function getHealth(_req: Request, res: Response) {
     }
 
     // Service healthy
-    const body: ResponseBody<ServiceHealthyResponse> = {
-        data: {
-            code: 200,
-            message: 'Service healthy',
-        },
-    }
-
+    const body = createResponseBody<ServiceHealthyResponse>({
+        code: 200,
+        message: 'Service healthy',
+    })
     res.status(body.data.code).json(body)
 }

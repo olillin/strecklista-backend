@@ -16,7 +16,8 @@
         "typecheck": "tsc --noEmit",
         "prisma:generate": "prisma generate",
         "prisma:seed": "prisma db seed",
-        "test": "echo \"Error: no test specified\" && exit 1"
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "check": "pnpm typecheck && pnpm format:check && pnpm lint"
     },
     "repository": {
         "type": "git",

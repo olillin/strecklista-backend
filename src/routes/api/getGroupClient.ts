@@ -1,14 +1,17 @@
 import type { Request, Response } from 'express'
-import type { GroupClientResponse, ResponseBody } from '@/responses.js'
+import {
+    createResponseBody,
+    type GroupClientResponse,
+} from '@/lib/responses.js'
 import * as clientService from '@/services/clientService.js'
-import { ApiError, sendError } from '@/errors.js'
-import { getGroupId } from '@/middleware/validateToken.js'
+import { ApiError, sendError } from '@/lib/errors.js'
+import { getGroupId } from '@/lib/token.js'
 
 export interface GetClientParams {
     id: string
 }
 
-export default async function getGroupClient(req: Request, res: Response) {
+export default async function routeHandler(req: Request, res: Response) {
     const groupId = getGroupId(res)
     if (groupId == null) {
         sendError(res, ApiError.Unauthorized)
@@ -23,8 +26,8 @@ export default async function getGroupClient(req: Request, res: Response) {
         return
     }
 
-    const body: ResponseBody<GroupClientResponse> = {
-        data: { client: groupClient },
-    }
+    const body = createResponseBody<GroupClientResponse>({
+        client: groupClient,
+    })
     res.status(200).json(body)
 }

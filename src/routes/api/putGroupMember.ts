@@ -1,18 +1,14 @@
 import type { Request, Response } from 'express'
-import { getGroupId } from '@/middleware/validateToken.js'
-import {
-    toGroupUserResponse,
-    type GroupUserResponse,
-    type ResponseBody,
-} from '@/responses.js'
-import { ApiError, sendError, unexpectedError } from '@/errors.js'
+import { getGroupId } from '@/lib/token.js'
+import { createResponseBody } from '@/lib/responses.js'
+import { ApiError, sendError, unexpectedError } from '@/lib/errors.js'
 import {
     updateGroupMember,
     type GroupMemberUpdate,
 } from '@/services/userService.js'
-import { getGroupUser } from '@/services/gammaService.js'
+import { getGroupUser, type GroupUser } from '@/services/gammaService.js'
 
-export default async function putGroupMember(req: Request, res: Response) {
+export default async function routeHandler(req: Request, res: Response) {
     if (typeof req.params.id !== 'string') {
         throw new Error('Invalid id, expected string but got array')
     }
@@ -36,8 +32,6 @@ export default async function putGroupMember(req: Request, res: Response) {
         return
     }
 
-    const body: ResponseBody<GroupUserResponse> = {
-        data: toGroupUserResponse(newGroupUser),
-    }
+    const body = createResponseBody<GroupUser>(newGroupUser)
     res.json(body)
 }

@@ -1,8 +1,8 @@
 import { Router, type Request, type Response } from 'express'
 import * as publicRoutes from '@/routes/public/index.js'
 import setHeader from '@/middleware/setHeader.js'
-import { sendError } from '@/errors.js'
-import type { ErrorResolvable } from '@/errors.js'
+import { sendError } from '@/lib/errors.js'
+import type { ErrorResolvable } from '@/lib/errors.js'
 
 export default async function createPublicRouter(): Promise<Router> {
     const router = Router()

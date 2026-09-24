@@ -8,7 +8,7 @@ import {
     type OfflineUser,
 } from '@/services/userService.js'
 import { Decimal } from '@prisma/client/runtime/client'
-import { clientApi } from '@/config/gamma.js'
+import { clientApi } from '@/lib/gamma.js'
 import { prisma } from '@/lib/prisma.js'
 
 export interface Group {

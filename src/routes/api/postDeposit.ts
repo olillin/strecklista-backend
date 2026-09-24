@@ -1,12 +1,11 @@
 import type { Request, Response } from 'express'
-import type { CreatedTransactionResponse, ResponseBody } from '@/responses.js'
 import {
-    getGroupId,
-    getTransactionCreator,
-} from '@/middleware/validateToken.js'
-import { ApiError, sendError, unexpectedError } from '@/errors.js'
+    createResponseBody,
+    type CreatedTransactionResponse,
+} from '@/lib/responses.js'
+import { getGroupId, getTransactionCreator } from '@/lib/token.js'
+import { ApiError, sendError, unexpectedError } from '@/lib/errors.js'
 import { createDeposit } from '@/services/transactionService.js'
-import { convertToJson } from '@/util/convertToJson.js'
 import { getOfflineGroupUser } from '@/services/userService.js'
 
 export interface PostDepositBody {
@@ -15,7 +14,7 @@ export interface PostDepositBody {
     comment?: string
 }
 
-export default async function postDeposit(req: Request, res: Response) {
+export default async function routeHandler(req: Request, res: Response) {
     const { userId: createdFor, total, comment } = req.body as PostDepositBody
 
     const groupId = getGroupId(res)
@@ -42,12 +41,10 @@ export default async function postDeposit(req: Request, res: Response) {
         )
         return
     }
-    const body: ResponseBody<CreatedTransactionResponse> = {
-        data: {
-            transaction: convertToJson(deposit),
-            balance: groupUser.balance.toNumber(),
-        },
-    }
+    const body = createResponseBody<CreatedTransactionResponse>({
+        transaction: deposit,
+        balance: groupUser.balance.toNumber(),
+    })
 
     const resourceUri = req.baseUrl + `/group/transaction/${deposit.id}`
     res.status(201).set('Location', resourceUri).json(body)

@@ -1,7 +1,7 @@
 import type { Location } from 'express-validator'
-import type { ResponseBody } from '@/responses.js'
+import type { ErrorResponseBody } from '@/lib/responses.js'
 import type { Response } from 'express'
-import { acceptedGrantTypes } from '@/routes/oauth2/token.js'
+import { acceptedGrantTypes } from '@/lib/token.js'
 
 export interface ErrorDefinition {
     code: number
@@ -30,6 +30,7 @@ export enum ApiError {
     UnsupportedGrantType,
     ExpiredToken,
     InvalidToken,
+    RevokedToken,
     BeforeNbf,
     NoPermission,
     InvalidCredentials,
@@ -110,6 +111,10 @@ const errorDefinitions: { [key in ApiError]: ErrorDefinition } = {
     ),
     [ApiError.ExpiredToken]: err(401, 'Token is expired'),
     [ApiError.InvalidToken]: err(401, 'Token is invalid, generate a new one'),
+    [ApiError.RevokedToken]: err(
+        401,
+        'Token has been revoked, generate a new one'
+    ),
     [ApiError.BeforeNbf]: err(401, 'Token cannot be used yet'),
     [ApiError.NoPermission]: err(403, 'No permission to access this service'),
     [ApiError.InvalidCredentials]: err(401, `Invalid credentials`),
@@ -282,11 +287,11 @@ export function sendError(
         message = error.message
     }
 
-    const response: ResponseBody<never> = {
+    const body: ErrorResponseBody = {
         error: {
             code: code,
             message: message,
         },
     }
-    res.status(code).json(response)
+    res.status(code).json(body)
 }

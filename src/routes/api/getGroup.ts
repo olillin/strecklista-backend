@@ -1,8 +1,8 @@
 import type { Request, Response, NextFunction } from 'express'
-import { clientApi } from '@/config/gamma.js'
-import { getGammaGroupId, getGroupId } from '@/middleware/validateToken.js'
-import { ApiError, sendError } from '@/errors.js'
-import type { GroupResponse, ResponseBody } from '@/responses.js'
+import { clientApi } from '@/lib/gamma.js'
+import { getGammaGroupId, getGroupId } from '@/lib/token.js'
+import { ApiError, sendError } from '@/lib/errors.js'
+import { createResponseBody, type GroupResponse } from '@/lib/responses.js'
 import {
     getOfflineUsersInGroup,
     type OfflineGroup,
@@ -13,9 +13,8 @@ import {
     getGammaGroup,
     type GroupMember,
 } from '@/services/gammaService.js'
-import type { ToJSON } from '@/util/convertToJson.js'
 
-export default async function getGroup(
+export default async function routeHandler(
     _req: Request,
     res: Response,
     next: NextFunction
@@ -37,7 +36,7 @@ export default async function getGroup(
 
         // Get members
         const offlineGroupUsers = await getOfflineUsersInGroup(groupId)
-        let members: ToJSON<GroupMember[]>
+        let members: GroupMember[]
         try {
             members = await Promise.all(
                 offlineGroupUsers.map(async offlineGroupUser => {
@@ -52,9 +51,9 @@ export default async function getGroup(
                     const user = completeUser(offlineGroupUser.user, gammaUser)
                     return {
                         ...user,
-                        balance: offlineGroupUser.balance.toNumber(),
+                        balance: offlineGroupUser.balance,
                         externalId: offlineGroupUser.externalId,
-                    } satisfies ToJSON<GroupMember>
+                    }
                 })
             )
         } catch (e) {
@@ -70,7 +69,7 @@ export default async function getGroup(
         }
         const group = completeGroup(offlineGroup, gammaGroup)
 
-        const body: ResponseBody<GroupResponse> = { data: { group, members } }
+        const body = createResponseBody<GroupResponse>({ group, members })
         res.json(body)
     } catch (error) {
         next(error)

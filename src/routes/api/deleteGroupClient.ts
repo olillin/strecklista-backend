@@ -1,9 +1,9 @@
 import type { Request, Response, NextFunction } from 'express'
-import { getGroupId, getUserId } from '@/middleware/validateToken.js'
-import { ApiError, sendError } from '@/errors.js'
+import { getGroupId, getUserId } from '@/lib/token.js'
+import { ApiError, sendError } from '@/lib/errors.js'
 import * as clientService from '@/services/clientService.js'
 
-export default async function deleteGroupClient(
+export default async function routeHandler(
     req: Request,
     res: Response,
     next: NextFunction

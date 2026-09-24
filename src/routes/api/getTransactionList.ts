@@ -1,11 +1,14 @@
 import type { Request, Response } from 'express'
-import { getGroupId } from '@/middleware/validateToken.js'
-import type { ResponseBody, TransactionsResponse } from '@/responses.js'
+import { getGroupId } from '@/lib/token.js'
+import {
+    createResponseBody,
+    type TransactionListResponse,
+} from '@/lib/responses.js'
 import * as transactionService from '@/services/transactionService.js'
-import { ApiError, sendError } from '@/errors.js'
+import { ApiError, sendError } from '@/lib/errors.js'
 import { isClientId } from '@/services/clientService.js'
 
-export default async function getTransactions(req: Request, res: Response) {
+export default async function routeHandler(req: Request, res: Response) {
     const limit = parseInt(req.query.limit as string)
     const offset = parseInt(req.query.offset as string)
     const createdFor = req.query.createdFor
@@ -62,12 +65,10 @@ export default async function getTransactions(req: Request, res: Response) {
         req.baseUrl +
         `/group/transaction?offset=${offset + limit}&limit=${limit}${optionsParamsString}`
 
-    const body: ResponseBody<TransactionsResponse> = {
-        data: {
-            transactions,
-            ...(offset > 0 && { previous: previousUrl }),
-            ...(count > offset + limit && { next: nextUrl }),
-        },
-    }
+    const body = createResponseBody<TransactionListResponse>({
+        transactions,
+        ...(offset > 0 && { previous: previousUrl }),
+        ...(count > offset + limit && { next: nextUrl }),
+    })
     res.json(body)
 }

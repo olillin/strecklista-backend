@@ -1,16 +1,15 @@
 import type { Request, Response } from 'express'
-import type { CreatedTransactionResponse, ResponseBody } from '@/responses.js'
 import {
-    getGroupId,
-    getTransactionCreator,
-} from '@/middleware/validateToken.js'
-import { ApiError, sendError, unexpectedError } from '@/errors.js'
+    createResponseBody,
+    type CreatedTransactionResponse,
+} from '@/lib/responses.js'
+import { getGroupId, getTransactionCreator } from '@/lib/token.js'
+import { ApiError, sendError, unexpectedError } from '@/lib/errors.js'
 import { createPurchase } from '@/services/transactionService.js'
 import {
     findUserByExternalId,
     getOfflineGroupUser,
 } from '@/services/userService.js'
-import { convertToJson } from '@/util/convertToJson.js'
 
 export interface JsonPrice {
     price: number
@@ -49,7 +48,7 @@ export type PostPurchaseBody = (
     comment?: string
 }
 
-export default async function postPurchase(req: Request, res: Response) {
+export default async function routeHandler(req: Request, res: Response) {
     const { userId, externalUserId, items, comment } =
         req.body as PostPurchaseBody
 
@@ -85,13 +84,10 @@ export default async function postPurchase(req: Request, res: Response) {
         )
         return
     }
-    const body: ResponseBody<CreatedTransactionResponse> = {
-        data: {
-            transaction: convertToJson(purchase),
-            balance: groupUser.balance.toNumber(),
-        },
-    }
-
+    const body = createResponseBody<CreatedTransactionResponse>({
+        transaction: purchase,
+        balance: groupUser.balance.toNumber(),
+    })
     const resourceUri = req.baseUrl + `/group/transaction/${purchase.id}`
     res.status(201).set('Location', resourceUri).json(body)
 }

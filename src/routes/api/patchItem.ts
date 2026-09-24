@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express'
-import { getUserId, getGroupId } from '@/middleware/validateToken.js'
-import type { ItemResponse, ResponseBody } from '@/responses.js'
+import { getUserId, getGroupId } from '@/lib/token.js'
+import { createResponseBody, type ItemResponse } from '@/lib/responses.js'
 import {
     updateItem,
     type Price,
@@ -8,8 +8,7 @@ import {
 } from '@/services/itemService.js'
 import type { JsonPrice } from '@/routes/api/postPurchase.js'
 import { Decimal } from '@prisma/client/runtime/client'
-import { ApiError, sendError } from '@/errors.js'
-import { convertToJson } from '@/util/convertToJson.js'
+import { ApiError, sendError } from '@/lib/errors.js'
 
 export interface PatchItemBody {
     icon?: string
@@ -19,7 +18,7 @@ export interface PatchItemBody {
     favorite?: boolean
 }
 
-export default async function patchItem(req: Request, res: Response) {
+export default async function routeHandler(req: Request, res: Response) {
     if (typeof req.params.id !== 'string') {
         throw new Error('Invalid id, expected string but got array')
     }
@@ -36,9 +35,7 @@ export default async function patchItem(req: Request, res: Response) {
 
     const newItem = await updateItem(groupId, itemId, patch, userId)
 
-    const body: ResponseBody<ItemResponse> = {
-        data: { item: convertToJson(newItem) },
-    }
+    const body = createResponseBody<ItemResponse>({ item: newItem })
     res.json(body)
 }
 

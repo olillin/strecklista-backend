@@ -1,4 +1,4 @@
-name: Build and push Docker image to all platforms
+name: Build and push Docker image
 
 on:
     push:

@@ -249,26 +249,45 @@ export async function transactionExistsInGroup(
         .then(transaction => transaction !== null)
 }
 
+export interface TransactionFilterOptions {
+    createdBy?: TransactionCreator
+    createdFor?: number
+}
+
 export async function countTransactionsInGroup(
-    groupId: number
+    groupId: number,
+    options: TransactionFilterOptions = {}
 ): Promise<number> {
     return await prisma.transaction.count({
         where: {
             groupId: groupId,
+            createdByUserId: options.createdBy?.userId ?? Prisma.skip,
+            createdByClientId: options.createdBy?.clientId ?? Prisma.skip,
+            ...(options.createdFor == undefined
+                ? {}
+                : {
+                      OR: [
+                          {
+                              purchase: {
+                                  createdForId: options.createdFor,
+                              },
+                          },
+                          {
+                              deposit: {
+                                  createdForId: options.createdFor,
+                              },
+                          },
+                      ],
+                  }),
         },
     })
-}
-
-export interface GetTransactionsOptions {
-    createdBy?: TransactionCreator
-    createdFor?: number
 }
 
 export async function getTransactionsInGroup(
     groupId: number,
     limit: number,
     offset: number,
-    options: GetTransactionsOptions = {}
+    options: TransactionFilterOptions = {}
 ): Promise<Array<AnyTransaction>> {
     const transactions = await prisma.transaction.findMany({
         where: {

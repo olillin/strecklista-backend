@@ -57,6 +57,7 @@ export type CreatedTransactionResponse = TransactionResponse & {
 }
 
 export interface PaginatedResponse {
+    count: number
     next?: string
     previous?: string
 }

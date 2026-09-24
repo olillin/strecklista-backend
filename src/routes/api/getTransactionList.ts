@@ -8,15 +8,27 @@ import * as transactionService from '@/services/transactionService.js'
 import { ApiError, sendError } from '@/lib/errors.js'
 import { isClientId } from '@/services/clientService.js'
 
+export const DEFAULT_LIMIT = 50
+export const DEFAULT_OFFSET = 0
+
 export default async function routeHandler(req: Request, res: Response) {
-    const limit = parseInt(req.query.limit as string)
-    const offset = parseInt(req.query.offset as string)
-    const createdFor = req.query.createdFor
-        ? parseInt(req.query.createdFor as string)
-        : undefined
-    const createdById = req.query.createdBy
-        ? (req.query.createdBy as string)
-        : undefined
+    const limit =
+        typeof req.query.limit === 'string'
+            ? parseInt(req.query.limit)
+            : DEFAULT_LIMIT
+    const offset =
+        typeof req.query.offset === 'string'
+            ? parseInt(req.query.offset)
+            : DEFAULT_OFFSET
+
+    const createdFor =
+        typeof req.query.createdFor === 'string'
+            ? parseInt(req.query.createdFor)
+            : undefined
+    const createdById =
+        typeof req.query.createdBy === 'string'
+            ? req.query.createdBy
+            : undefined
 
     let createdBy: transactionService.TransactionCreator | undefined = undefined
     if (createdById != undefined) {
@@ -37,12 +49,15 @@ export default async function routeHandler(req: Request, res: Response) {
         return
     }
 
-    const options: transactionService.GetTransactionsOptions = {
+    const options: transactionService.TransactionFilterOptions = {
         createdFor,
         createdBy,
     }
 
-    const count = await transactionService.countTransactionsInGroup(groupId)
+    const count = await transactionService.countTransactionsInGroup(
+        groupId,
+        options
+    )
     const transactions = await transactionService.getTransactionsInGroup(
         groupId,
         limit,
@@ -54,9 +69,19 @@ export default async function routeHandler(req: Request, res: Response) {
     const clamped = previousOffset < 0
     if (clamped) previousOffset = 0
 
-    const optionsParams = new URLSearchParams(Object.entries(options))
+    const optionsParams = new URLSearchParams()
+    if (options.createdFor) {
+        optionsParams.append('createdFor', options.createdFor.toString())
+    }
+    if (options.createdBy) {
+        optionsParams.append(
+            'createdBy',
+            options.createdBy.clientId ?? options.createdBy.userId.toString()
+        )
+    }
+
     const optionsParamsString =
-        optionsParams.size === 0 ? '' : optionsParams.toString()
+        optionsParams.size === 0 ? '' : '&' + optionsParams.toString()
 
     const previousUrl =
         req.baseUrl +
@@ -67,6 +92,7 @@ export default async function routeHandler(req: Request, res: Response) {
 
     const body = createResponseBody<TransactionListResponse>({
         transactions,
+        count,
         ...(offset > 0 && { previous: previousUrl }),
         ...(count > offset + limit && { next: nextUrl }),
     })

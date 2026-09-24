@@ -551,11 +551,11 @@ export const getGroupMemberByExternal = () => [
 export const getTransactionList = () => [
     checkExact([
         query('limit')
-            .default(50)
+            .optional()
             .isInt({ min: 1, max: 100 })
             .withMessage(ApiError.InvalidLimit),
         query('offset')
-            .default(0)
+            .optional()
             .isInt({ min: 0 })
             .withMessage(ApiError.InvalidOffset),
         query('createdBy')

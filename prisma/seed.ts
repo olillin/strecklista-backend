@@ -1,4 +1,9 @@
-import { prisma } from '../src/lib/prisma'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { PrismaClient } from '../src/generated/prisma/client'
+
+const connectionString = process.env.DATABASE_URL!
+const adapter = new PrismaPg({ connectionString })
+const prisma = new PrismaClient({ adapter })
 
 console.log('Adding example data')
 
@@ -78,7 +83,7 @@ async function main() {
         data: {
             groupId: group1.id,
             type: 'PURCHASE',
-            createdById: goken!.id,
+            createdByUserId: goken!.id,
             purchase: {
                 create: {
                     createdForId: goken!.id,
@@ -102,7 +107,7 @@ async function main() {
         data: {
             groupId: group1.id,
             type: 'PURCHASE',
-            createdById: goken!.id,
+            createdByUserId: goken!.id,
             purchase: {
                 create: {
                     createdForId: cal!.id,
@@ -133,7 +138,7 @@ async function main() {
         data: {
             groupId: group1.id,
             type: 'DEPOSIT',
-            createdById: goken!.id,
+            createdByUserId: goken!.id,
             deposit: {
                 create: {
                     createdForId: goken!.id,
@@ -206,7 +211,7 @@ async function main() {
         data: {
             groupId: group2.id,
             type: 'PURCHASE',
-            createdById: frogg!.id,
+            createdByUserId: frogg!.id,
             purchase: {
                 create: {
                     createdForId: fredag!.id,
@@ -230,12 +235,17 @@ async function main() {
         data: {
             groupId: group2.id,
             type: 'STOCK_UPDATE',
-            createdById: fredag!.id,
+            createdByUserId: fredag!.id,
             stockUpdate: {
                 create: {
                     items: {
                         create: [
-                            { itemId: fredagDrink!.id, before: 0, after: 5 },
+                            {
+                                itemId: fredagDrink!.id,
+                                displayName: fredagDrink!.displayName,
+                                before: 0,
+                                after: 5,
+                            },
                         ],
                     },
                 },
@@ -247,13 +257,18 @@ async function main() {
         data: {
             groupId: group2.id,
             type: 'STOCK_UPDATE',
-            createdById: frogg!.id,
+            createdByUserId: frogg!.id,
             comment: 'Fredag gjorde mer dryck',
             stockUpdate: {
                 create: {
                     items: {
                         create: [
-                            { itemId: fredagDrink!.id, before: 5, after: 10 },
+                            {
+                                itemId: fredagDrink!.id,
+                                displayName: fredagDrink!.displayName,
+                                before: 5,
+                                after: 10,
+                            },
                         ],
                     },
                 },
@@ -265,7 +280,7 @@ async function main() {
         data: {
             groupId: group2.id,
             type: 'PURCHASE',
-            createdById: frogg!.id,
+            createdByUserId: frogg!.id,
             purchase: {
                 create: {
                     createdForId: frogg!.id,

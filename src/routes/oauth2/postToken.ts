@@ -27,6 +27,7 @@ import {
     type ClientCredentials,
     type GrantType,
 } from '@/lib/token.js'
+import { convertToJson, type ToJSON } from '@/util/convertToJson.js'
 
 export default async function routeHandler(
     req: Request,
@@ -125,10 +126,10 @@ async function authorizationCodeFlow(req: Request, res: Response) {
     })
         .then(token => {
             // Do not put in 'data' as the token must be in root.
-            const body: LoginResponse = {
+            const body: ToJSON<LoginResponse> = convertToJson({
                 ...token,
                 ...groupUser,
-            }
+            })
             res.json(body)
         })
         .catch(error => {
@@ -202,7 +203,7 @@ async function clientCredentialsFlow(req: Request, res: Response) {
         scope: clientDetails.scope,
     })
         .then(token => {
-            res.json(token)
+            res.json(convertToJson(token))
         })
         .catch(error => {
             sendError(res, tokenSignError(String(error)))

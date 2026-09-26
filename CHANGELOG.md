@@ -8,6 +8,12 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [v0.6.1] - 2026-09-26
+
+### Fixed
+
+- Token endpoint does not properly convert response to JSON.
+
 ## [v0.6.0] - 2026-09-24
 
 See the [API docs][api] for specifics on how to use the new and updated endpoints.
@@ -53,5 +59,6 @@ See the [API docs][api] for specifics on how to use the new and updated endpoint
 - Supplying numeric strings are no longer accepted by int validators causing the server to crash.
 
 [api]: ./docs/API.md
-[unreleased]: https://github.com/olillin/strecklista-backend/compare/v0.6.0...dev
+[unreleased]: https://github.com/olillin/strecklista-backend/compare/v0.6.1...dev
+[v0.6.1]: https://github.com/olillin/strecklista-backend/compare/v0.6.0...v0.6.1
 [v0.6.0]: https://github.com/olillin/strecklista-backend/compare/v0.5.2...v0.6.0

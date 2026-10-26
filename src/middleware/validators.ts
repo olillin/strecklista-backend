@@ -839,6 +839,7 @@ export const patchItem = () => [
             .bail()
             .custom(checkPriceExternalIdUnique),
         body('visible').optional().isBoolean(),
+        body('favorite').optional().isBoolean(),
     ]),
     checkPricesExternalIdsInternallyUnique(),
 ]
